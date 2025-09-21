@@ -24,4 +24,4 @@
 * Real-time service status updates
 * Multi-role dashboard (Customer, Staff, Technician, Admin)
 
-#### Copyright © 2025 Nguyễn Quốc Đạt Originals
+#### Copyright © 2025 EV Service Center
