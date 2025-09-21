@@ -1,0 +1,230 @@
+/* Material Design Button Component */
+.md-button {
+  /* Base styles */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--md-spacing-2);
+  border: none;
+  cursor: pointer;
+  font-family: var(--md-font-family);
+  font-weight: var(--md-font-weight-medium);
+  text-decoration: none;
+  transition: all var(--md-transition-standard);
+  position: relative;
+  overflow: hidden;
+  min-width: 64px;
+  user-select: none;
+  border-radius: var(--md-border-radius-xl);
+  
+  /* Typography */
+  font-size: var(--md-font-size-sm);
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  
+  /* Ripple effect container */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.md-button:focus {
+  outline: none;
+}
+
+.md-button:focus-visible {
+  box-shadow: var(--md-focus-ring);
+}
+
+/* Button sizes */
+.md-button--small {
+  height: 32px;
+  padding: 0 12px;
+  font-size: var(--md-font-size-xs);
+  border-radius: var(--md-border-radius-lg);
+}
+
+.md-button--medium {
+  height: 40px;
+  padding: 0 16px;
+  font-size: var(--md-font-size-sm);
+}
+
+.md-button--large {
+  height: 48px;
+  padding: 0 24px;
+  font-size: var(--md-font-size-base);
+}
+
+/* Full width */
+.md-button--full-width {
+  width: 100%;
+}
+
+/* Button variants */
+
+/* Filled button (primary) */
+.md-button--filled {
+  background-color: var(--md-primary);
+  color: var(--md-on-primary);
+  box-shadow: var(--md-elevation-1);
+}
+
+.md-button--filled:hover {
+  background-color: var(--md-primary-hover);
+  box-shadow: var(--md-elevation-2);
+}
+
+.md-button--filled:active {
+  background-color: var(--md-primary-pressed);
+  box-shadow: var(--md-elevation-1);
+}
+
+/* Outlined button */
+.md-button--outlined {
+  background-color: transparent;
+  color: var(--md-primary);
+  border: 1px solid var(--md-outline);
+}
+
+.md-button--outlined:hover {
+  background-color: var(--md-primary-container);
+  border-color: var(--md-outline-variant);
+}
+
+.md-button--outlined:active {
+  background-color: var(--md-primary-container);
+}
+
+/* Text button */
+.md-button--text {
+  background-color: transparent;
+  color: var(--md-primary);
+  padding: 0 12px;
+}
+
+.md-button--text:hover {
+  background-color: var(--md-primary-container);
+}
+
+.md-button--text:active {
+  background-color: var(--md-primary-container);
+}
+
+/* Elevated button */
+.md-button--elevated {
+  background-color: var(--md-surface-container-low);
+  color: var(--md-primary);
+  box-shadow: var(--md-elevation-1);
+}
+
+.md-button--elevated:hover {
+  background-color: var(--md-surface-container);
+  box-shadow: var(--md-elevation-2);
+}
+
+.md-button--elevated:active {
+  background-color: var(--md-surface-container);
+  box-shadow: var(--md-elevation-1);
+}
+
+/* Tonal button */
+.md-button--tonal {
+  background-color: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
+}
+
+.md-button--tonal:hover {
+  background-color: var(--md-secondary-container-hover);
+  box-shadow: var(--md-elevation-1);
+}
+
+.md-button--tonal:active {
+  background-color: var(--md-secondary-container-pressed);
+}
+
+/* Disabled state */
+.md-button--disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Button content */
+.md-button__text {
+  display: flex;
+  align-items: center;
+}
+
+.md-button__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.md-button__icon--start {
+  margin-left: -4px;
+}
+
+.md-button__icon--end {
+  margin-right: -4px;
+}
+
+/* Small button icons */
+.md-button--small .md-button__icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Large button icons */
+.md-button--large .md-button__icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Ripple effect (optional enhancement) */
+.md-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: currentColor;
+  opacity: 0;
+  border-radius: inherit;
+  transition: opacity var(--md-transition-standard);
+}
+
+.md-button:hover::before {
+  opacity: 0.08;
+}
+
+.md-button:active::before {
+  opacity: 0.12;
+}
+
+/* Focus ring for outlined buttons */
+.md-button--outlined:focus-visible {
+  border-color: var(--md-primary);
+  box-shadow: var(--md-focus-ring);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .md-button--large {
+    height: 44px;
+    padding: 0 20px;
+  }
+  
+  .md-button--medium {
+    height: 40px;
+    padding: 0 16px;
+  }
+  
+  .md-button--small {
+    height: 36px;
+    padding: 0 12px;
+  }
+}

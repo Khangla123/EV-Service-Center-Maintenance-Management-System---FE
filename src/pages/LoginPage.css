@@ -1,0 +1,317 @@
+/* Material Design Login Page Styles */
+.md-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--md-spacing-4);
+  background-color: var(--md-surface);
+  position: relative;
+  overflow: hidden;
+}
+
+.md-login-page__background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
+
+.md-login-page__pattern {
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 20%, var(--md-primary-container) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, var(--md-tertiary-container) 0%, transparent 50%),
+    radial-gradient(circle at 40% 60%, var(--md-secondary-container) 0%, transparent 50%);
+  opacity: 0.3;
+}
+
+.md-login-page__container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 400px;
+}
+
+.md-login-page__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-6);
+}
+
+/* Header */
+.md-login-page__header {
+  text-align: center;
+  margin-bottom: var(--md-spacing-2);
+}
+
+.md-login-page__logo-link {
+  display: inline-block;
+  text-decoration: none;
+  margin-bottom: var(--md-spacing-4);
+}
+
+.md-login-page__logo {
+  width: 64px;
+  height: 64px;
+  background: var(--md-primary);
+  border-radius: var(--md-border-radius-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: var(--md-elevation-2);
+  transition: all var(--md-transition-standard);
+}
+
+.md-login-page__logo:hover {
+  transform: scale(1.05);
+  box-shadow: var(--md-elevation-3);
+}
+
+.md-login-page__logo-icon {
+  color: var(--md-on-primary);
+  width: 32px;
+  height: 32px;
+}
+
+.md-login-page__title {
+  font-size: var(--md-font-size-2xl);
+  font-weight: var(--md-font-weight-bold);
+  color: var(--md-on-surface);
+  margin: 0 0 var(--md-spacing-2) 0;
+  letter-spacing: -0.01em;
+}
+
+.md-login-page__subtitle {
+  font-size: var(--md-font-size-base);
+  color: var(--md-on-surface-variant);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Form Card */
+.md-login-page__form-card {
+  padding: var(--md-spacing-6) !important;
+}
+
+.md-login-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-5);
+}
+
+/* Error Message */
+.md-login-page__error {
+  display: flex;
+  align-items: center;
+  gap: var(--md-spacing-3);
+  padding: var(--md-spacing-3) var(--md-spacing-4);
+  background-color: var(--md-error-container);
+  color: var(--md-on-error-container);
+  border-radius: var(--md-border-radius-md);
+  border-left: 4px solid var(--md-error);
+}
+
+.md-login-page__error-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--md-error);
+}
+
+.md-login-page__error-text {
+  font-size: var(--md-font-size-sm);
+  line-height: 1.4;
+}
+
+/* Password Toggle */
+.md-login-page__password-toggle {
+  background: none;
+  border: none;
+  padding: var(--md-spacing-1);
+  color: var(--md-on-surface-variant);
+  cursor: pointer;
+  border-radius: var(--md-border-radius-sm);
+  transition: all var(--md-transition-standard);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.md-login-page__password-toggle:hover {
+  background-color: var(--md-surface-container-highest);
+  color: var(--md-on-surface);
+}
+
+.md-login-page__password-toggle:focus {
+  outline: none;
+  background-color: var(--md-surface-container-highest);
+  box-shadow: var(--md-focus-ring);
+}
+
+/* Options */
+.md-login-page__options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--md-spacing-3);
+}
+
+.md-login-page__checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--md-spacing-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.md-login-page__checkbox-input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--md-primary);
+  cursor: pointer;
+}
+
+.md-login-page__checkbox-label {
+  font-size: var(--md-font-size-sm);
+  color: var(--md-on-surface);
+  cursor: pointer;
+}
+
+.md-login-page__forgot-password {
+  background: none;
+  border: none;
+  color: var(--md-primary);
+  font-size: var(--md-font-size-sm);
+  font-weight: var(--md-font-weight-medium);
+  cursor: pointer;
+  padding: var(--md-spacing-1) var(--md-spacing-2);
+  border-radius: var(--md-border-radius-sm);
+  transition: all var(--md-transition-standard);
+  text-decoration: none;
+}
+
+.md-login-page__forgot-password:hover {
+  background-color: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+}
+
+.md-login-page__forgot-password:focus {
+  outline: none;
+  box-shadow: var(--md-focus-ring);
+}
+
+/* Signup Link */
+.md-login-page__signup-link {
+  text-align: center;
+  font-size: var(--md-font-size-sm);
+  color: var(--md-on-surface-variant);
+}
+
+.md-login-page__signup-button {
+  color: var(--md-primary);
+  font-weight: var(--md-font-weight-medium);
+  text-decoration: none;
+  transition: color var(--md-transition-standard);
+}
+
+.md-login-page__signup-button:hover {
+  color: var(--md-primary-hover);
+  text-decoration: underline;
+}
+
+/* Demo Card */
+.md-login-page__demo-card {
+  padding: var(--md-spacing-4) !important;
+}
+
+.md-login-page__demo-title {
+  font-size: var(--md-font-size-sm);
+  font-weight: var(--md-font-weight-medium);
+  color: var(--md-on-surface);
+  text-align: center;
+  margin: 0 0 var(--md-spacing-4) 0;
+}
+
+.md-login-page__demo-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--md-spacing-3);
+}
+
+.md-login-page__demo-button {
+  font-size: var(--md-font-size-xs) !important;
+  min-height: 40px !important;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .md-login-page {
+    padding: var(--md-spacing-3);
+  }
+  
+  .md-login-page__container {
+    max-width: 100%;
+  }
+  
+  .md-login-page__form-card {
+    padding: var(--md-spacing-4) !important;
+  }
+  
+  .md-login-page__title {
+    font-size: var(--md-font-size-xl);
+  }
+  
+  .md-login-page__options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--md-spacing-2);
+  }
+  
+  .md-login-page__demo-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 360px) {
+  .md-login-page__form-card {
+    padding: var(--md-spacing-3) !important;
+  }
+  
+  .md-login-page__demo-card {
+    padding: var(--md-spacing-3) !important;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .md-login-page__pattern {
+    opacity: 0.2;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .md-login-page__pattern {
+    display: none;
+  }
+  
+  .md-login-page {
+    background-color: var(--md-surface);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .md-login-page__logo {
+    transition: none;
+  }
+  
+  .md-login-page__logo:hover {
+    transform: none;
+  }
+}

@@ -1,0 +1,586 @@
+/* Enhanced Header Component - VinFast Style */
+.header {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.header:hover {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Force white background for all states */
+.header,
+.header * {
+  color: #374151 !important;
+}
+
+.header::before,
+.header::after {
+  display: none !important;
+}
+
+.header__container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 80px;
+  position: relative;
+}
+
+/* VinFast Style Logo */
+.header__logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.header__logo-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.header__logo:hover {
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.header__logo-icon {
+  width: 32px;
+  height: 32px;
+  color: #1a73e8;
+  transition: all 0.3s ease;
+}
+
+.header__logo-text {
+  font-weight: 700;
+  font-size: 24px;
+  color: #1a73e8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* VinFast Style Navigation */
+.header__nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  justify-content: center;
+  margin: 0 56px;
+}
+
+.header__nav-link {
+  color: #374151;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 16px;
+  padding: 16px 8px;
+  position: relative;
+  transition: all 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.header__nav-link:hover {
+  color: #1a73e8;
+  text-decoration: none;
+  background-color: rgba(26, 115, 232, 0.08);
+}
+
+.header__nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #1a73e8;
+  transition: width 0.3s ease;
+}
+
+.header__nav-link:hover::after {
+  width: 100%;
+}
+
+/* VinFast Style Action Buttons */
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.header__auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* VinFast Style Account Button */
+.header__account-btn {
+  background: transparent !important;
+  border: 1px solid #d1d5db !important;
+  color: #374151 !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  padding: 8px 20px !important;
+  height: 40px !important;
+  border-radius: 6px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  transition: all 0.3s ease !important;
+}
+
+.header__account-btn:hover {
+  background: #f9fafb !important;
+  border-color: #9ca3af !important;
+  color: #111827 !important;
+  transform: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* VinFast Style Register Button */
+.header__register-btn {
+  background: #1a73e8 !important;
+  border: 1px solid #1a73e8 !important;
+  color: white !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  padding: 8px 20px !important;
+  height: 40px !important;
+  border-radius: 6px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  transition: all 0.3s ease !important;
+}
+
+.header__register-btn:hover {
+  background: #1557b0 !important;
+  border-color: #1557b0 !important;
+  transform: none !important;
+  box-shadow: 0 2px 4px rgba(26, 115, 232, 0.3) !important;
+}
+
+/* Enhanced Notifications - Material Design Aligned */
+.header__notification-btn {
+  position: relative;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid transparent;
+  color: var(--md-on-surface-variant);
+  cursor: pointer;
+  padding: var(--md-spacing-3);
+  border-radius: var(--md-border-radius-lg);
+  transition: all var(--transition-normal);
+}
+
+.header__notification-btn:hover {
+  background: var(--primary-blue-light);
+  color: var(--md-primary);
+  border-color: var(--primary-blue-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.header__notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--gradient-warm);
+  color: var(--md-on-primary);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 6px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  animation: pulse 2s infinite;
+}
+
+/* Enhanced User Menu */
+.header__user-menu {
+  position: relative;
+}
+
+.header__user-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--md-spacing-3);
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: var(--md-spacing-2) var(--md-spacing-4);
+  border-radius: var(--md-border-radius-xl);
+  transition: all var(--transition-normal);
+}
+
+.header__user-btn:hover {
+  background: var(--primary-blue-light);
+  border-color: var(--primary-blue-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.header__user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--md-surface);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.header__user-btn:hover .header__user-avatar {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-md);
+}
+
+.header__user-avatar--placeholder {
+  background: var(--gradient-primary);
+  color: var(--md-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--md-font-size-sm);
+  font-weight: 700;
+}
+
+.header__user-name {
+  color: var(--md-on-surface);
+  font-weight: 600;
+  transition: color var(--transition-normal);
+}
+
+.header__user-btn:hover .header__user-name {
+  color: var(--md-primary);
+}
+
+.header__user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-border-radius-xl);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  padding: var(--md-spacing-4);
+  min-width: 240px;
+  z-index: 1001;
+  animation: fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header__user-info {
+  padding: var(--md-spacing-3) var(--md-spacing-4);
+  text-align: center;
+  background: var(--gradient-subtle);
+  border-radius: var(--md-border-radius-lg);
+  margin-bottom: var(--md-spacing-3);
+}
+
+.header__user-role {
+  font-size: var(--md-font-size-sm);
+  color: var(--md-primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.header__user-dropdown-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--md-outline-variant), transparent);
+  margin: var(--md-spacing-3) 0;
+}
+
+.header__user-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--md-spacing-3);
+  padding: var(--md-spacing-3) var(--md-spacing-4);
+  color: var(--md-on-surface);
+  text-decoration: none;
+  border-radius: var(--md-border-radius-lg);
+  transition: all var(--transition-normal);
+  width: 100%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: var(--md-font-size-base);
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.header__user-dropdown-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 82, 204, 0.1), transparent);
+  transition: left var(--transition-normal);
+}
+
+.header__user-dropdown-item:hover::before {
+  left: 100%;
+}
+
+.header__user-dropdown-item:hover {
+  background: var(--primary-blue-light);
+  color: var(--md-primary);
+  text-decoration: none;
+  transform: translateX(4px);
+}
+
+.header__user-dropdown-item--logout {
+  color: var(--accent-red);
+}
+
+.header__user-dropdown-item--logout:hover {
+  background: var(--accent-red-light);
+  color: var(--accent-red);
+}
+
+/* Enhanced Mobile Menu */
+/* VinFast Style Mobile Menu Button */
+.header__mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #374151;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.header__mobile-menu-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+/* VinFast Style Mobile Navigation */
+.header__mobile-nav {
+  display: none;
+  flex-direction: column;
+  background: #ffffff !important;
+  border-top: 1px solid #e5e7eb;
+  padding: 24px 32px;
+  animation: slideDown 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.header__mobile-nav-link {
+  color: #374151;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f3f4f6;
+  transition: all 0.3s ease;
+}
+
+.header__mobile-nav-link:hover {
+  color: #1a73e8;
+  text-decoration: none;
+}
+
+.header__mobile-nav-link:last-child {
+  border-bottom: none;
+}
+
+.header__mobile-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Mobile Button Styles */
+.header__mobile-account-btn {
+  background: transparent !important;
+  border: 1px solid #d1d5db !important;
+  color: #374151 !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.header__mobile-register-btn {
+  background: #1a73e8 !important;
+  border: 1px solid #1a73e8 !important;
+  color: white !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* VinFast Style Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* VinFast Style Responsive Design */
+@media (max-width: 1024px) {
+  .header__nav {
+    display: none;
+  }
+  
+  .header__mobile-menu-btn {
+    display: block;
+  }
+  
+  .header__mobile-nav {
+    display: flex;
+  }
+}
+
+@media (max-width: 768px) {
+  .header__container {
+    padding: 0 24px;
+    height: 70px;
+  }
+
+  .header__auth-buttons {
+    display: none;
+  }
+
+  .header__logo-text {
+    font-size: 20px;
+  }
+  
+  .header__logo-icon {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Enhanced Visual Balance */
+.header__nav-link.active {
+  color: #1a73e8;
+  background-color: rgba(26, 115, 232, 0.1);
+  font-weight: 600;
+}
+
+/* Improved Visual Hierarchy */
+.header__logo-container::after {
+  content: '';
+  position: absolute;
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 32px;
+  background-color: #e5e7eb;
+  opacity: 0.6;
+}
+
+/* Better Button Alignment */
+.header__actions .header__auth-buttons {
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Enhanced Focus States */
+.header__nav-link:focus,
+.header__account-btn:focus,
+.header__register-btn:focus {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+/* Improved Active States */
+.header__nav-link:active {
+  transform: translateY(1px);
+}
+
+.header__account-btn:active,
+.header__register-btn:active {
+  transform: translateY(1px);
+}
+@media (min-width: 640px) {
+  .header__container {
+    padding: 0 28px 0 40px;
+  }
+  
+  .header__nav {
+    gap: 14px;
+    margin: 0 40px 0 40px;
+    margin-right: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .header__container {
+    padding: 0 36px 0 48px;
+  }
+  
+  .header__nav {
+    gap: 16px;
+    margin: 0 48px 0 48px;
+    margin-right: 20px;
+  }
+  
+  .header__nav-link {
+    padding: 16px 10px;
+  }
+  
+  .header__auth-buttons {
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .header__container {
+    max-width: 1400px;
+    padding: 0 48px 0 64px;
+  }
+  
+  .header__nav {
+    gap: 18px;
+    margin: 0 64px 0 64px;
+    margin-right: 24px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .header {
+    background: #1a1a1a;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .header__user-dropdown {
+    background: #1a1a1a;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .header__mobile-nav {
+    background: #1a1a1a;
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+}
