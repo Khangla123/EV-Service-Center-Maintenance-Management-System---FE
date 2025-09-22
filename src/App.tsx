@@ -30,9 +30,11 @@ const ProtectedRoute: React.FC<{
 
 // Layout Component
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { state, logout } = useAuth();
+  
   return (
     <div className="app-layout">
-      <Header />
+      <Header user={state.user} onLogout={logout} />
       <main className="app-main">
         {children}
       </main>

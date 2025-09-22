@@ -168,7 +168,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
                   TÀI KHOẢN
                 </Button>
               </Link>
-              <Link to="/register">
+              <Link to="/signup">
                 <Button size="sm" className="header__register-btn">
                   ĐẶT LỊCH BẢO TRÌ
                 </Button>
@@ -206,7 +206,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
                   TÀI KHOẢN
                 </Button>
               </Link>
-              <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button fullWidth className="header__mobile-register-btn">
                   ĐẶT LỊCH BẢO TRÌ
                 </Button>

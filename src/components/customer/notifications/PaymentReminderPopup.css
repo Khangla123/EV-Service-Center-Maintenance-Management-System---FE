@@ -1,0 +1,337 @@
+.payment-reminder-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.payment-reminder-popup {
+  background: white;
+  border-radius: 16px;
+  max-width: 700px;
+  max-height: 80vh;
+  width: 90%;
+  overflow: hidden;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease-out;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.popup-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.popup-content {
+  padding: 16px 24px 24px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.popup-intro {
+  margin: 0 0 20px;
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.reminders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.reminder-item {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.reminder-item.overdue {
+  background: #fff5f5;
+  border-color: #fed7d7;
+}
+
+.reminder-item.overdue::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: #e53e3e;
+  border-radius: 2px 0 0 2px;
+}
+
+.reminder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.payment-info {
+  flex: 1;
+}
+
+.payment-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.type-icon {
+  font-size: 1.2rem;
+}
+
+.type-text {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 1rem;
+}
+
+.amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.overdue-badge {
+  background: #fed7d7;
+  color: #c53030;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid #feb2b2;
+  white-space: nowrap;
+}
+
+.reminder-details {
+  margin-bottom: 20px;
+}
+
+.description {
+  color: #4a5568;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.package-info {
+  background: #e6fffa;
+  border: 1px solid #b2f5ea;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+}
+
+.package-info h4 {
+  margin: 0 0 8px;
+  color: #234e52;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.package-info p {
+  margin: 0 0 12px;
+  color: #2d3748;
+  font-size: 0.9rem;
+}
+
+.package-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.benefit-tag {
+  background: #c6f6d5;
+  color: #22543d;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.more-benefits {
+  color: #38a169;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 4px 8px;
+}
+
+.due-info {
+  margin-top: 12px;
+}
+
+.due-date {
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.due-date.overdue {
+  background: #fed7d7;
+  color: #c53030;
+  font-weight: 600;
+}
+
+.reminder-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.reminder-actions .md-button {
+  flex: 1;
+  min-width: 120px;
+}
+
+.pay-now-btn {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.snooze-btn {
+  color: #718096 !important;
+}
+
+.popup-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f7fafc;
+}
+
+.footer-info {
+  flex: 1;
+}
+
+.total-amount {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.dismiss-btn {
+  color: #666 !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .payment-reminder-popup {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .popup-header {
+    padding: 20px 16px 12px;
+  }
+  
+  .popup-content {
+    padding: 12px 16px 20px;
+  }
+  
+  .popup-footer {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .reminder-actions {
+    flex-direction: column;
+  }
+  
+  .reminder-actions .md-button {
+    flex: none;
+    width: 100%;
+  }
+  
+  .amount {
+    font-size: 1.3rem;
+  }
+  
+  .reminder-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .overdue-badge {
+    align-self: flex-start;
+  }
+}

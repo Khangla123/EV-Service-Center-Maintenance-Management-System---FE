@@ -273,6 +273,88 @@ export enum NotificationType {
   SYSTEM_ALERT = 'system_alert'
 }
 
+// Customer Notification Types
+export interface MaintenanceReminder {
+  id: string;
+  vehicleId: string;
+  customerId: string;
+  reminderType: ReminderType;
+  dueDate: Date;
+  dueKilometers?: number;
+  currentKilometers?: number;
+  serviceType: string;
+  isOverdue: boolean;
+  lastReminderSent?: Date;
+  isActive: boolean;
+}
+
+export enum ReminderType {
+  REGULAR_MAINTENANCE = 'regular_maintenance',
+  BATTERY_CHECK = 'battery_check',
+  TIRE_ROTATION = 'tire_rotation',
+  BRAKE_INSPECTION = 'brake_inspection',
+  SOFTWARE_UPDATE = 'software_update'
+}
+
+export interface PaymentReminder {
+  id: string;
+  customerId: string;
+  type: PaymentReminderType;
+  amount: number;
+  dueDate: Date;
+  description: string;
+  servicePackageId?: string;
+  isOverdue: boolean;
+  lastReminderSent?: Date;
+}
+
+export enum PaymentReminderType {
+  MAINTENANCE_PACKAGE = 'maintenance_package',
+  SERVICE_RENEWAL = 'service_renewal',
+  OUTSTANDING_BILL = 'outstanding_bill'
+}
+
+// Service Center Types
+export interface ServiceCenter {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string;
+  email: string;
+  operatingHours: OperatingHours[];
+  services: string[];
+  isActive: boolean;
+  rating: number;
+  totalReviews: number;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
+
+export interface OperatingHours {
+  dayOfWeek: number; // 0 = Sunday, 1 = Monday, etc.
+  openTime: string; // HH:MM format
+  closeTime: string; // HH:MM format
+  isOpen: boolean;
+}
+
+// Maintenance Package Types
+export interface MaintenancePackage {
+  id: string;
+  name: string;
+  description: string;
+  duration: number; // in months
+  price: number;
+  services: ServiceType[];
+  benefits: string[];
+  isActive: boolean;
+  popularity: number;
+}
+
 // Dashboard and Analytics Types
 export interface DashboardStats {
   totalVehicles: number;
