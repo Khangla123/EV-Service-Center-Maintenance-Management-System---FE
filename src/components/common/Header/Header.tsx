@@ -32,21 +32,14 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
       return [
         { label: 'Giới thiệu', path: '/about' },
         { label: 'Dịch vụ bảo trì', path: '/services' },
-        { label: 'Xe điện hỗ trợ', path: '/vehicles' },
+        { label: 'Hỗ trợ xe điện', path: '/vehicles' },
         { label: 'Dịch vụ hậu mãi', path: '/after-sales' },
         { label: 'Phụ tùng & phụ kiện', path: '/parts' },
         { label: 'Liên hệ', path: '/contact' }
       ];
     }
 
-    switch (user.role) {
-      case UserRole.CUSTOMER:
-        return [
-          { label: 'Dashboard', path: '/customer/dashboard' },
-          { label: 'Xe của tôi', path: '/customer/vehicles' },
-          { label: 'Đặt lịch', path: '/customer/booking' },
-          { label: 'Lịch sử', path: '/customer/history' }
-        ];
+    switch (user.role) {  
       case UserRole.STAFF:
         return [
           { label: 'Dashboard', path: '/staff/dashboard' },
