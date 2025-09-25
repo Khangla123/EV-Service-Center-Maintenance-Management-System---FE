@@ -31,8 +31,31 @@
   margin: 0 0 15px;
   font-size: 1.8rem;
   font-weight: 600;
+  color: #333;
 }
 
+.method-card {
+  padding: 18px;
+  gap: 16px;
+}
+
+.method-icon {
+  width: 50px;
+  height: 50px;
+}
+
+.method-icon img {
+  width: 32px;
+  height: 32px;
+  }
+
+  .method-name {
+    font-size: 1.1rem;
+  }
+
+  .method-description {
+    font-size: 0.9rem;
+  }
 .payment-amount {
   display: flex;
   flex-direction: column;
@@ -103,27 +126,30 @@
 
 .methods-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
 }
 
 .method-card {
   border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 24px;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 20px;
   position: relative;
   background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .method-card:hover:not(.disabled) {
   border-color: #667eea;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.18);
+  background: #fafbff;
 }
 
 .method-card.disabled {
@@ -136,29 +162,63 @@
   font-size: 2.5rem;
   line-height: 1;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: #f8f9fa;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.method-icon img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.method-card:hover:not(.disabled) .method-icon {
+  background: #e8f2ff;
+  border-color: #667eea;
+  transform: scale(1.05);
 }
 
 .method-info {
   flex: 1;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
 }
 
 .method-name {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 5px;
+  margin-bottom: 2px;
+  line-height: 1.3;
 }
 
 .method-description {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-bottom: 6px;
+  line-height: 1.4;
 }
 
 .processing-fee {
-  font-size: 0.8rem;
-  color: #e53e3e;
-  font-weight: 500;
+  font-size: 0.85rem;
+  color: #dc2626;
+  font-weight: 600;
+  background: #fef2f2;
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  width: fit-content;
 }
 
 .disabled-badge {
@@ -184,29 +244,31 @@
 }
 
 .selected-method {
-  background: #f8f9fa;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 20px;
+  background: linear-gradient(135deg, #f8faff 0%, #e8f2ff 100%);
+  border: 2px solid #667eea;
+  border-radius: 16px;
+  padding: 24px;
   margin-bottom: 25px;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.1);
 }
 
 .method-summary {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 20px;
 }
 
 .method-details .method-name {
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1.3rem;
+  font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
 
 .method-details .method-type {
-  font-size: 0.9rem;
-  color: #666;
+  font-size: 1rem;
+  color: #64748b;
+  line-height: 1.4;
 }
 
 /* Payment Breakdown */

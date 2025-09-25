@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { MDButton } from '../../ui';
 import './OnlinePayment.css';
 
+const MomoImage = '/assets/images/MOMO.png';
+const ZaloPayImage = '/assets/images/ZaloPay.png';
+const VNPayImage = '/assets/images/VNPay.png';
+const VietcombankImage = '/assets/images/Vietcombank.png';
+const TechcombankImage = '/assets/images/Techcombank.png';
+const VisaMasterCardImage = '/assets/images/Visa and MasterCard.png';
+
 export interface PaymentMethod {
   id: string;
   name: string;
@@ -87,54 +94,48 @@ const OnlinePayment: React.FC<OnlinePaymentProps> = ({
           id: 'momo',
           name: 'MoMo',
           type: 'e-wallet',
-          icon: '📱',
+          icon: MomoImage,
           enabled: true,
-          processingFee: 0,
           description: 'Thanh toán nhanh với ví MoMo'
         },
         {
           id: 'zalopay',
           name: 'ZaloPay',
           type: 'e-wallet',
-          icon: '💙',
+          icon: ZaloPayImage,
           enabled: true,
-          processingFee: 0,
           description: 'Thanh toán với ví ZaloPay'
         },
         {
           id: 'vnpay',
           name: 'VNPay',
           type: 'e-wallet',
-          icon: '🏦',
+          icon: VNPayImage,
           enabled: true,
-          processingFee: 5000,
           description: 'Cổng thanh toán VNPay'
         },
         {
           id: 'vietcombank',
           name: 'Vietcombank',
           type: 'banking',
-          icon: '🏛️',
+          icon: VietcombankImage,
           enabled: true,
-          processingFee: 11000,
           description: 'Chuyển khoản ngân hàng Vietcombank'
         },
         {
           id: 'techcombank',
           name: 'Techcombank',
           type: 'banking',
-          icon: '🏛️',
+          icon: TechcombankImage,
           enabled: true,
-          processingFee: 11000,
           description: 'Chuyển khoản ngân hàng Techcombank'
         },
         {
           id: 'visa',
           name: 'Thẻ Visa/Mastercard',
           type: 'card',
-          icon: '💳',
+          icon: VisaMasterCardImage,
           enabled: true,
-          processingFee: 15000,
           description: 'Thanh toán bằng thẻ tín dụng/ghi nợ'
         }
       ];
@@ -268,7 +269,12 @@ const OnlinePayment: React.FC<OnlinePaymentProps> = ({
                   className={`method-card ${!method.enabled ? 'disabled' : ''}`}
                   onClick={() => method.enabled && selectPaymentMethod(method)}
                 >
-                  <div className="method-icon">{method.icon}</div>
+                  <div className="method-icon">
+                    {typeof method.icon === 'string' && (method.icon.endsWith('.png') || method.icon.endsWith('.jpg') || method.icon.endsWith('.jpeg')) ? 
+                      <img src={method.icon} alt={method.name} /> : 
+                      method.icon
+                    }
+                  </div>
                   <div className="method-info">
                     <div className="method-name">{method.name}</div>
                     <div className="method-description">{method.description}</div>
@@ -293,7 +299,12 @@ const OnlinePayment: React.FC<OnlinePaymentProps> = ({
             
             <div className="selected-method">
               <div className="method-summary">
-                <div className="method-icon">{selectedMethod.icon}</div>
+                <div className="method-icon">
+                  {typeof selectedMethod.icon === 'string' && (selectedMethod.icon.endsWith('.png') || selectedMethod.icon.endsWith('.jpg') || selectedMethod.icon.endsWith('.jpeg')) ? 
+                    <img src={selectedMethod.icon} alt={selectedMethod.name} /> : 
+                    selectedMethod.icon
+                  }
+                </div>
                 <div className="method-details">
                   <div className="method-name">{selectedMethod.name}</div>
                   <div className="method-type">{selectedMethod.description}</div>
