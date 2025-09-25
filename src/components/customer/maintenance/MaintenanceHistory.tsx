@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { ServiceRecord, Vehicle } from '../../../types';
 import { MDButton } from '../../ui';
@@ -15,13 +16,17 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
   limit,
   showFilters = true
 }) => {
+  const location = useLocation();
   const { state } = useAuth();
   const { user } = state;
 
+  // Get pre-selected vehicle ID from navigation state
+  const preSelectedVehicleId = location.state?.selectedVehicleId;
+  
   const [records, setRecords] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedVehicle, setSelectedVehicle] = useState<string>(vehicleId || 'all');
+  const [selectedVehicle, setSelectedVehicle] = useState<string>(vehicleId || preSelectedVehicleId || 'all');
   const [selectedRecord, setSelectedRecord] = useState<ServiceRecord | null>(null);
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
 

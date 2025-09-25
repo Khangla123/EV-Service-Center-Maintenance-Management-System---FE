@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { ServiceCenter, ServiceType, Vehicle, AppointmentFormData, Priority, ServiceCategory } from '../../../types';
 import { MDButton } from '../../ui';
@@ -13,8 +13,12 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
   onBookingComplete
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { state } = useAuth();
   const { user } = state;
+
+  // Get pre-selected vehicle ID from navigation state
+  const preSelectedVehicleId = location.state?.selectedVehicleId;
 
   // State
   const [step, setStep] = useState(1);
@@ -43,6 +47,17 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
     loadVehicles();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Handle pre-selected vehicle
+  useEffect(() => {
+    if (preSelectedVehicleId && vehicles.length > 0) {
+      const preSelectedVehicle = vehicles.find(v => v.id === preSelectedVehicleId);
+      if (preSelectedVehicle) {
+        setSelectedVehicle(preSelectedVehicle);
+        setFormData(prev => ({ ...prev, vehicleId: preSelectedVehicle.id }));
+      }
+    }
+  }, [preSelectedVehicleId, vehicles]);
 
   const loadServiceCenters = () => {
     // Mock service centers
@@ -158,7 +173,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         id: 'vehicle1',
         customerId: user?.id || '',
         make: 'VinFast',
-        model: 'VF 8',
+        model: 'VF8',
         year: 2023,
         vin: 'VF8ABC123456789',
         licensePlate: '30A-12345',
@@ -174,7 +189,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         id: 'vehicle2',
         customerId: user?.id || '',
         make: 'VinFast',
-        model: 'VF 9',
+        model: 'VF9',
         year: 2023,
         vin: 'VF9XYZ987654321',
         licensePlate: '30B-67890',

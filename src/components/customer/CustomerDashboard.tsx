@@ -7,6 +7,7 @@ import AppointmentTracker from './appointments/AppointmentTracker';
 import MaintenanceHistory from './maintenance/MaintenanceHistory';
 import CostManagement from './cost/CostManagement';
 import OnlinePayment from './payment/OnlinePayment';
+import VehicleManagement from './vehicles/VehicleManagement';
 import './CustomerDashboard.css';
 
 const CustomerDashboard: React.FC = () => {
@@ -17,7 +18,7 @@ const CustomerDashboard: React.FC = () => {
 
   const stats = [
     { label: 'Xe của tôi', value: '2', icon: Car, gradient: 'from-blue-500 to-blue-600', link: '/customer/vehicles' },
-    { label: 'Lịch hẹn', value: '3', icon: Calendar, gradient: 'from-green-500 to-green-600', link: '/customer/appointments' },
+    { label: 'Lịch dịch vụ', value: '3', icon: Calendar, gradient: 'from-green-500 to-green-600', link: '/customer/appointments' },
     { label: 'Hoàn tất', value: '12', icon: CheckCircle, gradient: 'from-purple-500 to-purple-600', link: '/customer/history' },
     { label: 'Chi phí tháng', value: '2.5M', icon: CreditCard, gradient: 'from-orange-500 to-orange-600', link: '/customer/costs' }
   ];
@@ -61,12 +62,12 @@ const CustomerDashboard: React.FC = () => {
   ];
 
   const menuItems = [
-    { path: '/customer/dashboard', label: 'Tổng quan', icon: Home },
-    { path: '/customer/booking', label: 'Đặt lịch hẹn', icon: Calendar },
-    { path: '/customer/appointments', label: 'Theo dõi lịch hẹn', icon: Clock },
+    { path: '/customer/dashboard', label: 'Tổng quan khách hàng', icon: Home },
+    { path: '/customer/booking', label: 'Đặt lịch dịch vụ', icon: Calendar },
+    { path: '/customer/appointments', label: 'Theo dõi lịch dịch vụ', icon: Clock },
     { path: '/customer/history', label: 'Lịch sử bảo dưỡng', icon: History },
-    { path: '/customer/costs', label: 'Quản lý chi phí', icon: CreditCard },
-    { path: '/customer/payment', label: 'Thanh toán', icon: CreditCard },
+    { path: '/customer/costs', label: 'Quản lý chi phí bảo dưỡng', icon: CreditCard },
+    { path: '/customer/payment', label: 'Thanh toán bảo dưỡng', icon: CreditCard },
     { path: '/customer/vehicles', label: 'Quản lý xe', icon: Car }
   ];
 
@@ -160,7 +161,7 @@ const CustomerDashboard: React.FC = () => {
               <div className="dashboard-header">
                 <div className="header-content">
                   <div>
-                    <h1>Dashboard Khách hàng</h1>
+                    <h1>Tổng quan khách hàng</h1>
                     <p>Chào mừng bạn trở lại! Quản lý xe và dịch vụ của bạn tại đây.</p>
                   </div>
                   <div className="header-actions">
@@ -209,7 +210,7 @@ const CustomerDashboard: React.FC = () => {
                 {/* Appointments Section */}
                 <div className="appointments-section">
                   <div className="section-header">
-                    <h3>Lịch hẹn sắp tới</h3>
+                    <h3>Lịch dịch vụ sắp tới</h3>
                     <MDButton 
                       variant="text" 
                       onClick={() => navigate('/customer/appointments')}
@@ -238,7 +239,7 @@ const CustomerDashboard: React.FC = () => {
                     {appointments.length === 0 && (
                       <div className="empty-state">
                         <Calendar className="h-12 w-12" />
-                        <p>Không có lịch hẹn nào</p>
+                        <p>Không có lịch dịch vụ nào</p>
                       </div>
                     )}
                   </div>
@@ -251,10 +252,10 @@ const CustomerDashboard: React.FC = () => {
                     <h3>Thao tác nhanh</h3>
                     <div className="actions-grid">
                       {[
-                        { path: '/customer/booking', icon: Calendar, label: 'Đặt lịch', color: 'bg-blue-500' },
+                        { path: '/customer/booking', icon: Calendar, label: 'Đặt lịch dịch vụ', color: 'bg-blue-500' },
                         { path: '/customer/vehicles', icon: Car, label: 'Quản lý xe', color: 'bg-green-500' },
-                        { path: '/customer/history', icon: History, label: 'Lịch sử', color: 'bg-purple-500' },
-                        { path: '/customer/payment', icon: CreditCard, label: 'Thanh toán', color: 'bg-orange-500' }
+                        { path: '/customer/history', icon: History, label: 'Lịch sử bảo dưỡng', color: 'bg-purple-500' },
+                        { path: '/customer/payment', icon: CreditCard, label: 'Thanh toán bảo dưỡng', color: 'bg-orange-500' }
                       ].map((action, index) => (
                         <button
                           key={index}
@@ -303,15 +304,7 @@ const CustomerDashboard: React.FC = () => {
           <Route path="/costs" element={<CostManagement />} />
           <Route path="/payment" element={<OnlinePayment />} />
           
-          <Route path="/vehicles" element={
-            <div className="placeholder-content">
-              <div className="placeholder-card">
-                <Car className="h-16 w-16 text-blue-500" />
-                <h2>Quản lý Xe</h2>
-                <p>Tính năng quản lý xe sẽ được hoàn thiện trong phiên bản tiếp theo.</p>
-              </div>
-            </div>
-          } />
+          <Route path="/vehicles" element={<VehicleManagement />} />
           
           <Route path="/*" element={
             <div className="placeholder-content">

@@ -227,7 +227,7 @@ const OnlinePayment: React.FC<OnlinePaymentProps> = ({
   if (loading) {
     return (
       <div className={`online-payment loading ${className || ''}`}>
-        <div className="loading-spinner">Đang tải phương thức thanh toán...</div>
+        <div className="loading-spinner">Đang tải các phương thức thanh toán...</div>
       </div>
     );
   }
@@ -236,7 +236,7 @@ const OnlinePayment: React.FC<OnlinePaymentProps> = ({
     <div className={`online-payment ${className || ''}`}>
       {/* Header */}
       <div className="payment-header">
-        <h2>Thanh toán Online</h2>
+        <h2>Thanh toán bảo dưỡng</h2>
         <div className="payment-amount">
           <span className="amount-label">Số tiền cần thanh toán:</span>
           <span className="amount-value">{formatCurrency(currentRequest.amount)}</span>

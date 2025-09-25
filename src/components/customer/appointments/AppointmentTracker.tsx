@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { ServiceAppointment, AppointmentStatus, Vehicle, ServiceType, ServiceCenter } from '../../../types';
 import { MDButton } from '../../ui';
@@ -13,6 +14,7 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
   appointmentId,
   onStatusChange
 }) => {
+  const navigate = useNavigate();
   const { state } = useAuth();
   const { user } = state;
 
@@ -258,7 +260,7 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
   };
 
   const handleCancelAppointment = async (appointmentId: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn hủy lịch hẹn này?')) {
+    if (window.confirm('Bạn có chắc chắn muốn hủy lịch dịch vụ này?')) {
       try {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -276,7 +278,7 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
         }
       } catch (error) {
         console.error('Error cancelling appointment:', error);
-        alert('Có lỗi xảy ra khi hủy lịch hẹn');
+        alert('Có lỗi xảy ra khi hủy lịch dịch vụ này');
       }
     }
   };
@@ -299,8 +301,8 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
       <div className="tracker-header">
         <h2>Theo dõi lịch dịch vụ</h2>
         {!appointmentId && (
-          <MDButton variant="filled" onClick={() => window.location.href = '/appointments'}>
-            Đặt lịch mới
+          <MDButton variant="filled" onClick={() => navigate('/customer/booking')}>
+            Đặt lịch dịch vụ
           </MDButton>
         )}
       </div>
@@ -323,8 +325,8 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
         <div className="appointments-list">
           {appointments.length === 0 ? (
             <div className="no-appointments">
-              <p>Bạn chưa có lịch hẹn nào.</p>
-              <MDButton variant="filled" onClick={() => window.location.href = '/appointments'}>
+              <p>Bạn chưa có lịch dịch vụ nào.</p>
+              <MDButton variant="filled" onClick={() => navigate('/customer/booking')}>
                 Đặt lịch ngay
               </MDButton>
             </div>
@@ -376,7 +378,7 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
       <div className={`appointment-card ${detailed ? 'detailed' : ''}`}>
         <div className="card-header">
           <div className="appointment-id">
-            <span>Mã lịch hẹn: {appointment.id}</span>
+            <span>Mã lịch dịch vụ: {appointment.id}</span>
           </div>
           <div className={`status-badge ${statusColor}`}>
             {getStatusText(appointment.status)}

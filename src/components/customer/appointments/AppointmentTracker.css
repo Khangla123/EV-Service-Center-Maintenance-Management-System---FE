@@ -28,7 +28,7 @@
 
 .tracker-header h2 {
   margin: 0;
-  color: #1a1a1a;
+  color: black;
   font-size: 1.8rem;
   font-weight: 600;
 }
@@ -411,7 +411,7 @@
   }
 
   .tracker-header h2 {
-    color: #e2e8f0;
+    color: black;
   }
 
   .appointment-id {

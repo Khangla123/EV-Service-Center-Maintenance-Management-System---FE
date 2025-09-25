@@ -304,7 +304,7 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
   if (loading) {
     return (
       <div className={`cost-management loading ${className || ''}`}>
-        <div className="loading-spinner">Đang tải dữ liệu chi phí...</div>
+        <div className="loading-spinner">Đang tải dữ liệu chi phí bảo dưỡng...</div>
       </div>
     );
   }
@@ -313,7 +313,7 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
     <div className={`cost-management ${className || ''}`}>
       {/* Header */}
       <div className="cost-header">
-        <h2>Quản lý Chi phí Bảo dưỡng</h2>
+        <h2>Quản lý chi phí bảo dưỡng</h2>
         <div className="header-actions">
           <select 
             value={viewMode} 
