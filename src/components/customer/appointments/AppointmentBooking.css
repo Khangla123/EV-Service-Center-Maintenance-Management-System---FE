@@ -436,32 +436,6 @@
   color: white;
 }
 
-.priority-section {
-  margin-bottom: 25px;
-}
-
-.priority-section label {
-  display: block;
-  margin-bottom: 8px;
-  color: #1a1a1a;
-  font-weight: 600;
-}
-
-.priority-section select {
-  width: 200px;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  transition: border-color 0.3s ease;
-}
-
-.priority-section select:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
 .notes-section {
   margin-bottom: 25px;
 }
@@ -508,6 +482,7 @@
   margin-bottom: 15px;
   padding-bottom: 15px;
   border-bottom: 1px solid #e2e8f0;
+  color: black;
 }
 
 .summary-item:last-child {
@@ -524,7 +499,7 @@
 
 .summary-item ul {
   margin: 5px 0 0 20px;
-  color: #4a5568;
+  color: black;
 }
 
 .summary-item li {
@@ -592,8 +567,7 @@
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .date-input input,
-  .priority-section select {
+  .date-input input {
     width: 100%;
   }
 

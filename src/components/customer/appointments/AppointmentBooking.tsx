@@ -489,19 +489,6 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                 </div>
               )}
 
-              <div className="priority-section">
-                <label>Mức độ ưu tiên:</label>
-                <select
-                  value={formData.priority}
-                  onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as Priority }))}
-                >
-                  <option value={Priority.LOW}>Thấp</option>
-                  <option value={Priority.MEDIUM}>Trung bình</option>
-                  <option value={Priority.HIGH}>Cao</option>
-                  <option value={Priority.URGENT}>Khẩn cấp</option>
-                </select>
-              </div>
-
               <div className="notes-section">
                 <label>Ghi chú (tùy chọn):</label>
                 <textarea
