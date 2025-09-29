@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, LogOut, Menu, X, Bell, Settings, Car } from 'lucide-react';
+import { User, LogOut, Menu, X, Bell, Settings, Car, History } from 'lucide-react';
 import { UserRole } from '../../../types';
 import Button from '../Button';
 import './Header.css';
@@ -13,11 +13,22 @@ interface HeaderProps {
     avatar?: string;
   } | null;
   onLogout?: () => void;
+  // Notification props
+  notificationCount?: number;
+  onNotificationClick?: () => void;
+  onNotificationHistoryClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  user, 
+  onLogout, 
+  notificationCount = 0,
+  onNotificationClick,
+  onNotificationHistoryClick 
+}) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -96,10 +107,68 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
           {user ? (
             <>
               {/* Notifications */}
-              <button className="header__notification-btn">
-                <Bell size={20} />
-                <span className="header__notification-badge">3</span>
-              </button>
+              <div className="header__notification-menu">
+                <button 
+                  className="header__notification-btn"
+                  onClick={() => setIsNotificationMenuOpen(!isNotificationMenuOpen)}
+                >
+                  <Bell size={20} />
+                  {notificationCount > 0 && (
+                    <span className="header__notification-badge">{notificationCount}</span>
+                  )}
+                </button>
+
+                {isNotificationMenuOpen && (
+                  <div className="header__notification-dropdown">
+                    <div className="header__notification-dropdown-header">
+                      <h3>Thông báo</h3>
+                    </div>
+                    <div className="header__notification-dropdown-content">
+                      {notificationCount > 0 ? (
+                        <>
+                          <button 
+                            className="header__notification-dropdown-item"
+                            onClick={() => {
+                              onNotificationClick?.();
+                              setIsNotificationMenuOpen(false);
+                            }}
+                          >
+                            <Bell size={16} />
+                            <span>Xem thông báo mới ({notificationCount})</span>
+                          </button>
+                          <button 
+                            className="header__notification-dropdown-item"
+                            onClick={() => {
+                              onNotificationHistoryClick?.();
+                              setIsNotificationMenuOpen(false);
+                            }}
+                          >
+                            <History size={16} />
+                            <span>Lịch sử thông báo</span>
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="header__notification-empty">
+                            <Bell size={24} />
+                            <p>Không có thông báo mới</p>
+                          </div>
+                          <button 
+                            className="header__notification-dropdown-item"
+                            onClick={() => {
+                              onNotificationHistoryClick?.();
+                              setIsNotificationMenuOpen(false);
+                            }}
+                          >
+                            <History size={16} />
+                            <span>Lịch sử thông báo</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* User Menu */}
               <div className="header__user-menu">
