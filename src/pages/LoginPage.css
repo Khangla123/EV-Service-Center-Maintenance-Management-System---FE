@@ -5,7 +5,10 @@
   align-items: center;
   justify-content: center;
   padding: var(--md-spacing-4);
-  background-color: var(--md-surface);
+  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../../public/assets/images/nhan_vien_VinFast.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   position: relative;
   overflow: hidden;
 }
@@ -227,6 +230,7 @@
 /* Demo Card */
 .md-login-page__demo-card {
   padding: var(--md-spacing-4) !important;
+  background-color: gray !important;
 }
 
 .md-login-page__demo-title {
@@ -301,7 +305,7 @@
   }
   
   .md-login-page {
-    background-color: var(--md-surface);
+    background-color: #ffffff;
   }
 }
 

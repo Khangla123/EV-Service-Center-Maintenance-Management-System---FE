@@ -14,8 +14,10 @@
   display: flex;
   align-items: center;
   position: relative;
-  background-color: var(--md-surface-container-highest);
-  border-radius: var(--md-border-radius-sm) var(--md-border-radius-sm) 0 0;
+  background-color: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--md-border-radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all var(--md-transition-standard);
 }
 
@@ -36,7 +38,8 @@
   font-family: inherit;
   font-size: var(--md-font-size-base);
   font-weight: var(--md-font-weight-regular);
-  color: var(--md-on-surface);
+  color: #1f2937;
+  padding: 12px 16px;
   transition: all var(--md-transition-standard);
   z-index: 1;
 }
@@ -114,36 +117,47 @@
 
 /* Filled variant */
 .md-textfield--filled .md-textfield__container {
-  background-color: var(--md-surface-container-highest);
-  border-bottom: 1px solid var(--md-outline);
+  background-color: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--md-border-radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .md-textfield--filled:hover .md-textfield__container {
-  background-color: var(--md-surface-container-high);
+  background-color: #ffffff;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .md-textfield--filled.md-textfield--focused .md-textfield__container {
-  border-bottom: 2px solid var(--md-primary);
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Outlined variant */
 .md-textfield--outlined .md-textfield__container {
-  background-color: transparent;
-  border: 1px solid var(--md-outline);
-  border-radius: var(--md-border-radius-sm);
+  background-color: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--md-border-radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .md-textfield--outlined:hover .md-textfield__container {
-  border-color: var(--md-on-surface);
+  background-color: #ffffff;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .md-textfield--outlined.md-textfield--focused .md-textfield__container {
-  border: 2px solid var(--md-primary);
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Outlined label positioning */
 .md-textfield--outlined .md-textfield__label {
-  background-color: var(--md-surface);
+  background-color: #ffffff;
   padding: 0 4px;
   margin-left: -4px;
 }
@@ -162,48 +176,57 @@
 }
 
 /* Focused state */
+.md-textfield--focused .md-textfield__container {
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
 .md-textfield--focused .md-textfield__label {
-  color: var(--md-primary);
+  color: #3b82f6;
 }
 
 .md-textfield--focused .md-textfield__icon {
-  color: var(--md-primary);
+  color: #3b82f6;
 }
 
 /* Error state */
 .md-textfield--error .md-textfield__container {
-  border-color: var(--md-error);
+  background-color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
 .md-textfield--error .md-textfield__label {
-  color: var(--md-error);
+  color: #ef4444;
 }
 
 .md-textfield--error .md-textfield__helper-text {
-  color: var(--md-error);
+  color: #ef4444;
 }
 
 .md-textfield--error .md-textfield__icon {
-  color: var(--md-error);
+  color: #ef4444;
 }
 
 /* Disabled state */
 .md-textfield--disabled {
-  opacity: 0.38;
+  opacity: 0.6;
   pointer-events: none;
 }
 
 .md-textfield--disabled .md-textfield__container {
-  background-color: var(--md-surface-variant);
-  border-color: var(--md-outline);
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+  box-shadow: none;
 }
 
 .md-textfield--disabled .md-textfield__input {
-  color: var(--md-on-surface);
+  color: #6b7280;
 }
 
 .md-textfield--disabled .md-textfield__label {
-  color: var(--md-on-surface);
+  color: #6b7280;
 }
 
 /* Focus ring for accessibility */
@@ -211,10 +234,19 @@
   box-shadow: var(--md-focus-ring);
 }
 
+/* Hover state */
+.md-textfield:hover:not(.md-textfield--disabled):not(.md-textfield--focused) .md-textfield__container {
+  background-color: #ffffff;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 /* Placeholder text */
 .md-textfield__input::placeholder {
-  color: var(--md-on-surface-variant);
+  color: #9ca3af;
   opacity: 1;
+  font-weight: 400;
+  font-size: var(--md-font-size-base);
 }
 
 /* Responsive adjustments */

@@ -135,7 +135,7 @@ const SignupPage: React.FC = () => {
               </Link>
               <h2 className="md-signup-page__brand-title">EV Service Center</h2>
               <p className="md-signup-page__brand-subtitle">
-                Tham gia cộng đồng chăm sóc xe điện thông minh
+                Phần mềm quản lý bảo dưỡng xe điện cho trung tâm dịch vụ
               </p>
             </div>
 
@@ -199,7 +199,7 @@ const SignupPage: React.FC = () => {
 
               <div className="md-signup-page__name-fields">
                 <MDTextField
-                  label="Họ"
+                  placeholder="Họ"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleInputChange}
@@ -208,7 +208,7 @@ const SignupPage: React.FC = () => {
                   required
                 />
                 <MDTextField
-                  label="Tên"
+                  placeholder="Tên"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleInputChange}
@@ -219,7 +219,7 @@ const SignupPage: React.FC = () => {
               </div>
 
               <MDTextField
-                label="Email"
+                placeholder="Email"
                 type="email"
                 name="email"
                 value={formData.email}
@@ -231,7 +231,7 @@ const SignupPage: React.FC = () => {
               />
 
               <MDTextField
-                label="Số điện thoại"
+                placeholder="Số điện thoại"
                 type="tel"
                 name="phone"
                 value={formData.phone}
@@ -243,7 +243,7 @@ const SignupPage: React.FC = () => {
               />
 
               <MDTextField
-                label="Mật khẩu"
+                placeholder="Mật khẩu"
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
@@ -264,7 +264,7 @@ const SignupPage: React.FC = () => {
               />
 
               <MDTextField
-                label="Xác nhận mật khẩu"
+                placeholder="Xác nhận mật khẩu"
                 type={showConfirmPassword ? 'text' : 'password'}
                 name="confirmPassword"
                 value={formData.confirmPassword}

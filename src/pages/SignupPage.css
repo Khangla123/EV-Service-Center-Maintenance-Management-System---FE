@@ -5,7 +5,10 @@
   align-items: center;
   justify-content: center;
   padding: var(--md-spacing-4);
-  background-color: var(--md-surface);
+  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../../public/assets/images/nhan_vien_VinFast.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   position: relative;
   overflow: hidden;
 }
@@ -112,15 +115,16 @@
   align-items: flex-start;
   gap: var(--md-spacing-4);
   padding: var(--md-spacing-4);
-  background-color: var(--md-surface-container-low);
+  background-color: #87CEEB;
   border-radius: var(--md-border-radius-lg);
-  border-left: 4px solid var(--md-primary);
+  border-left: 4px solid #4682B4;
   transition: all var(--md-transition-standard);
 }
 
 .md-signup-page__feature:hover {
-  background-color: var(--md-surface-container);
+  background-color: #87CEFA;
   transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(135, 206, 235, 0.3);
 }
 
 .md-signup-page__feature-icon {
@@ -142,13 +146,13 @@
 .md-signup-page__feature-title {
   font-size: var(--md-font-size-lg);
   font-weight: var(--md-font-weight-medium);
-  color: var(--md-on-surface);
+  color: #1e3a8a;
   margin: 0 0 var(--md-spacing-1) 0;
 }
 
 .md-signup-page__feature-description {
   font-size: var(--md-font-size-sm);
-  color: var(--md-on-surface-variant);
+  color: #1e40af;
   margin: 0;
   line-height: 1.5;
 }
@@ -418,7 +422,7 @@
   }
   
   .md-signup-page {
-    background-color: var(--md-surface);
+    background-color: #ffffff;
   }
   
   .md-signup-page__feature {

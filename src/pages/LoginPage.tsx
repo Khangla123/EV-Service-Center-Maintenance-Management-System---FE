@@ -116,7 +116,7 @@ const LoginPage: React.FC = () => {
               )}
 
               <MDTextField
-                label="Email"
+                placeholder="Email"
                 type="email"
                 name="email"
                 value={formData.email}
@@ -128,7 +128,7 @@ const LoginPage: React.FC = () => {
               />
 
               <MDTextField
-                label="Mật khẩu"
+                placeholder="Mật khẩu"
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
