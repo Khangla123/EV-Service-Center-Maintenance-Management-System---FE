@@ -9,11 +9,11 @@
 
 ### Technologies used
 
-* React 18 with TypeScript
+* React with TypeScript
 * React Router Dom for navigation
 * Material Design components
 * Lucide React for icons
-* CSS3 with responsive design
+* CSS with responsive design
 * Context API for state management
 
 ### API Features
