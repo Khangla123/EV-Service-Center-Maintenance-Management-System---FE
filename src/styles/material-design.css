@@ -4,6 +4,8 @@
 :root {
   /* Material Design Color Palette */
   --md-primary: #1976d2;
+  --md-primary-hover: #1565c0;
+  --md-primary-pressed: #0d47a1;
   --md-primary-variant: #1565c0;
   --md-primary-light: #bbdefb;
   --md-secondary: #03dac6;
@@ -389,6 +391,8 @@ body {
 @media (prefers-color-scheme: dark) {
   :root {
     --md-primary: #90caf9;
+    --md-primary-hover: #64b5f6;
+    --md-primary-pressed: #42a5f5;
     --md-primary-variant: #42a5f5;
     --md-secondary: #80cbc4;
     --md-background: #121212;

@@ -69,12 +69,12 @@
 }
 
 .md-button--filled:hover {
-  background-color: var(--md-primary-hover);
+  background-color: var(--md-primary-hover) !important;
   box-shadow: var(--md-elevation-2);
 }
 
 .md-button--filled:active {
-  background-color: var(--md-primary-pressed);
+  background-color: var(--md-primary-pressed) !important;
   box-shadow: var(--md-elevation-1);
 }
 
