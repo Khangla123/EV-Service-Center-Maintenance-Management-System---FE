@@ -123,7 +123,7 @@
 
 .md-signup-page__feature:hover {
   background-color: #87CEFA;
-  transform: translateX(4px);
+  transform: scale(1.02);
   box-shadow: 0 4px 12px rgba(135, 206, 235, 0.3);
 }
 
