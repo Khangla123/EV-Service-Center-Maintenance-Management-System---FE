@@ -321,6 +321,13 @@
   text-decoration: underline;
 }
 
+/* Override disabled button opacity for loading state */
+.md-signup-page__form .md-button--disabled {
+  opacity: 1 !important;
+  background-color: var(--md-primary) !important;
+  color: var(--md-on-primary) !important;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .md-signup-page__container {

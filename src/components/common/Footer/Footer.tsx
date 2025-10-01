@@ -48,7 +48,7 @@ const Footer: React.FC = () => {
               MST/MSDN: 0108926276 do Sở KHĐT TP Hà Nội cấp lần đầu ngày 01/10/2019 và các lần thay đổi tiếp theo.
             </p>
             <p className="footer__company-address">
-              Địa chỉ trụ sở chính: Số 75, đường Lê Ngọc Hân, phường Vũng Tàu, thành phố Hồ Chí Minh, Việt Nam
+              Địa chỉ trụ sở chính: Số 7, đường Bằng Lăng 1, khu đô thị Vinhomes Riverside, phường Việt Hưng, thành phố Hà Nội, Việt Nam
             </p>
           </div>
 

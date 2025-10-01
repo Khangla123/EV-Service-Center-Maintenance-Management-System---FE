@@ -64,11 +64,29 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
     const mockCenters: ServiceCenter[] = [
       {
         id: 'center1',
-        name: 'VinFast Hà Nội',
-        address: 'Số 57B, phố Đinh Tiên Hoàng, phường Hoàn Kiếm',
-        city: 'TP. Hà Nội',
-        state: 'TP. Hà Nội',
-        zipCode: '100000',
+        name: 'VinFast Bãi Cháy',
+        address: 'Số 950, đường Hạ Long, phường Bãi Cháy, tỉnh Quảng Ninh',
+        phone: '0203-123-4567',
+        email: 'quangninh@vinfast.vn',
+        operatingHours: [
+          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
+          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
+        ],
+        services: ['maintenance', 'repair', 'inspection', 'battery'],
+        isActive: true,
+        rating: 4.8,
+        totalReviews: 178,
+        coordinates: { lat: 20.9568, lng: 107.0433 }
+      },
+      {
+        id: 'center2',
+        name: 'VinFast Trường Chinh',
+        address: 'Số 162, phố Trường Chinh, phường Kim Liên, thành phố Hà Nội',
         phone: '0243-123-4567',
         email: 'hanoi@vinfast.vn',
         operatingHours: [
@@ -87,14 +105,53 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         coordinates: { lat: 21.0285, lng: 105.8542 }
       },
       {
-        id: 'center2',
-        name: 'VinFast TP. Hồ Chí Minh',
-        address: 'Số 165, đường Lê Hồng Phong, phường Tam Thắng',
-        city: 'TP. Hồ Chí Minh',
-        state: 'TP. Hồ Chí Minh',
-        zipCode: '700000',
+        id: 'center3',
+        name: 'VinFast Hải Thành',
+        address: 'Số 591, đường Hùng Vương, phường Quy Nhơn Bắc, tỉnh Gia Lai',
+        phone: '0257-123-4567',
+        email: 'gialai@vinfast.vn',
+        operatingHours: [
+          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
+          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
+        ],
+        services: ['maintenance', 'repair', 'inspection'],
+        isActive: true,
+        rating: 4.7,
+        totalReviews: 156,
+        coordinates: { lat: 13.7830, lng: 109.2198 }
+      },
+      {
+        id: 'center4',
+        name: 'VinFast Sông Cầu',
+        address: 'Số 92, đường Phạm Văn Đồng, phường Sông Cầu, tỉnh Đắk Lắk',
+        phone: '0262-123-4567',
+        email: 'daklak@vinfast.vn',
+        operatingHours: [
+          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
+          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
+        ],
+        services: ['maintenance', 'repair', 'inspection'],
+        isActive: true,
+        rating: 4.6,
+        totalReviews: 142,
+        coordinates: { lat: 12.6676, lng: 108.0432 }
+      },
+      {
+        id: 'center5',
+        name: 'VinFast Phú Mỹ Hưng',
+        address: 'Số 1489, đường Nguyễn Văn Linh, phường Tân Hưng, thành phố Hồ Chí Minh',
         phone: '028-987-6543',
-        email: 'hcm@vinfast.vn',
+        email: 'hcmc@vinfast.vn',
         operatingHours: [
           { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
           { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
@@ -109,6 +166,27 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         rating: 4.9,
         totalReviews: 189,
         coordinates: { lat: 10.7769, lng: 106.7009 }
+      },
+      {
+        id: 'center6',
+        name: 'VinFast Võ Thị Sáu',
+        address: 'Số 468, đường Võ Thị Sáu, phường Bạc Liêu, tỉnh Cà Mau',
+        phone: '0290-123-4567',
+        email: 'camau@vinfast.vn',
+        operatingHours: [
+          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
+          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
+          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
+        ],
+        services: ['maintenance', 'repair', 'inspection'],
+        isActive: true,
+        rating: 4.5,
+        totalReviews: 128,
+        coordinates: { lat: 9.1768, lng: 105.1524 }
       }
     ];
     setServiceCenters(mockCenters);
@@ -176,7 +254,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         model: 'VF8',
         year: 2023,
         vin: 'VF8ABC123456789',
-        licensePlate: '30A-12345',
+        licensePlate: '30A-123.45',
         color: 'Đen',
         batteryCapacity: 87.7,
         mileage: 14800,
@@ -192,7 +270,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         model: 'VF9',
         year: 2023,
         vin: 'VF9XYZ987654321',
-        licensePlate: '30B-67890',
+        licensePlate: '30B-678.90',
         color: 'Trắng',
         batteryCapacity: 123,
         mileage: 8500,
@@ -355,7 +433,6 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                   </div>
                   <div className="center-address">
                     <p>{center.address}</p>
-                    <p>{center.city}</p>
                   </div>
                   <div className="center-contact">
                     <p>📞 {center.phone}</p>

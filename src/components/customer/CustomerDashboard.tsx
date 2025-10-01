@@ -132,9 +132,6 @@ const CustomerDashboard: React.FC = () => {
 
       {/* Sidebar Navigation */}
       <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h2>EV Service Center</h2>
-        </div>
         <nav className="sidebar-nav">
           {menuItems.map((item) => (
             <button

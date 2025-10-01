@@ -44,6 +44,11 @@
   align-items: center;
   text-decoration: none;
   transition: all 0.3s ease;
+  outline: none;
+}
+
+.header__logo:focus {
+  outline: none;
 }
 
 .header__logo-container {
@@ -93,6 +98,7 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   border-radius: 8px;
   white-space: nowrap;
+  outline: none;
 }
 
 .header__nav-link:hover {
@@ -143,6 +149,7 @@
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
   transition: all 0.3s ease !important;
+  outline: none !important;
 }
 
 .header__account-btn:hover {
@@ -166,6 +173,7 @@
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
   transition: all 0.3s ease !important;
+  outline: none !important;
 }
 
 .header__register-btn:hover {
@@ -185,6 +193,11 @@
   padding: var(--md-spacing-3);
   border-radius: var(--md-border-radius-lg);
   transition: all var(--transition-normal);
+  outline: none;
+}
+
+.header__notification-btn:focus {
+  outline: none;
 }
 
 .header__notification-btn:hover {
@@ -226,6 +239,11 @@
   padding: var(--md-spacing-2) var(--md-spacing-4);
   border-radius: var(--md-border-radius-xl);
   transition: all var(--transition-normal);
+  outline: none;
+}
+
+.header__user-btn:focus {
+  outline: none;
 }
 
 .header__user-btn:hover {
@@ -368,6 +386,11 @@
   padding: 8px;
   border-radius: 6px;
   transition: all 0.3s ease;
+  outline: none;
+}
+
+.header__mobile-menu-btn:focus {
+  outline: none;
 }
 
 .header__mobile-menu-btn:hover {
@@ -510,8 +533,7 @@
 .header__nav-link:focus,
 .header__account-btn:focus,
 .header__register-btn:focus {
-  outline: 2px solid #1a73e8;
-  outline-offset: 2px;
+  outline: none;
 }
 
 /* Improved Active States */

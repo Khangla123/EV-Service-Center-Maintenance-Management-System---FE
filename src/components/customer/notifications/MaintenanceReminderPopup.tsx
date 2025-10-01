@@ -54,7 +54,6 @@ const MaintenanceReminderPopup: React.FC<MaintenanceReminderPopupProps> = ({
       <div className="maintenance-reminder-popup">
         <div className="popup-header">
           <h2>🔔 Nhắc nhở bảo dưỡng</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
         </div>
 
         <div className="popup-content">
@@ -72,6 +71,7 @@ const MaintenanceReminderPopup: React.FC<MaintenanceReminderPopupProps> = ({
                   <div className="reminder-header">
                     <div className="vehicle-info">
                       <h3>{vehicle?.make} {vehicle?.model}</h3>
+                      <span className="vehicle-year">{vehicle?.year}</span>
                       <span className="license-plate">{vehicle?.licensePlate}</span>
                     </div>
                     {reminder.isOverdue && (
@@ -132,6 +132,7 @@ const MaintenanceReminderPopup: React.FC<MaintenanceReminderPopupProps> = ({
         </div>
 
         <div className="popup-footer">
+          <div className="footer-spacer"></div>
           <MDButton
             variant="text"
             onClick={onClose}

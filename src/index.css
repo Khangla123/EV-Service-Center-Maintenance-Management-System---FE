@@ -844,8 +844,34 @@ a:focus,
 input:focus,
 textarea:focus,
 select:focus {
-  outline: 2px solid var(--primary-blue);
-  outline-offset: 2px;
+  outline: none;
+}
+
+/* Remove outline for all interactive elements */
+*:focus,
+*:focus-visible {
+  outline: none;
+}
+
+/* Remove outline for buttons and links */
+button,
+a,
+input,
+textarea,
+select,
+[role="button"],
+[tabindex] {
+  outline: none;
+}
+
+button:focus,
+a:focus,
+input:focus,
+textarea:focus,
+select:focus,
+[role="button"]:focus,
+[tabindex]:focus {
+  outline: none;
 }
 
 /* VinFast Print Styles */

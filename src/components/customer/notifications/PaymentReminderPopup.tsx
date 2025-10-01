@@ -70,7 +70,6 @@ const PaymentReminderPopup: React.FC<PaymentReminderPopupProps> = ({
       <div className="payment-reminder-popup">
         <div className="popup-header">
           <h2>💳 Nhắc nhở thanh toán</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
         </div>
 
         <div className="popup-content">

@@ -88,10 +88,10 @@ const HomePage: React.FC = () => {
         id: 'vehicle1',
         customerId: user?.id || '',
         make: 'VinFast',
-        model: 'VF 8',
+        model: 'VF8',
         year: 2023,
         vin: 'VF8ABC123456789',
-        licensePlate: '30A-12345',
+        licensePlate: '30A-123.45',
         color: 'Đen',
         batteryCapacity: 87.7,
         mileage: 14800,
@@ -104,10 +104,10 @@ const HomePage: React.FC = () => {
         id: 'vehicle2',
         customerId: user?.id || '',
         make: 'VinFast',
-        model: 'VF 9',
+        model: 'VF9',
         year: 2023,
         vin: 'VF9XYZ987654321',
-        licensePlate: '30B-67890',
+        licensePlate: '30B-678.90',
         color: 'Trắng',
         batteryCapacity: 123,
         mileage: 8500,
@@ -224,11 +224,11 @@ const HomePage: React.FC = () => {
   }, [showMaintenanceReminder, paymentReminders.length]);
 
   const vehicleCategories = [
-    { id: 'vf5', name: 'VF 5' },
-    { id: 'vf6', name: 'VF 6' },
-    { id: 'vf7', name: 'VF 7' },
-    { id: 'vf8', name: 'VF 8' },
-    { id: 'vf9', name: 'VF 9' }
+    { id: 'vf5', name: 'VF5' },
+    { id: 'vf6', name: 'VF6' },
+    { id: 'vf7', name: 'VF7' },
+    { id: 'vf8', name: 'VF8' },
+    { id: 'vf9', name: 'VF9' }
   ];
 
   return (

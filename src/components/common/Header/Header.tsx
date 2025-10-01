@@ -74,7 +74,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
         <Link to="/" className="header__logo">
           <div className="header__logo-container">
             <Car className="header__logo-icon" />
-            <span className="header__logo-text">EV Service</span>
+            <span className="header__logo-text">EV Service Center</span>
           </div>
         </Link>
 

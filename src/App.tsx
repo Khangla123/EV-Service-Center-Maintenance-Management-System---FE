@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import HomePage from './pages/HomePage';
 import CustomerDashboard from './components/customer/CustomerDashboard';
+import AppointmentSuccessPage from './pages/AppointmentSuccessPage';
 import './App.css';
 
 // Protected Route Component
@@ -56,6 +57,13 @@ const AppRoutes: React.FC = () => {
       
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      
+      {/* Appointment Success Route */}
+      <Route path="/appointments/success" element={
+        <Layout>
+          <AppointmentSuccessPage />
+        </Layout>
+      } />
       
       {/* Customer Routes */}
       <Route path="/customer/*" element={

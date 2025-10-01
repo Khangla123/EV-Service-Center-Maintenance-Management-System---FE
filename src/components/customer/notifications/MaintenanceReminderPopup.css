@@ -30,37 +30,21 @@
   align-items: center;
   padding: 24px 24px 16px;
   border-bottom: 1px solid #e0e0e0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .popup-header h2 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #ffffff;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .close-btn {
-  background: none;
-  border: none;
-  font-size: 2rem;
-  color: #666;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background-color: #f5f5f5;
-  color: #333;
+  display: none;
 }
 
 .popup-content {
@@ -103,13 +87,25 @@
 }
 
 .vehicle-info h3 {
-  margin: 0 0 4px;
+  margin: 0 0 8px;
   font-size: 1.1rem;
   font-weight: 600;
   color: #1a1a1a;
 }
 
+.vehicle-year {
+  display: inline-block;
+  background: #e6edff;
+  color: #3b82f6;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
 .license-plate {
+  display: inline-block;
   background: #e3f2fd;
   color: #1976d2;
   padding: 2px 8px;
@@ -190,7 +186,12 @@
   padding: 16px 24px;
   border-top: 1px solid #e0e0e0;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-spacer {
+  flex: 1;
 }
 
 .dismiss-btn {

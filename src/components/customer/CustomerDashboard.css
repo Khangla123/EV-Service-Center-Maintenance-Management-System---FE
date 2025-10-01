@@ -41,20 +41,6 @@
   flex-shrink: 0;
 }
 
-.sidebar-header {
-  padding: 30px 25px;
-  border-bottom: 1px solid #e2e8f0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.sidebar-header h2 {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: 600;
-  text-align: center;
-}
-
 .sidebar-nav {
   padding: 20px 0;
 }
@@ -74,6 +60,11 @@
   font-size: 0.95rem;
   font-weight: 500;
   position: relative;
+  outline: none;
+}
+
+.nav-item:focus {
+  outline: none;
 }
 
 .nav-item:hover {
