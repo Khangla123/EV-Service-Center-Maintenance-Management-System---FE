@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
               <Mail className="newsletter-icon" size={18} />
               <h3 className="newsletter-title">Nhận thông tin mới nhất</h3>
             </div>
-            <p className="newsletter-subtitle">Cập nhật dịch vụ & ưu đãi từ VinFast</p>
+            <p className="newsletter-subtitle">Cập nhật dịch vụ & ưu đãi từ EV Service Center</p>
           </div>
           <form className="newsletter-form">
             <div className="input-group">
