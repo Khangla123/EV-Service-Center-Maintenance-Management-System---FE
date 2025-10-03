@@ -150,7 +150,7 @@
 /* Main Footer Content */
 .footer__main {
   display: grid;
-  grid-template-columns: 2.5fr 1.5fr 1.5fr 1.5fr;
+  grid-template-columns: 2.5fr 2fr 1.5fr 1.5fr;
   gap: 60px;
   margin-bottom: 40px;
 }
@@ -208,7 +208,7 @@
 /* Main Links */
 .footer__links-main {
   display: flex;
-  gap: 40px;
+  gap: 16px;
 }
 
 .footer__links-column {

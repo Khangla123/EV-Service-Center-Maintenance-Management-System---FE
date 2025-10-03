@@ -437,6 +437,8 @@ html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 body {
@@ -450,6 +452,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'rlig' 1, 'calt' 1;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Force header to always have white background */
@@ -751,11 +755,11 @@ a:focus {
 
 @media (min-width: 1280px) {
   .container {
-    max-width: 1280px;
+    max-width: 1200px;
   }
   
   .container-wide {
-    max-width: 1440px;
+    max-width: 1200px;
   }
   
   h1 { 
