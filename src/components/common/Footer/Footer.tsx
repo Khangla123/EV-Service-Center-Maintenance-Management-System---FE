@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Car, Phone, Mail, Facebook, Youtube, Instagram, ExternalLink, Send } from 'lucide-react';
+import { Phone, Mail, Facebook, Youtube, Instagram, ExternalLink, Send } from 'lucide-react';
 import './Footer.css';
 
 const Footer: React.FC = () => {
@@ -38,7 +38,11 @@ const Footer: React.FC = () => {
           {/* Company Info */}
           <div className="footer__section footer__company">
             <div className="footer__logo">
-              <Car className="footer__logo-icon" />
+              <img 
+                src="/ev-service-logo.svg" 
+                alt="EV Service Center" 
+                className="footer__logo-icon"
+              />
               <span className="footer__logo-text">EV Service Center</span>
             </div>
             <p className="footer__company-description">

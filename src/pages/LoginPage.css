@@ -74,9 +74,10 @@
 }
 
 .md-login-page__logo-icon {
-  width: 40px;
-  height: 40px;
+  width: 100px;
+  height: 100px;
   color: #007aff;
+  object-fit: contain;
 }
 
 .md-login-page__title {
@@ -292,7 +293,7 @@
   }
   
   .md-login-page__logo-icon {
-    width: 32px;
-    height: 32px;
+    width: 76px;
+    height: 76px;
   }
 }

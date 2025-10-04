@@ -559,6 +559,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   background: #ffffff;
+  padding-bottom: 8px;
 }
 
 /* Custom scrollbar giống Facebook */

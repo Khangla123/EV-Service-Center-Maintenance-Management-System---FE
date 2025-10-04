@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, LogOut, Menu, X, Bell, Settings, Car, Wrench, CreditCard } from 'lucide-react';
+import { User, LogOut, Menu, X, Bell, Settings, Wrench, CreditCard } from 'lucide-react';
 import { UserRole } from '../../../types';
 import Button from '../Button';
 import './Header.css';
@@ -147,7 +147,11 @@ const Header: React.FC<HeaderProps> = ({
         {/* Logo */}
         <Link to="/" className="header__logo">
           <div className="header__logo-container">
-            <Car className="header__logo-icon" />
+            <img 
+              src="/ev-service-logo.svg" 
+              alt="EV Service Center" 
+              className="header__logo-icon"
+            />
             <span className="header__logo-text">EV Service Center</span>
           </div>
         </Link>
@@ -238,10 +242,12 @@ const Header: React.FC<HeaderProps> = ({
                                   </div>
                                   <div className="notification-content">
                                     <div className="notification-title">
-                                      Nhắc nhở bảo dưỡng
+                                      🔔 Nhắc nhở bảo dưỡng
                                     </div>
                                     <div className="notification-description">
-                                      Xe của bạn cần được bảo dưỡng định kỳ
+                                      {maintenanceReminderCount === 1 
+                                        ? 'Xe của bạn cần được bảo dưỡng định kỳ' 
+                                        : `Bạn có ${maintenanceReminderCount} xe cần bảo dưỡng`}
                                     </div>
                                     <div className="notification-time">Hôm nay</div>
                                   </div>
@@ -264,10 +270,12 @@ const Header: React.FC<HeaderProps> = ({
                                   </div>
                                   <div className="notification-content">
                                     <div className="notification-title">
-                                      Nhắc nhở thanh toán
+                                      💳 Nhắc nhở thanh toán
                                     </div>
                                     <div className="notification-description">
-                                      Bạn có các khoản cần thanh toán
+                                      {paymentReminderCount === 1 
+                                        ? 'Bạn có khoản cần thanh toán' 
+                                        : `Bạn có ${paymentReminderCount} khoản cần thanh toán`}
                                     </div>
                                     <div className="notification-time">Hôm nay</div>
                                   </div>
@@ -295,10 +303,12 @@ const Header: React.FC<HeaderProps> = ({
                                   </div>
                                   <div className="notification-content">
                                     <div className="notification-title">
-                                      Nhắc nhở bảo dưỡng
+                                      🔔 Nhắc nhở bảo dưỡng
                                     </div>
                                     <div className="notification-description">
-                                      Xe của bạn cần được bảo dưỡng định kỳ
+                                      {maintenanceReminderCount === 1 
+                                        ? 'Xe của bạn cần được bảo dưỡng định kỳ' 
+                                        : `Bạn có ${maintenanceReminderCount} xe cần bảo dưỡng`}
                                     </div>
                                     <div className="notification-time">Hôm nay</div>
                                   </div>
@@ -317,10 +327,12 @@ const Header: React.FC<HeaderProps> = ({
                                   </div>
                                   <div className="notification-content">
                                     <div className="notification-title">
-                                      Nhắc nhở thanh toán
+                                      💳 Nhắc nhở thanh toán
                                     </div>
                                     <div className="notification-description">
-                                      Bạn có các khoản cần thanh toán
+                                      {paymentReminderCount === 1 
+                                        ? 'Bạn có khoản cần thanh toán' 
+                                        : `Bạn có ${paymentReminderCount} khoản cần thanh toán`}
                                     </div>
                                     <div className="notification-time">Hôm nay</div>
                                   </div>

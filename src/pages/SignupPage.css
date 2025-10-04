@@ -82,9 +82,10 @@
 }
 
 .md-signup-page__logo-icon {
-  width: 40px;
-  height: 40px;
+  width: 100px;
+  height: 100px;
   color: #007aff;
+  object-fit: contain;
 }
 
 .md-signup-page__brand-title {

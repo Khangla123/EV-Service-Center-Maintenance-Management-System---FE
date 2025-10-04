@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider, useNotifications } from './context/NotificationContext';
 import { UserRole } from './types';
 import Header from './components/common/Header/Header';
 import Footer from './components/common/Footer/Footer';
@@ -9,6 +10,8 @@ import SignupPage from './pages/SignupPage';
 import HomePage from './pages/HomePage';
 import CustomerDashboard from './components/customer/CustomerDashboard';
 import AppointmentSuccessPage from './pages/AppointmentSuccessPage';
+import MaintenanceReminderPopup from './components/customer/notifications/MaintenanceReminderPopup';
+import PaymentReminderPopup from './components/customer/notifications/PaymentReminderPopup';
 import './App.css';
 
 // Protected Route Component
@@ -32,17 +35,89 @@ const ProtectedRoute: React.FC<{
 // Layout Component
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { state, logout } = useAuth();
+  const { 
+    maintenanceReminders, 
+    paymentReminders, 
+    vehicles, 
+    packages,
+    showMaintenanceReminder,
+    showPaymentReminder,
+    setShowMaintenanceReminder,
+    setShowPaymentReminder,
+    loadNotifications 
+  } = useNotifications();
+  
+  // Load notifications when user logs in
+  useEffect(() => {
+    if (state.user && state.user.role === 'customer') {
+      loadNotifications(state.user.id);
+    }
+  }, [state.user, loadNotifications]);
+  
+  const handleScheduleService = (reminderId: string) => {
+    console.log('Schedule service for reminder:', reminderId);
+    // Navigate to booking page or show booking form
+    setShowMaintenanceReminder(false);
+  };
+
+  const handleSnoozeMaintenanceReminder = (reminderId: string, days: number) => {
+    console.log('Snooze maintenance reminder:', reminderId, 'for', days, 'days');
+    // Remove reminder from list
+    setShowMaintenanceReminder(false);
+  };
+
+  const handlePayNow = (reminderId: string) => {
+    console.log('Pay now for reminder:', reminderId);
+    // Navigate to payment page
+    setShowPaymentReminder(false);
+  };
+
+  const handleViewPaymentDetails = (reminderId: string) => {
+    console.log('View payment details for reminder:', reminderId);
+    // Navigate to payment details page
+    setShowPaymentReminder(false);
+  };
+
+  const handleSnoozePaymentReminder = (reminderId: string, days: number) => {
+    console.log('Snooze payment reminder:', reminderId, 'for', days, 'days');
+    // Remove reminder from list
+    setShowPaymentReminder(false);
+  };
   
   return (
     <div className="app-layout">
+      {/* Global Notification Popups */}
+      {state.user && state.user.role === 'customer' && (
+        <>
+          <MaintenanceReminderPopup
+            reminders={maintenanceReminders}
+            vehicles={vehicles}
+            isOpen={showMaintenanceReminder}
+            onClose={() => setShowMaintenanceReminder(false)}
+            onScheduleService={handleScheduleService}
+            onSnooze={handleSnoozeMaintenanceReminder}
+          />
+
+          <PaymentReminderPopup
+            reminders={paymentReminders}
+            packages={packages}
+            isOpen={showPaymentReminder}
+            onClose={() => setShowPaymentReminder(false)}
+            onPayNow={handlePayNow}
+            onViewDetails={handleViewPaymentDetails}
+            onSnooze={handleSnoozePaymentReminder}
+          />
+        </>
+      )}
+      
       <Header 
         user={state.user} 
         onLogout={logout}
-        onShowMaintenanceReminder={() => {}}
-        onShowPaymentReminder={() => {}}
+        onShowMaintenanceReminder={() => setShowMaintenanceReminder(true)}
+        onShowPaymentReminder={() => setShowPaymentReminder(true)}
         onShowAllNotifications={() => {}}
-        maintenanceReminderCount={0}
-        paymentReminderCount={0}
+        maintenanceReminderCount={maintenanceReminders.length}
+        paymentReminderCount={paymentReminders.length}
       />
       <main className="app-main">
         {children}
@@ -144,9 +219,11 @@ const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
+      <NotificationProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Car, AlertCircle, UserPlus, Sparkles, Settings, Clock } from 'lucide-react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { Eye, EyeOff, AlertCircle, UserPlus, Sparkles, Settings, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import { MDButton, MDTextField, MDCard } from '../components/ui';
@@ -22,12 +22,16 @@ const SignupPage: React.FC = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { state, register, clearError } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get return URL from location state, default to home
+  const returnUrl = (location.state as { returnUrl?: string })?.returnUrl || '/';
 
   useEffect(() => {
     if (state.isAuthenticated) {
-      navigate('/');
+      navigate(returnUrl);
     }
-  }, [state.isAuthenticated, navigate]);
+  }, [state.isAuthenticated, navigate, returnUrl]);
 
   useEffect(() => {
     if (state.error) {
@@ -98,7 +102,7 @@ const SignupPage: React.FC = () => {
     });
 
     if (success) {
-      navigate('/');
+      navigate(returnUrl);
     }
   };
 
@@ -130,7 +134,11 @@ const SignupPage: React.FC = () => {
             <div className="md-signup-page__logo-section">
               <Link to="/" className="md-signup-page__logo-link">
                 <div className="md-signup-page__logo">
-                  <Car className="md-signup-page__logo-icon" />
+                  <img 
+                    src="/ev-service-logo.svg" 
+                    alt="EV Service Center" 
+                    className="md-signup-page__logo-icon"
+                  />
                 </div>
               </Link>
               <h2 className="md-signup-page__brand-title">EV Service Center</h2>

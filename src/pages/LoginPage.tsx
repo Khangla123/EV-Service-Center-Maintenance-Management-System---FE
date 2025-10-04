@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle, Car, Shield, UserCheck } from 'lucide-react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { Eye, EyeOff, AlertCircle, Shield, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getDemoAccounts } from '../services/mockAuth';
 import { MDButton, MDTextField, MDCard } from '../components/ui';
@@ -15,13 +15,17 @@ const LoginPage: React.FC = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { state, login, clearError } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const demoAccounts = getDemoAccounts();
+  
+  // Get return URL from location state, default to home
+  const returnUrl = (location.state as { returnUrl?: string })?.returnUrl || '/';
 
   useEffect(() => {
     if (state.isAuthenticated) {
-      navigate('/');
+      navigate(returnUrl);
     }
-  }, [state.isAuthenticated, navigate]);
+  }, [state.isAuthenticated, navigate, returnUrl]);
 
   useEffect(() => {
     if (state.error) {
@@ -58,7 +62,7 @@ const LoginPage: React.FC = () => {
 
     const success = await login(formData.email, formData.password);
     if (success) {
-      navigate('/');
+      navigate(returnUrl);
     }
   };
 
@@ -98,7 +102,11 @@ const LoginPage: React.FC = () => {
           <div className="md-login-page__header">
             <Link to="/" className="md-login-page__logo-link">
               <div className="md-login-page__logo">
-                <Car className="md-login-page__logo-icon" />
+                <img 
+                  src="/ev-service-logo.svg" 
+                  alt="EV Service Center" 
+                  className="md-login-page__logo-icon"
+                />
               </div>
             </Link>
             <h1 className="md-login-page__title">Chào mừng trở lại</h1>
@@ -177,7 +185,11 @@ const LoginPage: React.FC = () => {
 
               <div className="md-login-page__signup-link">
                 <span>Chưa có tài khoản? </span>
-                <Link to="/signup" className="md-login-page__signup-button">
+                <Link 
+                  to="/signup" 
+                  state={{ returnUrl }} 
+                  className="md-login-page__signup-button"
+                >
                   Đăng ký ngay
                 </Link>
               </div>

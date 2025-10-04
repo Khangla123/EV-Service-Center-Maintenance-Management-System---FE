@@ -1,11 +1,11 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "EV Service",
+  "name": "EV Service Center - Trung tâm bảo dưỡng xe điện",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "ev-service-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
     },
     {
       "src": "logo192.png",
@@ -20,6 +20,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#2563eb",
   "background_color": "#ffffff"
 }
