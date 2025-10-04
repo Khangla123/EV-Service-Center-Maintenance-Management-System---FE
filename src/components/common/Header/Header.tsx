@@ -18,6 +18,8 @@ interface HeaderProps {
   onShowAllNotifications?: () => void;
   maintenanceReminderCount?: number;
   paymentReminderCount?: number;
+  readNotifications?: Set<string>;
+  onMarkNotificationAsRead?: (notificationId: string) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -27,15 +29,26 @@ const Header: React.FC<HeaderProps> = ({
   onShowPaymentReminder,
   onShowAllNotifications,
   maintenanceReminderCount = 0,
-  paymentReminderCount = 0
+  paymentReminderCount = 0,
+  readNotifications: externalReadNotifications,
+  onMarkNotificationAsRead
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
-  const [readNotifications, setReadNotifications] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+  
+  // Use external readNotifications from context if available, otherwise use empty Set
+  const readNotifications = externalReadNotifications || new Set<string>();
+  
+  // Helper function to mark notification as read
+  const markAsRead = (notificationId: string) => {
+    if (onMarkNotificationAsRead) {
+      onMarkNotificationAsRead(notificationId);
+    }
+  };
   
   // Đếm số loại thông báo (mỗi loại chỉ tính 1 lần)
   const notificationTypes = [];
@@ -44,11 +57,6 @@ const Header: React.FC<HeaderProps> = ({
   
   const totalNotifications = notificationTypes.length;
   const unreadCount = notificationTypes.filter(type => !readNotifications.has(type)).length;
-  
-  // Helper function to mark notification as read
-  const markAsRead = (notificationId: string) => {
-    setReadNotifications(prev => new Set(prev).add(notificationId));
-  };
   
   // Mock data for old notifications (lịch sử thông báo) - giống Facebook
   const oldNotifications = [
@@ -234,7 +242,12 @@ const Header: React.FC<HeaderProps> = ({
                                   onClick={() => {
                                     markAsRead('maintenance');
                                     setIsNotificationOpen(false);
-                                    onShowMaintenanceReminder?.();
+                                    setShowAllNotifications(false);
+                                    setActiveTab('all');
+                                    // Đảm bảo dropdown đóng hoàn toàn trước khi mở popup
+                                    setTimeout(() => {
+                                      onShowMaintenanceReminder?.();
+                                    }, 100);
                                   }}
                                 >
                                   <div className="notification-icon maintenance">
@@ -262,7 +275,12 @@ const Header: React.FC<HeaderProps> = ({
                                   onClick={() => {
                                     markAsRead('payment');
                                     setIsNotificationOpen(false);
-                                    onShowPaymentReminder?.();
+                                    setShowAllNotifications(false);
+                                    setActiveTab('all');
+                                    // Đảm bảo dropdown đóng hoàn toàn trước khi mở popup
+                                    setTimeout(() => {
+                                      onShowPaymentReminder?.();
+                                    }, 100);
                                   }}
                                 >
                                   <div className="notification-icon payment">
@@ -295,7 +313,12 @@ const Header: React.FC<HeaderProps> = ({
                                   className="notification-item notification-item-read"
                                   onClick={() => {
                                     setIsNotificationOpen(false);
-                                    onShowMaintenanceReminder?.();
+                                    setShowAllNotifications(false);
+                                    setActiveTab('all');
+                                    // Đảm bảo dropdown đóng hoàn toàn trước khi mở popup
+                                    setTimeout(() => {
+                                      onShowMaintenanceReminder?.();
+                                    }, 100);
                                   }}
                                 >
                                   <div className="notification-icon maintenance">
@@ -319,7 +342,12 @@ const Header: React.FC<HeaderProps> = ({
                                   className="notification-item notification-item-read"
                                   onClick={() => {
                                     setIsNotificationOpen(false);
-                                    onShowPaymentReminder?.();
+                                    setShowAllNotifications(false);
+                                    setActiveTab('all');
+                                    // Đảm bảo dropdown đóng hoàn toàn trước khi mở popup
+                                    setTimeout(() => {
+                                      onShowPaymentReminder?.();
+                                    }, 100);
                                   }}
                                 >
                                   <div className="notification-icon payment">

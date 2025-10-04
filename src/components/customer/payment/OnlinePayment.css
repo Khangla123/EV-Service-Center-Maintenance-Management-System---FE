@@ -507,7 +507,7 @@
 /* Footer */
 .payment-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding: 20px 0;
 }
@@ -515,6 +515,7 @@
 .security-info {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   color: #666;
   font-size: 0.9rem;

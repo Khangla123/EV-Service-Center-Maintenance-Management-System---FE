@@ -8,12 +8,14 @@ interface NotificationContextState {
   packages: MaintenancePackage[];
   showMaintenanceReminder: boolean;
   showPaymentReminder: boolean;
+  readNotifications: Set<string>;
   setMaintenanceReminders: (reminders: MaintenanceReminder[]) => void;
   setPaymentReminders: (reminders: PaymentReminder[]) => void;
   setVehicles: (vehicles: Vehicle[]) => void;
   setPackages: (packages: MaintenancePackage[]) => void;
   setShowMaintenanceReminder: (show: boolean) => void;
   setShowPaymentReminder: (show: boolean) => void;
+  markNotificationAsRead: (notificationId: string) => void;
   loadNotifications: (userId: string) => void;
 }
 
@@ -26,6 +28,11 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [packages, setPackages] = useState<MaintenancePackage[]>([]);
   const [showMaintenanceReminder, setShowMaintenanceReminder] = useState(false);
   const [showPaymentReminder, setShowPaymentReminder] = useState(false);
+  const [readNotifications, setReadNotifications] = useState<Set<string>>(new Set());
+
+  const markNotificationAsRead = useCallback((notificationId: string) => {
+    setReadNotifications(prev => new Set(prev).add(notificationId));
+  }, []);
 
   const loadNotifications = useCallback((userId: string) => {
     // Mock maintenance reminders
@@ -149,12 +156,14 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     packages,
     showMaintenanceReminder,
     showPaymentReminder,
+    readNotifications,
     setMaintenanceReminders,
     setPaymentReminders,
     setVehicles,
     setPackages,
     setShowMaintenanceReminder,
     setShowPaymentReminder,
+    markNotificationAsRead,
     loadNotifications
   };
 

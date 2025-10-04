@@ -42,8 +42,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     packages,
     showMaintenanceReminder,
     showPaymentReminder,
+    readNotifications,
     setShowMaintenanceReminder,
     setShowPaymentReminder,
+    markNotificationAsRead,
     loadNotifications 
   } = useNotifications();
   
@@ -113,11 +115,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <Header 
         user={state.user} 
         onLogout={logout}
-        onShowMaintenanceReminder={() => setShowMaintenanceReminder(true)}
-        onShowPaymentReminder={() => setShowPaymentReminder(true)}
+        onShowMaintenanceReminder={() => {
+          setShowPaymentReminder(false); // Đóng Payment Reminder trước
+          setShowMaintenanceReminder(true);
+        }}
+        onShowPaymentReminder={() => {
+          setShowMaintenanceReminder(false); // Đóng Maintenance Reminder trước
+          setShowPaymentReminder(true);
+        }}
         onShowAllNotifications={() => {}}
         maintenanceReminderCount={maintenanceReminders.length}
         paymentReminderCount={paymentReminders.length}
+        readNotifications={readNotifications}
+        onMarkNotificationAsRead={markNotificationAsRead}
       />
       <main className="app-main">
         {children}

@@ -2,6 +2,8 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
+  min-height: 100vh;
+  background: #ffffff;
 }
 
 .cost-management.loading {
@@ -23,15 +25,24 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e2e8f0;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 1;
 }
 
 .cost-header h2 {
   margin: 0;
-  color: #1a1a1a;
   font-size: 1.8rem;
-  font-weight: 600;
+  font-weight: 700;
+  color: #1a1a1a;
 }
 
 .header-actions {
@@ -66,16 +77,21 @@
 }
 
 .summary-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
   padding: 25px;
   display: flex;
   align-items: center;
   gap: 20px;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .summary-card::before {
@@ -104,8 +120,11 @@
 }
 
 .summary-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .card-icon {

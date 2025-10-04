@@ -136,18 +136,6 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-.reminder-item.overdue::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: linear-gradient(180deg, #e53e3e 0%, #fc8181 100%);
-  border-radius: 2px 0 0 2px;
-  box-shadow: 0 0 12px rgba(229, 62, 62, 0.4);
-}
-
 .reminder-header {
   display: flex;
   justify-content: space-between;

@@ -481,9 +481,6 @@ const OnlinePayment: React.FC<OnlinePaymentProps> = ({
       {/* Footer Actions */}
       {(currentStep === 'select' || currentStep === 'confirm') && (
         <div className="payment-footer">
-          <MDButton variant="text" onClick={handleCancel}>
-            Hủy bỏ
-          </MDButton>
           <div className="security-info">
             <span>🔒 Giao dịch được bảo mật bằng SSL</span>
           </div>

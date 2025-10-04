@@ -2,6 +2,8 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  min-height: 100vh;
+  background: #ffffff;
 }
 
 .appointment-tracker.loading {
@@ -13,7 +15,7 @@
 
 .loading-spinner {
   font-size: 1.2rem;
-  color: #666;
+  color: #1a1a1a;
   animation: pulse 1.5s ease-in-out infinite;
 }
 
@@ -22,15 +24,24 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e2e8f0;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: none;
+  border-radius: 20px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 1;
 }
 
 .tracker-header h2 {
   margin: 0;
-  color: black;
   font-size: 1.8rem;
-  font-weight: 600;
+  font-weight: 700;
+  color: #1a1a1a;
 }
 
 .appointment-detail {
@@ -50,7 +61,7 @@
 .no-appointments {
   text-align: center;
   padding: 60px 20px;
-  color: #666;
+  color: #1a1a1a;
 }
 
 .no-appointments p {
@@ -64,19 +75,27 @@
 }
 
 .appointment-card {
-  background: #f8f9fa;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
   padding: 24px;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  color: #1a1a1a;
 }
 
 .appointment-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  border-color: #c3dafe;
+  transform: translateY(-6px);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .appointment-card.detailed {
@@ -95,8 +114,8 @@
 
 .appointment-id {
   font-size: 0.9rem;
-  color: #666;
-  font-weight: 500;
+  color: #1a1a1a;
+  font-weight: 600;
 }
 
 .status-badge {
@@ -218,13 +237,13 @@
 
 .step span {
   font-size: 0.8rem;
-  color: #666;
+  color: #1a1a1a;
   text-align: center;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .step.completed span {
-  color: #2d3748;
+  color: #1a1a1a;
   font-weight: 600;
 }
 
@@ -236,6 +255,7 @@
   display: flex;
   margin-bottom: 12px;
   line-height: 1.5;
+  color: #1a1a1a;
 }
 
 .info-row strong {
@@ -243,6 +263,11 @@
   font-weight: 600;
   min-width: 140px;
   margin-right: 10px;
+}
+
+.info-row span {
+  color: #1a1a1a;
+  font-weight: 500;
 }
 
 .info-row:last-child {
