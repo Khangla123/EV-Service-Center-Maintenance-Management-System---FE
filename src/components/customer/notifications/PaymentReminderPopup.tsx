@@ -35,14 +35,6 @@ const PaymentReminderPopup: React.FC<PaymentReminderPopupProps> = ({
     return new Date(date).toLocaleDateString('vi-VN');
   };
 
-  const getDaysOverdue = (dueDate: Date) => {
-    const today = new Date();
-    const due = new Date(dueDate);
-    const diffTime = today.getTime() - due.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
   const getPaymentTypeText = (type: string) => {
     const types: { [key: string]: string } = {
       'maintenance_package': 'Gói bảo dưỡng',
@@ -79,7 +71,6 @@ const PaymentReminderPopup: React.FC<PaymentReminderPopupProps> = ({
 
           <div className="reminders-list">
             {reminders.map((reminder) => {
-              const daysOverdue = getDaysOverdue(reminder.dueDate);
               const packageInfo = reminder.servicePackageId ? getPackageInfo(reminder.servicePackageId) : null;
               
               return (
@@ -98,11 +89,6 @@ const PaymentReminderPopup: React.FC<PaymentReminderPopupProps> = ({
                         {formatCurrency(reminder.amount)}
                       </div>
                     </div>
-                    {reminder.isOverdue && (
-                      <span className="overdue-badge">
-                        Quá hạn {daysOverdue} ngày
-                      </span>
-                    )}
                   </div>
 
                   <div className="reminder-details">

@@ -424,12 +424,7 @@ const Header: React.FC<HeaderProps> = ({
             <div className="header__auth-buttons">
               <Link to="/login">
                 <Button variant="outline" size="sm" className="header__account-btn">
-                  TÀI KHOẢN
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button size="sm" className="header__register-btn">
-                  ĐẶT LỊCH BẢO TRÌ
+                  ĐĂNG NHẬP
                 </Button>
               </Link>
             </div>
@@ -462,12 +457,7 @@ const Header: React.FC<HeaderProps> = ({
             <div className="header__mobile-auth">
               <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button variant="outline" fullWidth className="header__mobile-account-btn">
-                  TÀI KHOẢN
-                </Button>
-              </Link>
-              <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button fullWidth className="header__mobile-register-btn">
-                  ĐẶT LỊCH BẢO TRÌ
+                  ĐĂNG NHẬP
                 </Button>
               </Link>
             </div>

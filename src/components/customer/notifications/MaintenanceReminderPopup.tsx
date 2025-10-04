@@ -30,14 +30,6 @@ const MaintenanceReminderPopup: React.FC<MaintenanceReminderPopupProps> = ({
     return new Date(date).toLocaleDateString('vi-VN');
   };
 
-  const getDaysOverdue = (dueDate: Date) => {
-    const today = new Date();
-    const due = new Date(dueDate);
-    const diffTime = today.getTime() - due.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
   const getReminderTypeText = (type: string) => {
     const types: { [key: string]: string } = {
       'regular_maintenance': 'Bảo dưỡng định kỳ',
@@ -64,7 +56,6 @@ const MaintenanceReminderPopup: React.FC<MaintenanceReminderPopupProps> = ({
           <div className="reminders-list">
             {reminders.map((reminder) => {
               const vehicle = getVehicleInfo(reminder.vehicleId);
-              const daysOverdue = getDaysOverdue(reminder.dueDate);
               
               return (
                 <div key={reminder.id} className={`reminder-item ${reminder.isOverdue ? 'overdue' : ''}`}>
@@ -74,11 +65,6 @@ const MaintenanceReminderPopup: React.FC<MaintenanceReminderPopupProps> = ({
                       <span className="vehicle-year">{vehicle?.year}</span>
                       <span className="license-plate">{vehicle?.licensePlate}</span>
                     </div>
-                    {reminder.isOverdue && (
-                      <span className="overdue-badge">
-                        Quá hạn {daysOverdue} ngày
-                      </span>
-                    )}
                   </div>
 
                   <div className="reminder-details">
