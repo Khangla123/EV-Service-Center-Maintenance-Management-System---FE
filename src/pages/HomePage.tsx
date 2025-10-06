@@ -18,15 +18,6 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const vehicleCategories = [
-    { id: 'vf3', name: 'VF3' },
-    { id: 'vf5', name: 'VF5' },
-    { id: 'vf6', name: 'VF6' },
-    { id: 'vf7', name: 'VF7' },
-    { id: 'vf8', name: 'VF8' },
-    { id: 'vf9', name: 'VF9' }
-  ];
-
   return (
     <div className="homepage">
       <section className="hero-section">
@@ -59,19 +50,6 @@ const HomePage: React.FC = () => {
                 className="hero-img"
               />
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="categories-section">
-        <div className="container">
-          <h2 className="section-title">Danh mục bảo dưỡng</h2>
-          <div className="categories-grid">
-            {vehicleCategories.map((category) => (
-              <div key={category.id} className="category-item">
-                <span className="category-name">{category.name}</span>
-              </div>
-            ))}
           </div>
         </div>
       </section>

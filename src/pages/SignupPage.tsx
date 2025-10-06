@@ -24,14 +24,25 @@ const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Get return URL from location state, default to home
-  const returnUrl = (location.state as { returnUrl?: string })?.returnUrl || '/';
+  // Get return URL from location state, default to customer dashboard for new signups
+  const getReturnUrl = () => {
+    const stateReturnUrl = (location.state as { returnUrl?: string })?.returnUrl;
+    if (stateReturnUrl) return stateReturnUrl;
+    // Default to customer dashboard for newly registered users
+    return '/customer/dashboard';
+  };
+  const returnUrl = getReturnUrl();
 
   useEffect(() => {
     if (state.isAuthenticated) {
-      navigate(returnUrl);
+      // Navigate based on user role
+      if (state.user?.role === UserRole.CUSTOMER) {
+        navigate('/customer/dashboard');
+      } else {
+        navigate(returnUrl);
+      }
     }
-  }, [state.isAuthenticated, navigate, returnUrl]);
+  }, [state.isAuthenticated, state.user, navigate, returnUrl]);
 
   useEffect(() => {
     if (state.error) {
@@ -92,7 +103,7 @@ const SignupPage: React.FC = () => {
       return;
     }
 
-    const success = await register({
+    await register({
       firstName: formData.firstName,
       lastName: formData.lastName,
       email: formData.email,
@@ -100,10 +111,7 @@ const SignupPage: React.FC = () => {
       password: formData.password,
       role: formData.role
     });
-
-    if (success) {
-      navigate(returnUrl);
-    }
+    // Navigation is handled by useEffect based on user role
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

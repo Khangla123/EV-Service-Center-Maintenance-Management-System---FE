@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, Shield, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { UserRole } from '../types';
 import { getDemoAccounts } from '../services/mockAuth';
 import { MDButton, MDTextField, MDCard } from '../components/ui';
 import './LoginPage.css';
@@ -18,14 +19,25 @@ const LoginPage: React.FC = () => {
   const location = useLocation();
   const demoAccounts = getDemoAccounts();
   
-  // Get return URL from location state, default to home
-  const returnUrl = (location.state as { returnUrl?: string })?.returnUrl || '/';
+  // Get return URL from location state, default to customer dashboard for customers
+  const getReturnUrl = () => {
+    const stateReturnUrl = (location.state as { returnUrl?: string })?.returnUrl;
+    if (stateReturnUrl) return stateReturnUrl;
+    // Default to customer dashboard for newly logged in users
+    return '/customer/dashboard';
+  };
+  const returnUrl = getReturnUrl();
 
   useEffect(() => {
     if (state.isAuthenticated) {
-      navigate(returnUrl);
+      // Navigate based on user role
+      if (state.user?.role === UserRole.CUSTOMER) {
+        navigate('/customer/dashboard');
+      } else {
+        navigate(returnUrl);
+      }
     }
-  }, [state.isAuthenticated, navigate, returnUrl]);
+  }, [state.isAuthenticated, state.user, navigate, returnUrl]);
 
   useEffect(() => {
     if (state.error) {
@@ -60,10 +72,8 @@ const LoginPage: React.FC = () => {
       return;
     }
 
-    const success = await login(formData.email, formData.password);
-    if (success) {
-      navigate(returnUrl);
-    }
+    await login(formData.email, formData.password);
+    // Navigation is handled by useEffect based on user role
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

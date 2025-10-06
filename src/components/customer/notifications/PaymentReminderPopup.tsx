@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PaymentReminder, MaintenancePackage } from '../../../types';
 import { MDButton } from '../../ui';
 import './PaymentReminderPopup.css';
@@ -22,7 +23,14 @@ const PaymentReminderPopup: React.FC<PaymentReminderPopupProps> = ({
   onViewDetails,
   onSnooze
 }) => {
+  const navigate = useNavigate();
+  
   if (!isOpen || reminders.length === 0) return null;
+
+  const handlePayNow = (reminderId: string) => {
+    onPayNow(reminderId);
+    navigate('/customer/payment');
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -125,7 +133,7 @@ const PaymentReminderPopup: React.FC<PaymentReminderPopupProps> = ({
                   <div className="reminder-actions">
                     <MDButton
                       variant="filled"
-                      onClick={() => onPayNow(reminder.id)}
+                      onClick={() => handlePayNow(reminder.id)}
                       className="pay-now-btn"
                     >
                       Thanh toán ngay

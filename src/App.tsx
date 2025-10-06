@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider, useNotifications } from './context/NotificationContext';
 import { UserRole } from './types';
@@ -35,6 +35,7 @@ const ProtectedRoute: React.FC<{
 // Layout Component
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { state, logout } = useAuth();
+  const navigate = useNavigate();
   const { 
     maintenanceReminders, 
     paymentReminders, 
@@ -58,8 +59,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   
   const handleScheduleService = (reminderId: string) => {
     console.log('Schedule service for reminder:', reminderId);
-    // Navigate to booking page or show booking form
+    // Navigate to booking page
     setShowMaintenanceReminder(false);
+    navigate('/customer/booking');
   };
 
   const handleSnoozeMaintenanceReminder = (reminderId: string, days: number) => {

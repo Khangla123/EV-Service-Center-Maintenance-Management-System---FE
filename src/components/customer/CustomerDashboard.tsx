@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Car, Calendar, History, CreditCard, Bell, Settings, TrendingUp, Clock, CheckCircle, AlertCircle, Home, Menu, X } from 'lucide-react';
+import { Car, Calendar, History, CreditCard, TrendingUp, Clock, CheckCircle, AlertCircle, Home, Menu, X } from 'lucide-react';
 import { MDButton } from '../ui';
 import AppointmentBooking from './appointments/AppointmentBooking';
 import AppointmentTracker from './appointments/AppointmentTracker';
@@ -14,7 +14,6 @@ const CustomerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [notifications] = useState(3);
 
   const stats = [
     { label: 'Xe của tôi', value: '2', icon: Car, gradient: 'from-blue-500 to-blue-600', link: '/customer/vehicles' },
@@ -160,15 +159,6 @@ const CustomerDashboard: React.FC = () => {
                   <div>
                     <h1>Tổng quan khách hàng</h1>
                     <p>Chào mừng bạn trở lại! Quản lý xe và dịch vụ của bạn tại đây.</p>
-                  </div>
-                  <div className="header-actions">
-                    <button className="notification-btn">
-                      <Bell className="h-5 w-5" />
-                      {notifications > 0 && <span className="notification-badge">{notifications}</span>}
-                    </button>
-                    <button className="settings-btn">
-                      <Settings className="h-5 w-5" />
-                    </button>
                   </div>
                 </div>
               </div>

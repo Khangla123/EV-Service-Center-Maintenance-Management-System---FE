@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MaintenanceReminder, Vehicle } from '../../../types';
 import { MDButton } from '../../ui';
 import './MaintenanceReminderPopup.css';
@@ -20,7 +21,14 @@ const MaintenanceReminderPopup: React.FC<MaintenanceReminderPopupProps> = ({
   onScheduleService,
   onSnooze
 }) => {
+  const navigate = useNavigate();
+  
   if (!isOpen || reminders.length === 0) return null;
+
+  const handleScheduleService = (reminderId: string) => {
+    onScheduleService(reminderId);
+    navigate('/customer/booking');
+  };
 
   const getVehicleInfo = (vehicleId: string) => {
     return vehicles.find(v => v.id === vehicleId);
@@ -100,7 +108,7 @@ const MaintenanceReminderPopup: React.FC<MaintenanceReminderPopupProps> = ({
                   <div className="reminder-actions">
                     <MDButton
                       variant="filled"
-                      onClick={() => onScheduleService(reminder.id)}
+                      onClick={() => handleScheduleService(reminder.id)}
                     >
                       Đặt lịch ngay
                     </MDButton>
