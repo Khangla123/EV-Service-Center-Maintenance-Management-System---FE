@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle, Shield, UserCheck } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Shield, UserCheck, Users, Wrench } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import { getDemoAccounts } from '../services/mockAuth';
@@ -31,10 +31,21 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     if (state.isAuthenticated) {
       // Navigate based on user role
-      if (state.user?.role === UserRole.CUSTOMER) {
-        navigate('/customer/dashboard');
-      } else {
-        navigate(returnUrl);
+      switch (state.user?.role) {
+        case UserRole.CUSTOMER:
+          navigate('/customer/dashboard');
+          break;
+        case UserRole.STAFF:
+          navigate('/staff/dashboard');
+          break;
+        case UserRole.TECHNICIAN:
+          navigate('/technician/dashboard');
+          break;
+        case UserRole.ADMIN:
+          navigate('/admin/dashboard');
+          break;
+        default:
+          navigate(returnUrl);
       }
     }
   }, [state.isAuthenticated, state.user, navigate, returnUrl]);
@@ -218,6 +229,24 @@ const LoginPage: React.FC = () => {
                 className="md-login-page__demo-button"
               >
                 Khách hàng
+              </MDButton>
+              <MDButton
+                variant="outlined"
+                size="medium"
+                startIcon={<Users size={18} />}
+                onClick={() => fillDemoAccount(demoAccounts.staff.email, demoAccounts.staff.password)}
+                className="md-login-page__demo-button"
+              >
+                Nhân viên
+              </MDButton>
+              <MDButton
+                variant="outlined"
+                size="medium"
+                startIcon={<Wrench size={18} />}
+                onClick={() => fillDemoAccount(demoAccounts.technician.email, demoAccounts.technician.password)}
+                className="md-login-page__demo-button"
+              >
+                Kỹ thuật viên
               </MDButton>
               <MDButton
                 variant="outlined"

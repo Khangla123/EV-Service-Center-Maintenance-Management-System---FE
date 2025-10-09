@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import HomePage from './pages/HomePage';
 import CustomerDashboard from './components/customer/CustomerDashboard';
+import StaffDashboard from './components/staff/StaffDashboard';
 import AppointmentSuccessPage from './pages/AppointmentSuccessPage';
 import MaintenanceReminderPopup from './components/customer/notifications/MaintenanceReminderPopup';
 import PaymentReminderPopup from './components/customer/notifications/PaymentReminderPopup';
@@ -150,8 +151,17 @@ const AppRoutes: React.FC = () => {
         </Layout>
       } />
       
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/login" element={
+        <Layout>
+          <LoginPage />
+        </Layout>
+      } />
+      
+      <Route path="/signup" element={
+        <Layout>
+          <SignupPage />
+        </Layout>
+      } />
       
       {/* Appointment Success Route */}
       <Route path="/appointments/success" element={
@@ -173,10 +183,10 @@ const AppRoutes: React.FC = () => {
       <Route path="/staff/*" element={
         <ProtectedRoute allowedRoles={[UserRole.STAFF]}>
           <Layout>
-            <div className="dashboard-placeholder">
-              <h1>Staff Dashboard</h1>
-              <p>Chức năng dành cho nhân viên đang được phát triển...</p>
-            </div>
+            <Routes>
+              <Route path="dashboard" element={<StaffDashboard />} />
+              <Route path="*" element={<Navigate to="/staff/dashboard" replace />} />
+            </Routes>
           </Layout>
         </ProtectedRoute>
       } />

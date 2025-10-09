@@ -249,7 +249,8 @@
 }
 
 .md-login-page__demo-buttons {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--lg-spacing-sm);
 }
 
@@ -280,7 +281,7 @@
   }
   
   .md-login-page__demo-buttons {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
   
   .md-login-page__title {
