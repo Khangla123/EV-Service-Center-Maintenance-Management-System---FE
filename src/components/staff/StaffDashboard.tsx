@@ -136,7 +136,7 @@ const StaffDashboard: React.FC = () => {
                     <Wrench />
                   </div>
                   <div className="activity-content">
-                    <div className="activity-title">Hoàn thành bảo dưỡng VF8 - BKS: 30A-12345</div>
+                    <div className="activity-title">Hoàn thành bảo dưỡng VF8 - BKS: 30A-123.45</div>
                     <div className="activity-time">15 phút trước</div>
                   </div>
                 </div>

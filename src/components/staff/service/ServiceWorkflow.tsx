@@ -48,7 +48,7 @@ const ServiceWorkflow: React.FC = () => {
       {
         id: 'job-001',
         vehicleModel: 'VinFast VF8',
-        licensePlate: '30A-12345',
+        licensePlate: '30A-123.45',
         customerName: 'Nguyễn Văn A',
         serviceType: 'Bảo dưỡng định kỳ',
         status: 'waiting',
@@ -67,7 +67,7 @@ const ServiceWorkflow: React.FC = () => {
       {
         id: 'job-002',
         vehicleModel: 'VinFast VF9',
-        licensePlate: '30B-67890',
+        licensePlate: '30B-678.90',
         customerName: 'Trần Thị B',
         serviceType: 'Kiểm tra pin',
         status: 'in-progress',
@@ -87,7 +87,7 @@ const ServiceWorkflow: React.FC = () => {
       {
         id: 'job-003',
         vehicleModel: 'VinFast VF5',
-        licensePlate: '30C-11111',
+        licensePlate: '51F-111.11',
         customerName: 'Lê Văn C',
         serviceType: 'Sửa chữa khẩn cấp',
         status: 'in-progress',
@@ -109,7 +109,7 @@ const ServiceWorkflow: React.FC = () => {
       {
         id: 'job-004',
         vehicleModel: 'VinFast VF8',
-        licensePlate: '30D-22222',
+        licensePlate: '29B-222.22',
         customerName: 'Phạm Thị D',
         serviceType: 'Thay lốp xe',
         status: 'completed',
