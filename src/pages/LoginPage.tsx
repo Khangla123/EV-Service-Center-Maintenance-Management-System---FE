@@ -29,15 +29,26 @@ const LoginPage: React.FC = () => {
   const returnUrl = getReturnUrl();
 
   useEffect(() => {
-    if (state.isAuthenticated) {
+    if (state.isAuthenticated && state.user) {
       // Navigate based on user role
-      if (state.user?.role === UserRole.CUSTOMER) {
-        navigate('/customer/dashboard');
-      } else {
-        navigate(returnUrl);
+      switch (state.user.role) {
+        case UserRole.CUSTOMER:
+          navigate('/customer/dashboard');
+          break;
+        case UserRole.ADMIN:
+          navigate('/admin/dashboard');
+          break;
+        case UserRole.STAFF:
+          navigate('/staff/dashboard');
+          break;
+        case UserRole.TECHNICIAN:
+          navigate('/technician/dashboard');
+          break;
+        default:
+          navigate('/');
       }
     }
-  }, [state.isAuthenticated, state.user, navigate, returnUrl]);
+  }, [state.isAuthenticated, state.user, navigate]);
 
   useEffect(() => {
     if (state.error) {
