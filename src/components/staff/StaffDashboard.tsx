@@ -168,17 +168,12 @@ const StaffDashboard: React.FC = () => {
   return (
     <div className="staff-dashboard">
       <div className="dashboard-sidebar">
-        <div className="sidebar-header">
-          <h2>Staff Portal</h2>
-          <p>Trung tâm Dịch vụ EV</p>
-        </div>
         <nav className="sidebar-menu">
           {menuItems.map((item) => (
             <button
               key={item.id}
               className={`menu-item ${currentView === item.id ? 'active' : ''}`}
               onClick={() => setCurrentView(item.id as StaffView)}
-              style={{ '--item-color': item.color } as React.CSSProperties}
             >
               <span className="menu-icon">{item.icon}</span>
               <span className="menu-label">{item.label}</span>
