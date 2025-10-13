@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import HomePage from './pages/HomePage';
 import CustomerDashboard from './components/customer/CustomerDashboard';
+import AdminDashboard from './components/admin/AdminDashboard';
 import StaffDashboard from './components/staff/StaffDashboard';
 import AppointmentSuccessPage from './pages/AppointmentSuccessPage';
 import MaintenanceReminderPopup from './components/customer/notifications/MaintenanceReminderPopup';
@@ -207,10 +208,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/admin/*" element={
         <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
           <Layout>
-            <div className="dashboard-placeholder">
-              <h1>Admin Dashboard</h1>
-              <p>Chức năng dành cho quản trị viên đang được phát triển...</p>
-            </div>
+            <AdminDashboard />
           </Layout>
         </ProtectedRoute>
       } />

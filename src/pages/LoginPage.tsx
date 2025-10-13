@@ -29,7 +29,7 @@ const LoginPage: React.FC = () => {
   const returnUrl = getReturnUrl();
 
   useEffect(() => {
-    if (state.isAuthenticated) {
+    if (state.isAuthenticated && state.user) {
       // Navigate based on user role
       switch (state.user?.role) {
         case UserRole.CUSTOMER:
@@ -48,7 +48,7 @@ const LoginPage: React.FC = () => {
           navigate(returnUrl);
       }
     }
-  }, [state.isAuthenticated, state.user, navigate, returnUrl]);
+  }, [state.isAuthenticated, state.user, navigate]);
 
   useEffect(() => {
     if (state.error) {
