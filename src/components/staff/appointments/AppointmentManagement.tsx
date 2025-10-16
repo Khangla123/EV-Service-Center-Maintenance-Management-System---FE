@@ -1,27 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, User, Car, Check, X, Edit, Filter, Plus } from 'lucide-react';
 import { MDButton } from '../../ui';
-import { getAllAppointments, Appointment } from '../../../services/mockData';
+import { appointmentService } from '../../../services';
 import './AppointmentManagement.css';
 
+interface StaffAppointment {
+  id: string;
+  customerName: string;
+  phone: string;
+  vehicleModel: string;
+  licensePlate: string;
+  scheduledDate: Date;
+  scheduledTime: string;
+  serviceType: string;
+  status: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled';
+  technicianName?: string;
+  notes?: string;
+}
+
 const AppointmentManagement: React.FC = () => {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<StaffAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'today'>('all');
-  // const [selectedDate, setSelectedDate] = useState(new Date()); // Reserved for future date filtering
 
   useEffect(() => {
     loadAppointments();
   }, []);
 
   const loadAppointments = async () => {
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    // Use shared mock data
-    const sharedMockAppointments = getAllAppointments();
-    setAppointments(sharedMockAppointments);
-    setLoading(false);
+    try {
+      setLoading(true);
+      
+      // Get all appointments from API
+      const { appointments: allAppointments } = await appointmentService.getAllAppointments();
+      
+      // Convert to staff appointment format
+      const convertedAppointments: StaffAppointment[] = allAppointments.map((apt: any) => {
+        const appointmentDate = new Date(apt.appointmentDate);
+        
+        return {
+          id: apt.id,
+          customerName: apt.customerName || 'N/A',
+          phone: apt.customerPhone || 'N/A',
+          vehicleModel: apt.vehicleModel || 'N/A',
+          licensePlate: apt.vehicleLicensePlate || 'N/A',
+          scheduledDate: appointmentDate,
+          scheduledTime: appointmentDate.toLocaleTimeString('vi-VN', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          serviceType: apt.servicePackageName || 'N/A',
+          status: apt.status?.toLowerCase() || 'pending',
+          technicianName: apt.technicianName,
+          notes: apt.notes
+        };
+      });
+      
+      setAppointments(convertedAppointments);
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+      setAppointments([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredAppointments = appointments.filter(apt => {
@@ -33,8 +74,8 @@ const AppointmentManagement: React.FC = () => {
     return apt.status === filter;
   });
 
-  const getStatusColor = (status: Appointment['status']) => {
-    const colors = {
+  const getStatusColor = (status: StaffAppointment['status']) => {
+    const colors: Record<StaffAppointment['status'], string> = {
       pending: 'warning',
       confirmed: 'info',
       'in-progress': 'primary',
@@ -44,8 +85,8 @@ const AppointmentManagement: React.FC = () => {
     return colors[status];
   };
 
-  const getStatusLabel = (status: Appointment['status']) => {
-    const labels = {
+  const getStatusLabel = (status: StaffAppointment['status']) => {
+    const labels: Record<StaffAppointment['status'], string> = {
       pending: 'Chờ xác nhận',
       confirmed: 'Đã xác nhận',
       'in-progress': 'Đang xử lý',
@@ -55,20 +96,50 @@ const AppointmentManagement: React.FC = () => {
     return labels[status];
   };
 
-  const confirmAppointment = (id: string) => {
-    setAppointments(prev =>
-      prev.map(apt =>
-        apt.id === id ? { ...apt, status: 'confirmed' as const } : apt
-      )
-    );
+  const confirmAppointment = async (id: string) => {
+    try {
+      await appointmentService.updateAppointment(id, {
+        status: 'CONFIRMED'
+      });
+      
+      // Update local state
+      setAppointments(prev =>
+        prev.map(apt =>
+          apt.id === id ? { ...apt, status: 'confirmed' as const } : apt
+        )
+      );
+    } catch (error) {
+      console.error('Error confirming appointment:', error);
+      alert('Không thể xác nhận lịch hẹn. Vui lòng thử lại!');
+    }
   };
 
-  const cancelAppointment = (id: string) => {
-    setAppointments(prev =>
-      prev.map(apt =>
-        apt.id === id ? { ...apt, status: 'cancelled' as const } : apt
-      )
-    );
+  const cancelAppointment = async (id: string) => {
+    try {
+      await appointmentService.cancelAppointment(id);
+      
+      // Reload appointments to get updated data
+      await loadAppointments();
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      alert('Không thể hủy lịch hẹn. Vui lòng thử lại!');
+    }
+  };
+
+  const editAppointment = (id: string) => {
+    const appointment = appointments.find(apt => apt.id === id);
+    if (!appointment) return;
+    
+    alert(`Chức năng chỉnh sửa lịch hẹn:\n\nKhách hàng: ${appointment.customerName}\nXe: ${appointment.vehicleModel} (${appointment.licensePlate})\nThời gian: ${appointment.scheduledDate.toLocaleDateString('vi-VN')} ${appointment.scheduledTime}\nDịch vụ: ${appointment.serviceType}\n\nChức năng đang được phát triển...`);
+    // TODO: Open edit modal with appointment details
+  };
+
+  const assignTechnician = (id: string) => {
+    const appointment = appointments.find(apt => apt.id === id);
+    if (!appointment) return;
+    
+    alert(`Chức năng phân công kỹ thuật viên:\n\nLịch hẹn: ${appointment.customerName}\nXe: ${appointment.vehicleModel} (${appointment.licensePlate})\nThời gian: ${appointment.scheduledDate.toLocaleDateString('vi-VN')} ${appointment.scheduledTime}\n\nChức năng đang được phát triển...`);
+    // TODO: Open technician assignment modal
   };
 
   if (loading) {
@@ -202,10 +273,20 @@ const AppointmentManagement: React.FC = () => {
               )}
               {(appointment.status === 'confirmed' || appointment.status === 'in-progress') && (
                 <>
-                  <MDButton variant="outlined" size="small" startIcon={<Edit />}>
+                  <MDButton 
+                    variant="outlined" 
+                    size="small" 
+                    startIcon={<Edit />}
+                    onClick={() => editAppointment(appointment.id)}
+                  >
                     Chỉnh sửa
                   </MDButton>
-                  <MDButton variant="outlined" size="small" startIcon={<User />}>
+                  <MDButton 
+                    variant="outlined" 
+                    size="small" 
+                    startIcon={<User />}
+                    onClick={() => assignTechnician(appointment.id)}
+                  >
                     Phân công KTV
                   </MDButton>
                 </>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { User, AuthState, UserRole } from '../types';
-import { authenticateUser, emailExists } from '../services/mockAuth';
+import authService from '../services/authService';
 
 interface AuthContextType {
   state: AuthState;
@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check for existing token on app load
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
     if (token && userData) {
@@ -109,6 +109,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const user = JSON.parse(userData);
         dispatch({ type: 'LOAD_USER', payload: { user, token } });
       } catch (error) {
+        localStorage.removeItem('accessToken');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
@@ -119,30 +120,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await authService.login({ email, password });
       
-      // Authenticate using mock data
-      const user = authenticateUser(email, password);
-      
-      if (user) {
-        const mockToken = 'mock-jwt-token-' + Date.now();
+      const user: User = {
+        id: response.user.id,
+        email: response.user.email,
+        firstName: response.user.firstName,
+        lastName: response.user.lastName,
+        phone: response.user.phone || '',
+        role: response.user.role as UserRole,
+        avatar: response.user.avatar,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
-        // Store in localStorage
-        localStorage.setItem('token', mockToken);
-        localStorage.setItem('user', JSON.stringify(user));
-
-        dispatch({ 
-          type: 'LOGIN_SUCCESS', 
-          payload: { user, token: mockToken } 
-        });
-        return true;
-      } else {
-        dispatch({ type: 'LOGIN_FAILURE' });
-        return false;
-      }
-    } catch (error) {
-      dispatch({ type: 'LOGIN_FAILURE' });
+      dispatch({ 
+        type: 'LOGIN_SUCCESS', 
+        payload: { user, token: response.token } 
+      });
+      return true;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Đăng nhập thất bại';
+      dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
       return false;
     }
   };
@@ -151,16 +150,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      // Check if email already exists
-      if (emailExists(userData.email)) {
-        dispatch({ type: 'LOGIN_FAILURE' });
-        return false;
-      }
-
-      // Simulate network delay
+      // TODO: Implement real registration API call when backend is ready
+      // For now, simulate registration
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock user creation
       const newUser: User = {
         id: Date.now().toString(),
         email: userData.email,
@@ -189,10 +182,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    dispatch({ type: 'LOGOUT' });
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      dispatch({ type: 'LOGOUT' });
+    }
   };
 
   const clearError = () => {

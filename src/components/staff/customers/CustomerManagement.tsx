@@ -4,14 +4,35 @@ import {
   Eye, Edit, Trash2, Filter, Download
 } from 'lucide-react';
 import { MDButton } from '../../ui';
-import { getAllCustomers, Customer } from '../../../services/mockData';
+import { customerService, vehicleService, appointmentService } from '../../../services';
 import './CustomerManagement.css';
 
+interface StaffCustomer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address?: string;
+  vehicles: Array<{
+    id: string;
+    licensePlate: string;
+    model: string;
+    year?: number;
+    vin?: string;
+    color?: string;
+    mileage?: number;
+  }>;
+  totalServices: number;
+  lastServiceDate?: Date;
+  registeredDate: Date;
+  notes?: string;
+}
+
 const CustomerManagement: React.FC = () => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<StaffCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<StaffCustomer | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showChat, setShowChat] = useState(false);
 
@@ -20,13 +41,79 @@ const CustomerManagement: React.FC = () => {
   }, []);
 
   const loadCustomers = async () => {
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Use shared mock data
-    const sharedMockCustomers = getAllCustomers();
-    setCustomers(sharedMockCustomers);
-    setLoading(false);
+    try {
+      setLoading(true);
+      
+      // Get all customers from API (returns Page object)
+      const customerPage = await customerService.getAllCustomers({ size: 100 });
+      
+      // Extract content array from Page object
+      const allCustomers = Array.isArray(customerPage?.content) ? customerPage.content : [];
+      
+      if (!Array.isArray(allCustomers) || allCustomers.length === 0) {
+        setCustomers([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Get all appointments to calculate service stats
+      const { appointments: allAppointments } = await appointmentService.getAllAppointments();
+      
+      // Convert to staff customer format
+      const convertedCustomers: StaffCustomer[] = await Promise.all(
+        allCustomers.map(async (customer: any) => {
+          // Get customer's vehicles
+          let vehicles: any[] = [];
+          try {
+            const customerId = customer.id?.toString() || customer.id;
+            vehicles = await vehicleService.getVehiclesByCustomerId(customerId);
+          } catch (error) {
+            vehicles = [];
+          }
+          
+          // Count customer's appointments
+          const customerAppointments = allAppointments.filter(
+            (apt: any) => apt.customerId === customer.id
+          );
+          
+          // Find last service date
+          const completedAppointments = customerAppointments.filter(
+            (apt: any) => apt.status === 'COMPLETED'
+          );
+          const lastServiceDate = completedAppointments.length > 0
+            ? new Date(Math.max(...completedAppointments.map((apt: any) => new Date(apt.appointmentDate).getTime())))
+            : undefined;
+          
+          return {
+            id: customer.id,
+            name: customer.fullName || customer.email || 'N/A',
+            email: customer.email,
+            phone: customer.phone || 'N/A',
+            address: customer.address || 'Chưa cập nhật',
+            vehicles: vehicles.map((v: any) => ({
+              id: v.id,
+              licensePlate: v.licensePlate || 'N/A',
+              model: v.vehicleModel?.model || 'N/A',
+              year: v.vehicleModel?.year,
+              vin: v.vin,
+              color: v.color,
+              mileage: v.mileage
+            })),
+            totalServices: completedAppointments.length,
+            lastServiceDate,
+            registeredDate: customer.createdAt ? new Date(customer.createdAt) : new Date(),
+            notes: ''
+          };
+        })
+      );
+      
+      setCustomers(convertedCustomers);
+    } catch (error) {
+      console.error('Error loading customers:', error);
+      setCustomers([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredCustomers = customers.filter(customer =>
@@ -36,13 +123,13 @@ const CustomerManagement: React.FC = () => {
     customer.vehicles.some(v => v.licensePlate.includes(searchTerm.toUpperCase()))
   );
 
-  const viewCustomerDetails = (customer: Customer) => {
+  const viewCustomerDetails = (customer: StaffCustomer) => {
     setSelectedCustomer(customer);
     setShowDetails(true);
     setShowChat(false);
   };
 
-  const openChat = (customer: Customer) => {
+  const openChat = (customer: StaffCustomer) => {
     setSelectedCustomer(customer);
     setShowChat(true);
     setShowDetails(false);
@@ -271,15 +358,15 @@ const CustomerManagement: React.FC = () => {
                           </div>
                           <div className="vehicle-detail">
                             <strong>VIN:</strong>
-                            <span className="vin-code">{vehicle.vin}</span>
+                            <span className="vin-code">{vehicle.vin || 'N/A'}</span>
                           </div>
                           <div className="vehicle-detail">
                             <strong>Màu sắc:</strong>
-                            <span>{vehicle.color}</span>
+                            <span>{vehicle.color || 'N/A'}</span>
                           </div>
                           <div className="vehicle-detail">
                             <strong>Km đã chạy:</strong>
-                            <span>{vehicle.mileage.toLocaleString()} km</span>
+                            <span>{vehicle.mileage ? vehicle.mileage.toLocaleString() + ' km' : 'N/A'}</span>
                           </div>
                         </div>
                         <div className="vehicle-actions">

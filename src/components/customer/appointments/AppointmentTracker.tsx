@@ -4,6 +4,11 @@ import { useAuth } from '../../../context/AuthContext';
 import { ServiceAppointment, AppointmentStatus, Vehicle, ServiceType, ServiceCenter } from '../../../types';
 import { MDButton } from '../../ui';
 import './AppointmentTracker.css';
+import appointmentService from '../../../services/appointmentService';
+import vehicleService from '../../../services/vehicleService';
+import servicePackageService from '../../../services/servicePackageService';
+import serviceCenterService from '../../../services/serviceCenterService';
+import customerService from '../../../services/customerService';
 
 interface AppointmentTrackerProps {
   appointmentId?: string;
@@ -24,12 +29,15 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
   const [centers, setCenters] = useState<ServiceCenter[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState<ServiceAppointment | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAppointments();
-    loadVehicles();
-    loadServices();
-    loadCenters();
+    if (user?.id) {
+      loadAppointments();
+      loadVehicles();
+      loadServices();
+      loadCenters();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -46,149 +54,112 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
     if (!user?.id) return;
 
     try {
-      // Mock appointments data
-      const mockAppointments: ServiceAppointment[] = [
-        {
-          id: 'app1',
-          customerId: user.id,
-          vehicleId: 'vehicle1',
-          serviceTypeId: 'service1',
-          technicianId: 'tech1',
-          scheduledDate: new Date('2024-10-01T09:00:00'),
-          status: AppointmentStatus.CONFIRMED,
-          priority: 'medium' as any,
-          notes: 'Kiểm tra pin và thay dầu',
-          estimatedCompletion: new Date('2024-10-01T11:00:00'),
-          createdAt: new Date('2024-09-25'),
-          updatedAt: new Date('2024-09-25')
-        },
-        {
-          id: 'app2',
-          customerId: user.id,
-          vehicleId: 'vehicle2',
-          serviceTypeId: 'service2',
-          scheduledDate: new Date('2024-09-28T14:00:00'),
-          status: AppointmentStatus.IN_PROGRESS,
-          priority: 'high' as any,
-          notes: 'Bảo dưỡng định kỳ 15000km',
-          estimatedCompletion: new Date('2024-09-28T16:30:00'),
-          createdAt: new Date('2024-09-20'),
-          updatedAt: new Date('2024-09-28')
-        },
-        {
-          id: 'app3',
-          customerId: user.id,
-          vehicleId: 'vehicle1',
-          serviceTypeId: 'service3',
-          scheduledDate: new Date('2024-09-15T10:00:00'),
-          status: AppointmentStatus.COMPLETED,
-          priority: 'low' as any,
-          notes: 'Cập nhật phần mềm',
-          estimatedCompletion: new Date('2024-09-15T10:30:00'),
-          actualCompletion: new Date('2024-09-15T10:25:00'),
-          createdAt: new Date('2024-09-10'),
-          updatedAt: new Date('2024-09-15')
-        }
-      ];
-
-      setAppointments(mockAppointments);
+      setLoading(true);
+      
+      // Get all appointments and filter by user's vehicles
+      const { appointments: allAppointments } = await appointmentService.getAllAppointments();
+      console.log('📋 All appointments from API:', allAppointments);
+      console.log('📋 Total appointments:', allAppointments.length);
+      
+      // Get user's vehicles to filter appointments
+      const myVehicles = await vehicleService.getMyVehicles();
+      console.log('🚗 My vehicles:', myVehicles);
+      console.log('🚗 My vehicle IDs:', myVehicles.map(v => v.id));
+      
+      const myVehicleIds = myVehicles.map(v => v.id);
+      
+      // Debug: Check the structure of appointments
+      console.log('🔍 First appointment structure:', allAppointments[0]);
+      
+      // Filter appointments for user's vehicles
+      // Backend returns vehicle as object, so we need to access vehicle.id
+      const myAppointments = allAppointments.filter((apt: any) => {
+        const vehicleId = apt.vehicle?.id || apt.vehicleId;
+        console.log('🔍 Checking appointment:', { vehicleId, myVehicleIds });
+        return myVehicleIds.includes(vehicleId);
+      });
+      console.log('✅ My appointments (filtered):', myAppointments);
+      console.log('✅ Number of my appointments:', myAppointments.length);
+      
+      // Convert API appointments to ServiceAppointment format
+      const convertedAppointments: ServiceAppointment[] = myAppointments.map((apt: any) => ({
+        id: apt.id,
+        customerId: apt.customerId,
+        vehicleId: apt.vehicleId,
+        serviceTypeId: apt.servicePackageId,
+        serviceCenterId: apt.serviceCenterId,
+        scheduledDate: new Date(apt.appointmentDate),
+        status: apt.status as AppointmentStatus,
+        priority: 'medium' as any,
+        notes: apt.notes,
+        estimatedCompletion: apt.estimatedCompletion ? new Date(apt.estimatedCompletion) : undefined,
+        actualCompletion: apt.actualCompletion ? new Date(apt.actualCompletion) : undefined,
+        createdAt: apt.createdAt ? new Date(apt.createdAt) : new Date(),
+        updatedAt: apt.updatedAt ? new Date(apt.updatedAt) : new Date()
+      }));
+      
+      console.log('🎯 Final converted appointments:', convertedAppointments);
+      setAppointments(convertedAppointments);
       setLoading(false);
-    } catch (error) {
-      console.error('Error loading appointments:', error);
+    } catch (error: any) {
+      console.error('❌ Error in loadAppointments:', error);
+      setAppointments([]);
       setLoading(false);
     }
   };
 
-  const loadVehicles = () => {
-    // Mock vehicles
-    const mockVehicles: Vehicle[] = [
-      {
-        id: 'vehicle1',
-        customerId: user?.id || '',
-        make: 'VinFast',
-        model: 'VF8',
-        year: 2023,
-        vin: 'VF8ABC123456789',
-        licensePlate: '30A-123.45',
-        color: 'Đen',
-        batteryCapacity: 87.7,
-        mileage: 14800,
-        purchaseDate: new Date('2023-05-15'),
-        warrantyExpiration: new Date('2026-05-15'),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: 'vehicle2',
-        customerId: user?.id || '',
-        make: 'VinFast',
-        model: 'VF9',
-        year: 2023,
-        vin: 'VF9XYZ987654321',
-        licensePlate: '30B-678.90',
-        color: 'Trắng',
-        batteryCapacity: 123,
-        mileage: 8500,
-        purchaseDate: new Date('2023-08-10'),
-        warrantyExpiration: new Date('2026-08-10'),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ];
-    setVehicles(mockVehicles);
+  const loadVehicles = async () => {
+    try {
+      const data = await vehicleService.getMyVehicles();
+      setVehicles(data);
+    } catch (error) {
+      console.error('Error loading vehicles:', error);
+      setVehicles([]);
+    }
   };
 
-  const loadServices = () => {
-    // Mock services
-    const mockServices: ServiceType[] = [
-      {
-        id: 'service1',
-        name: 'Bảo dưỡng định kỳ',
-        description: 'Kiểm tra và bảo dưỡng toàn diện xe điện',
-        basePrice: 500000,
-        estimatedDuration: 120,
-        category: 'regular_maintenance' as any,
-        isActive: true
-      },
-      {
-        id: 'service2',
-        name: 'Kiểm tra pin',
-        description: 'Kiểm tra tình trạng và hiệu suất pin xe điện',
-        basePrice: 300000,
-        estimatedDuration: 60,
-        category: 'battery_service' as any,
-        isActive: true
-      },
-      {
-        id: 'service3',
-        name: 'Cập nhật phần mềm',
-        description: 'Cập nhật firmware và phần mềm hệ thống',
-        basePrice: 100000,
-        estimatedDuration: 30,
-        category: 'software_update' as any,
-        isActive: true
-      }
-    ];
-    setServices(mockServices);
+  const loadServices = async () => {
+    try {
+      const data = await servicePackageService.getAllServicePackages();
+      // Convert service packages to ServiceType format
+      const convertedServices: ServiceType[] = data.map((pkg: any) => ({
+        id: pkg.id,
+        name: pkg.name,
+        description: pkg.description,
+        basePrice: pkg.price,
+        estimatedDuration: pkg.durationMinutes,
+        category: 'regular_maintenance' as any, // Default category
+        isActive: pkg.isActive
+      }));
+      setServices(convertedServices);
+    } catch (error) {
+      console.error('Error loading services:', error);
+      setServices([]);
+    }
   };
 
-  const loadCenters = () => {
-    // Mock centers
-    const mockCenters: ServiceCenter[] = [
-      {
-        id: 'center1',
-        name: 'VinFast Hà Nội',
-        address: 'Số 123, đường Láng, phường Đống Đa, thành phố Hà Nội',
-        phone: '0243-123-4567',
-        email: 'hanoi@vinfast.vn',
+  const loadCenters = async () => {
+    try {
+      const response = await serviceCenterService.getAllServiceCenters({ isActive: true });
+      // Convert backend ServiceCenter to frontend ServiceCenter
+      const convertedCenters: ServiceCenter[] = response.serviceCenters.map((center: any) => ({
+        id: center.id,
+        name: center.name,
+        address: center.address,
+        phone: center.phone || '',
+        email: center.email || '',
         operatingHours: [],
-        services: ['maintenance', 'repair'],
-        isActive: true,
-        rating: 4.8,
-        totalReviews: 245
-      }
-    ];
-    setCenters(mockCenters);
+        services: center.services || [],
+        isActive: center.isActive || true,
+        rating: center.rating || 0,
+        totalReviews: center.totalReviews || 0,
+        coordinates: { lat: 0, lng: 0 }
+      }));
+      setCenters(convertedCenters);
+    } catch (error) {
+      console.error('Error loading service centers:', error);
+      setCenters([]);
+    }
   };
 
   const getVehicleInfo = (vehicleId: string) => {
@@ -259,20 +230,16 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
   const handleCancelAppointment = async (appointmentId: string) => {
     if (window.confirm('Bạn có chắc chắn muốn hủy lịch dịch vụ này?')) {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await appointmentService.cancelAppointment(appointmentId);
         
-        setAppointments(prev => 
-          prev.map(app => 
-            app.id === appointmentId 
-              ? { ...app, status: AppointmentStatus.CANCELLED, updatedAt: new Date() }
-              : app
-          )
-        );
+        // Reload appointments
+        await loadAppointments();
         
         if (onStatusChange) {
           onStatusChange(AppointmentStatus.CANCELLED);
         }
+        
+        alert('Đã hủy lịch dịch vụ thành công!');
       } catch (error) {
         console.error('Error cancelling appointment:', error);
         alert('Có lỗi xảy ra khi hủy lịch dịch vụ này');
@@ -311,7 +278,7 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
             appointment={selectedAppointment}
             vehicle={getVehicleInfo(selectedAppointment.vehicleId)}
             service={getServiceInfo(selectedAppointment.serviceTypeId)}
-            center={getCenterInfo('center1')}
+            center={getCenterInfo(selectedAppointment.serviceCenterId || '')}
             onCancel={handleCancelAppointment}
             onReschedule={handleReschedule}
             detailed={true}
@@ -335,7 +302,7 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
                   appointment={appointment}
                   vehicle={getVehicleInfo(appointment.vehicleId)}
                   service={getServiceInfo(appointment.serviceTypeId)}
-                  center={getCenterInfo('center1')}
+                  center={getCenterInfo(appointment.serviceCenterId || '')}
                   onCancel={handleCancelAppointment}
                   onReschedule={handleReschedule}
                   detailed={false}

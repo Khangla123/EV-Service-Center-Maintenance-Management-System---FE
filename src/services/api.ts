@@ -1,0 +1,59 @@
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
+
+// Base API URL - có thể thay đổi tùy theo environment
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+// Tạo axios instance
+const api: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});
+
+// Request interceptor - thêm token vào header
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = localStorage.getItem('accessToken');
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error: AxiosError) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor - xử lý lỗi
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  async (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      // Token hết hạn hoặc không hợp lệ
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      
+      // Redirect về login page
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+
+// Helper function để xử lý error message
+export const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.message || 'Có lỗi xảy ra';
+  }
+  return 'Có lỗi xảy ra';
+};

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Search, 
@@ -12,73 +12,37 @@ import {
   Phone,
   Shield
 } from 'lucide-react';
+import { staffService, Staff } from '../../../services';
 import './StaffManagement.css';
-
-interface Staff {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  role: 'staff' | 'technician';
-  status: 'active' | 'inactive';
-  joinDate: string;
-  avatar?: string;
-}
 
 const StaffManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState<'all' | 'staff' | 'technician'>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterRole, setFilterRole] = useState<'all' | 'STAFF' | 'TECHNICIAN'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'ACTIVE' | 'INACTIVE'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [staffList] = useState<Staff[]>([
-    {
-      id: '1',
-      firstName: 'Lê',
-      lastName: 'Văn Nhân',
-      email: 'staff@evservice.vn',
-      phone: '0901234567',
-      role: 'staff',
-      status: 'active',
-      joinDate: '2024-01-01'
-    },
-    {
-      id: '2',
-      firstName: 'Phạm',
-      lastName: 'Thị Hoa',
-      email: 'staff2@evservice.vn',
-      phone: '0978123456',
-      role: 'staff',
-      status: 'active',
-      joinDate: '2024-01-10'
-    },
-    {
-      id: '3',
-      firstName: 'Hoàng',
-      lastName: 'Văn Kỹ',
-      email: 'technician@evservice.vn',
-      phone: '0965432109',
-      role: 'technician',
-      status: 'active',
-      joinDate: '2024-01-05'
-    },
-    {
-      id: '4',
-      firstName: 'Đỗ',
-      lastName: 'Văn Thuật',
-      email: 'technician2@evservice.vn',
-      phone: '0943210987',
-      role: 'technician',
-      status: 'active',
-      joinDate: '2024-01-08'
+  useEffect(() => {
+    loadStaffList();
+  }, []);
+
+  const loadStaffList = async () => {
+    try {
+      setLoading(true);
+      const staff = await staffService.getAllStaff();
+      setStaffList(staff);
+    } catch (error) {
+      console.error('Error loading staff:', error);
+      alert('Không thể tải danh sách nhân viên');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const filteredStaff = staffList.filter(staff => {
     const matchesSearch = 
-      staff.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      staff.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       staff.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'all' || staff.role === filterRole;
     const matchesStatus = filterStatus === 'all' || staff.status === filterStatus;
@@ -94,14 +58,32 @@ const StaffManagement: React.FC = () => {
     console.log('Edit staff:', staffId);
   };
 
-  const handleDeleteStaff = (staffId: string) => {
+  const handleDeleteStaff = async (staffId: string) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
-      console.log('Delete staff:', staffId);
+      try {
+        await staffService.deleteStaff(staffId);
+        alert('Xóa nhân viên thành công');
+        loadStaffList();
+      } catch (error) {
+        console.error('Error deleting staff:', error);
+        alert('Không thể xóa nhân viên');
+      }
     }
   };
 
-  const handleToggleStatus = (staffId: string) => {
-    console.log('Toggle status:', staffId);
+  const handleToggleStatus = async (staffId: string) => {
+    const staff = staffList.find(s => s.id === staffId);
+    if (!staff) return;
+    
+    const newStatus = staff.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    try {
+      await staffService.updateStaff(staffId, { status: newStatus });
+      alert('Cập nhật trạng thái thành công');
+      loadStaffList();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Không thể cập nhật trạng thái');
+    }
   };
 
   return (
@@ -133,14 +115,14 @@ const StaffManagement: React.FC = () => {
           <Filter size={18} />
           <select value={filterRole} onChange={(e) => setFilterRole(e.target.value as any)}>
             <option value="all">Tất cả vai trò</option>
-            <option value="staff">Nhân viên</option>
-            <option value="technician">Kỹ thuật viên</option>
+            <option value="STAFF">Nhân viên</option>
+            <option value="TECHNICIAN">Kỹ thuật viên</option>
           </select>
 
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}>
             <option value="all">Tất cả trạng thái</option>
-            <option value="active">Đang làm việc</option>
-            <option value="inactive">Ngừng làm việc</option>
+            <option value="ACTIVE">Đang làm việc</option>
+            <option value="INACTIVE">Ngừng làm việc</option>
           </select>
         </div>
       </div>
@@ -153,7 +135,7 @@ const StaffManagement: React.FC = () => {
           </div>
           <div className="stat-info">
             <p className="stat-label">Tổng nhân viên</p>
-            <p className="stat-value">{staffList.filter(s => s.role === 'staff').length}</p>
+            <p className="stat-value">{staffList.filter(s => s.role === 'STAFF').length}</p>
           </div>
         </div>
         <div className="stat-item">
@@ -162,7 +144,7 @@ const StaffManagement: React.FC = () => {
           </div>
           <div className="stat-info">
             <p className="stat-label">Kỹ thuật viên</p>
-            <p className="stat-value">{staffList.filter(s => s.role === 'technician').length}</p>
+            <p className="stat-value">{staffList.filter(s => s.role === 'TECHNICIAN').length}</p>
           </div>
         </div>
         <div className="stat-item">
@@ -171,97 +153,110 @@ const StaffManagement: React.FC = () => {
           </div>
           <div className="stat-info">
             <p className="stat-label">Đang làm việc</p>
-            <p className="stat-value">{staffList.filter(s => s.status === 'active').length}</p>
+            <p className="stat-value">{staffList.filter(s => s.status === 'ACTIVE').length}</p>
           </div>
         </div>
       </div>
 
       {/* Staff Table */}
       <div className="staff-table-container">
-        <table className="staff-table">
-          <thead>
-            <tr>
-              <th>Nhân viên</th>
-              <th>Email</th>
-              <th>Số điện thoại</th>
-              <th>Vai trò</th>
-              <th>Trạng thái</th>
-              <th>Ngày vào làm</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredStaff.map((staff) => (
-              <tr key={staff.id}>
-                <td>
-                  <div className="staff-info">
-                    <div className="staff-avatar">
-                      {staff.firstName.charAt(0)}{staff.lastName.charAt(0)}
-                    </div>
-                    <div className="staff-details">
-                      <p className="staff-name">{staff.lastName} {staff.firstName}</p>
-                      <p className="staff-id">ID: {staff.id}</p>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div className="contact-info">
-                    <Mail size={14} />
-                    {staff.email}
-                  </div>
-                </td>
-                <td>
-                  <div className="contact-info">
-                    <Phone size={14} />
-                    {staff.phone}
-                  </div>
-                </td>
-                <td>
-                  <span className={`role-badge ${staff.role}`}>
-                    {staff.role === 'staff' ? 'Nhân viên' : 'Kỹ thuật viên'}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className={`status-badge ${staff.status}`}
-                    onClick={() => handleToggleStatus(staff.id)}
-                  >
-                    {staff.status === 'active' ? (
-                      <>
-                        <UserCheck size={14} />
-                        Đang làm
-                      </>
-                    ) : (
-                      <>
-                        <UserX size={14} />
-                        Ngừng làm
-                      </>
-                    )}
-                  </button>
-                </td>
-                <td>{new Date(staff.joinDate).toLocaleDateString('vi-VN')}</td>
-                <td>
-                  <div className="action-buttons">
-                    <button 
-                      className="btn-action btn-edit"
-                      onClick={() => handleEditStaff(staff.id)}
-                      title="Chỉnh sửa"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      className="btn-action btn-delete"
-                      onClick={() => handleDeleteStaff(staff.id)}
-                      title="Xóa"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+        {loading ? (
+          <div className="loading-state">
+            <p>Đang tải danh sách nhân viên...</p>
+          </div>
+        ) : (
+          <table className="staff-table">
+            <thead>
+              <tr>
+                <th>Nhân viên</th>
+                <th>Email</th>
+                <th>Số điện thoại</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Mã nhân viên</th>
+                <th>Thao tác</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredStaff.map((staff) => {
+                const nameParts = staff.fullName.split(' ');
+                const initials = nameParts.length >= 2 
+                  ? nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)
+                  : staff.fullName.substring(0, 2).toUpperCase();
+                
+                return (
+                  <tr key={staff.id}>
+                    <td>
+                      <div className="staff-info">
+                        <div className="staff-avatar">
+                          {initials}
+                        </div>
+                        <div className="staff-details">
+                          <p className="staff-name">{staff.fullName}</p>
+                          <p className="staff-id">{staff.employeeCode || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="contact-info">
+                        <Mail size={14} />
+                        {staff.email}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="contact-info">
+                        <Phone size={14} />
+                        {staff.phone}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`role-badge ${staff.role.toLowerCase()}`}>
+                        {staff.role === 'STAFF' ? 'Nhân viên' : 'Kỹ thuật viên'}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className={`status-badge ${staff.status.toLowerCase()}`}
+                        onClick={() => handleToggleStatus(staff.id)}
+                      >
+                        {staff.status === 'ACTIVE' ? (
+                          <>
+                            <UserCheck size={14} />
+                            Đang làm
+                          </>
+                        ) : (
+                          <>
+                            <UserX size={14} />
+                            Ngừng làm
+                          </>
+                        )}
+                      </button>
+                    </td>
+                    <td>{staff.employeeCode || 'N/A'}</td>
+                    <td>
+                      <div className="action-buttons">
+                        <button 
+                          className="btn-action btn-edit"
+                          onClick={() => handleEditStaff(staff.id)}
+                          title="Chỉnh sửa"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button 
+                          className="btn-action btn-delete"
+                          onClick={() => handleDeleteStaff(staff.id)}
+                          title="Xóa"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {filteredStaff.length === 0 && (

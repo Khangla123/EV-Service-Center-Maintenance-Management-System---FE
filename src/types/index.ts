@@ -68,6 +68,7 @@ export interface ServiceAppointment {
   customerId: string;
   vehicleId: string;
   serviceTypeId: string;
+  serviceCenterId?: string;
   technicianId?: string;
   scheduledDate: Date;
   status: AppointmentStatus;

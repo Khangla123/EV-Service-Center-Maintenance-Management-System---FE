@@ -8,56 +8,28 @@ import MaintenanceHistory from './maintenance/MaintenanceHistory';
 import CostManagement from './cost/CostManagement';
 import OnlinePayment from './payment/OnlinePayment';
 import VehicleManagement from './vehicles/VehicleManagement';
+import { vehicleService, appointmentService } from '../../services';
 import './CustomerDashboard.css';
 
 const CustomerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // State for dashboard data
+  const [vehicleCount, setVehicleCount] = useState(0);
+  const [appointmentCount, setAppointmentCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [monthlyCost, setMonthlyCost] = useState('0');
+  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
   const stats = [
-    { label: 'Xe của tôi', value: '2', icon: Car, gradient: 'from-blue-500 to-blue-600', link: '/customer/vehicles' },
-    { label: 'Lịch dịch vụ', value: '3', icon: Calendar, gradient: 'from-green-500 to-green-600', link: '/customer/appointments' },
-    { label: 'Hoàn tất', value: '12', icon: CheckCircle, gradient: 'from-purple-500 to-purple-600', link: '/customer/history' },
-    { label: 'Chi phí tháng', value: '2.5M', icon: CreditCard, gradient: 'from-orange-500 to-orange-600', link: '/customer/costs' }
-  ];
-
-  const appointments = [
-    {
-      id: 1,
-      vehicle: 'VinFast VF8',
-      service: 'Bảo dưỡng định kỳ',
-      date: '2025-01-20',
-      time: '09:00',
-      status: 'confirmed',
-      priority: 'high'
-    },
-    {
-      id: 2,
-      vehicle: 'VinFast VF5',
-      service: 'Kiểm tra pin',
-      date: '2025-01-22',
-      time: '14:00',
-      status: 'pending',
-      priority: 'medium'
-    }
-  ];
-
-  const recentActivity = [
-    {
-      id: 1,
-      action: 'Bảo dưỡng định kỳ hoàn tất',
-      vehicle: 'VinFast VF8',
-      date: '2025-01-15',
-      type: 'maintenance'
-    },
-    {
-      id: 2,
-      action: 'Thanh toán hóa đơn',
-      amount: '1.2M VND',
-      date: '2025-01-14',
-      type: 'payment'
-    }
+    { label: 'Xe của tôi', value: vehicleCount.toString(), icon: Car, gradient: 'from-blue-500 to-blue-600', link: '/customer/vehicles' },
+    { label: 'Lịch dịch vụ', value: appointmentCount.toString(), icon: Calendar, gradient: 'from-green-500 to-green-600', link: '/customer/appointments' },
+    { label: 'Hoàn tất', value: completedCount.toString(), icon: CheckCircle, gradient: 'from-purple-500 to-purple-600', link: '/customer/history' },
+    { label: 'Chi phí tháng', value: monthlyCost, icon: CreditCard, gradient: 'from-orange-500 to-orange-600', link: '/customer/costs' }
   ];
 
   const menuItems = [
@@ -71,14 +43,149 @@ const CustomerDashboard: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Load notifications or user data
-    const loadUserData = async () => {
-      // Mock loading data
-      await new Promise(resolve => setTimeout(resolve, 500));
-    };
-    
-    loadUserData();
+    loadDashboardData();
   }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Get customer ID from localStorage or auth context
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        console.error('No user found in localStorage');
+        setLoading(false);
+        return;
+      }
+      
+      const user = JSON.parse(userStr);
+      const customerId = user.id;
+      
+      console.log('Dashboard - User info:', user);
+      console.log('Dashboard - Customer ID:', customerId);
+
+      // Load vehicles count
+      try {
+        const vehiclesResponse = await vehicleService.getMyVehicles();
+        setVehicleCount(vehiclesResponse.length || 0);
+      } catch (error) {
+        console.error('Error loading vehicles:', error);
+        setVehicleCount(0);
+      }
+
+      // Load appointments
+      try {
+        // Try to get appointments with customerId filter
+        const appointmentsResponse = await appointmentService.getAllAppointments({
+          customerId: customerId
+        });
+        const allAppointments = appointmentsResponse.appointments || [];
+        
+        console.log('Dashboard - Customer ID:', customerId);
+        console.log('Dashboard - All appointments:', allAppointments);
+        console.log('Dashboard - Appointments count:', allAppointments.length);
+        
+        // Count total appointments (excluding cancelled)
+        const activeAppointments = allAppointments.filter(
+          (apt: any) => apt.status !== 'CANCELLED'
+        );
+        setAppointmentCount(activeAppointments.length);
+
+        // Count completed appointments
+        const completed = allAppointments.filter(
+          (apt: any) => apt.status === 'COMPLETED'
+        );
+        setCompletedCount(completed.length);
+
+        // Get upcoming appointments (PENDING or CONFIRMED, future dates)
+        const now = new Date();
+        console.log('Dashboard - Current date:', now);
+        
+        const upcoming = allAppointments
+          .filter((apt: any) => {
+            const aptDate = new Date(apt.appointmentDate);
+            console.log(`Dashboard - Checking appointment ${apt.id}:`, {
+              status: apt.status,
+              date: aptDate,
+              isFuture: aptDate >= now,
+              isValidStatus: apt.status === 'PENDING' || apt.status === 'CONFIRMED'
+            });
+            return (
+              (apt.status === 'PENDING' || apt.status === 'CONFIRMED') &&
+              aptDate >= now
+            );
+          })
+          .sort((a: any, b: any) => {
+            return new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime();
+          })
+          .slice(0, 3); // Take first 3 upcoming appointments
+
+        console.log('Dashboard - Upcoming appointments:', upcoming);
+        
+        // If no upcoming appointments, show the most recent ones
+        if (upcoming.length === 0 && allAppointments.length > 0) {
+          const recentAppointments = allAppointments
+            .sort((a: any, b: any) => {
+              return new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime();
+            })
+            .slice(0, 3);
+          console.log('Dashboard - No upcoming, showing recent:', recentAppointments);
+          setUpcomingAppointments(recentAppointments);
+        } else {
+          setUpcomingAppointments(upcoming);
+        }
+
+        // Calculate monthly cost (from completed appointments this month)
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const thisMonthCompleted = allAppointments.filter((apt: any) => {
+          const aptDate = new Date(apt.appointmentDate);
+          return (
+            apt.status === 'COMPLETED' &&
+            aptDate.getMonth() === currentMonth &&
+            aptDate.getFullYear() === currentYear
+          );
+        });
+        
+        // Estimate cost (assume average 500k per service)
+        const estimatedCost = thisMonthCompleted.length * 500000;
+        setMonthlyCost(estimatedCost >= 1000000 
+          ? `${(estimatedCost / 1000000).toFixed(1)}M` 
+          : `${Math.round(estimatedCost / 1000)}K`
+        );
+
+        // Get recent activity (last 5 completed appointments)
+        const recentCompleted = allAppointments
+          .filter((apt: any) => apt.status === 'COMPLETED')
+          .sort((a: any, b: any) => {
+            const dateA = new Date(a.actualCompletion || a.appointmentDate);
+            const dateB = new Date(b.actualCompletion || b.appointmentDate);
+            return dateB.getTime() - dateA.getTime();
+          })
+          .slice(0, 5)
+          .map((apt: any) => ({
+            id: apt.id,
+            action: `${apt.servicePackageName || 'Dịch vụ'} hoàn tất`,
+            vehicle: `${apt.vehicleModel || 'N/A'} - ${apt.vehicleLicensePlate || ''}`,
+            date: new Date(apt.actualCompletion || apt.appointmentDate).toLocaleDateString('vi-VN'),
+            type: 'maintenance'
+          }));
+        
+        setRecentActivity(recentCompleted);
+      } catch (error) {
+        console.error('Error loading appointments:', error);
+        setAppointmentCount(0);
+        setCompletedCount(0);
+        setMonthlyCost('0');
+        setUpcomingAppointments([]);
+        setRecentActivity([]);
+      }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -206,24 +313,36 @@ const CustomerDashboard: React.FC = () => {
                     </MDButton>
                   </div>
                   <div className="appointments-list">
-                    {appointments.map((appointment) => (
-                      <div key={appointment.id} className={`appointment-card ${getPriorityColor(appointment.priority)}`}>
-                        <div className="appointment-content">
-                          <div className="appointment-info">
-                            <h4>{appointment.vehicle}</h4>
-                            <p>{appointment.service}</p>
-                            <div className="appointment-time">
-                              <Clock className="h-4 w-4" />
-                              <span>{appointment.date} - {appointment.time}</span>
+                    {loading ? (
+                      <div className="empty-state">
+                        <p>Đang tải dữ liệu...</p>
+                      </div>
+                    ) : upcomingAppointments.length > 0 ? (
+                      upcomingAppointments.map((appointment) => {
+                        const aptDate = new Date(appointment.appointmentDate);
+                        const status = appointment.status.toLowerCase();
+                        
+                        return (
+                          <div key={appointment.id} className={`appointment-card border-l-blue-500`}>
+                            <div className="appointment-content">
+                              <div className="appointment-info">
+                                <h4>{appointment.vehicleModel || 'N/A'} - {appointment.vehicleLicensePlate || ''}</h4>
+                                <p>{appointment.servicePackageName || 'Dịch vụ'}</p>
+                                <div className="appointment-time">
+                                  <Clock className="h-4 w-4" />
+                                  <span>
+                                    {aptDate.toLocaleDateString('vi-VN')} - {aptDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className={`appointment-status ${getStatusColor(status)}`}>
+                                {getStatusText(status)}
+                              </div>
                             </div>
                           </div>
-                          <div className={`appointment-status ${getStatusColor(appointment.status)}`}>
-                            {getStatusText(appointment.status)}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {appointments.length === 0 && (
+                        );
+                      })
+                    ) : (
                       <div className="empty-state">
                         <Calendar className="h-12 w-12" />
                         <p>Không có lịch dịch vụ nào</p>
@@ -262,22 +381,33 @@ const CustomerDashboard: React.FC = () => {
                   <div className="recent-activity">
                     <h3>Hoạt động gần đây</h3>
                     <div className="activity-list">
-                      {recentActivity.map((activity) => (
-                        <div key={activity.id} className="activity-item">
-                          <div className={`activity-icon ${activity.type === 'maintenance' ? 'bg-blue-100' : 'bg-green-100'}`}>
-                            {activity.type === 'maintenance' ? (
-                              <Car className="h-4 w-4 text-blue-600" />
-                            ) : (
-                              <CreditCard className="h-4 w-4 text-green-600" />
-                            )}
-                          </div>
-                          <div className="activity-content">
-                            <p className="activity-action">{activity.action}</p>
-                            <p className="activity-detail">{activity.vehicle || activity.amount}</p>
-                            <p className="activity-date">{activity.date}</p>
-                          </div>
+                      {loading ? (
+                        <div className="empty-state">
+                          <p>Đang tải...</p>
                         </div>
-                      ))}
+                      ) : recentActivity.length > 0 ? (
+                        recentActivity.map((activity) => (
+                          <div key={activity.id} className="activity-item">
+                            <div className={`activity-icon ${activity.type === 'maintenance' ? 'bg-blue-100' : 'bg-green-100'}`}>
+                              {activity.type === 'maintenance' ? (
+                                <Car className="h-4 w-4 text-blue-600" />
+                              ) : (
+                                <CreditCard className="h-4 w-4 text-green-600" />
+                              )}
+                            </div>
+                            <div className="activity-content">
+                              <p className="activity-action">{activity.action}</p>
+                              <p className="activity-detail">{activity.vehicle || activity.amount}</p>
+                              <p className="activity-date">{activity.date}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="empty-state">
+                          <History className="h-8 w-8" />
+                          <p>Chưa có hoạt động nào</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

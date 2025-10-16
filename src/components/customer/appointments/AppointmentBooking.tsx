@@ -4,6 +4,11 @@ import { useAuth } from '../../../context/AuthContext';
 import { ServiceCenter, ServiceType, Vehicle, AppointmentFormData, Priority, ServiceCategory } from '../../../types';
 import { MDButton } from '../../ui';
 import './AppointmentBooking.css';
+import vehicleService from '../../../services/vehicleService';
+import appointmentService from '../../../services/appointmentService';
+import customerService from '../../../services/customerService';
+import serviceCenterService from '../../../services/serviceCenterService';
+import servicePackageService from '../../../services/servicePackageService';
 
 interface AppointmentBookingProps {
   onBookingComplete?: (appointmentId: string) => void;
@@ -23,6 +28,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
   // State
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const [serviceCenters, setServiceCenters] = useState<ServiceCenter[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -42,11 +48,21 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
 
   // Load initial data
   useEffect(() => {
+    loadCustomerProfile();
     loadServiceCenters();
     loadServiceTypes();
     loadVehicles();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadCustomerProfile = async () => {
+    try {
+      const customer = await customerService.getMyProfile();
+      setCustomerId(customer.id);
+    } catch (err) {
+      console.error('Error loading customer profile:', err);
+    }
+  };
 
   // Handle pre-selected vehicle
   useEffect(() => {
@@ -59,228 +75,135 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
     }
   }, [preSelectedVehicleId, vehicles]);
 
-  const loadServiceCenters = () => {
-    // Mock service centers
-    const mockCenters: ServiceCenter[] = [
-      {
-        id: 'center1',
-        name: 'VinFast Bãi Cháy',
-        address: 'Số 950, đường Hạ Long, phường Bãi Cháy, tỉnh Quảng Ninh',
-        phone: '0203-123-4567',
-        email: 'quangninh@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection', 'battery'],
-        isActive: true,
-        rating: 4.8,
-        totalReviews: 178,
-        coordinates: { lat: 20.9568, lng: 107.0433 }
-      },
-      {
-        id: 'center2',
-        name: 'VinFast Trường Chinh',
-        address: 'Số 162, phố Trường Chinh, phường Kim Liên, thành phố Hà Nội',
-        phone: '0243-123-4567',
-        email: 'hanoi@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection'],
-        isActive: true,
-        rating: 4.8,
-        totalReviews: 245,
-        coordinates: { lat: 21.0285, lng: 105.8542 }
-      },
-      {
-        id: 'center3',
-        name: 'VinFast Hải Thành',
-        address: 'Số 591, đường Hùng Vương, phường Quy Nhơn Bắc, tỉnh Gia Lai',
-        phone: '0257-123-4567',
-        email: 'gialai@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection'],
-        isActive: true,
-        rating: 4.7,
-        totalReviews: 156,
-        coordinates: { lat: 13.7830, lng: 109.2198 }
-      },
-      {
-        id: 'center4',
-        name: 'VinFast Sông Cầu',
-        address: 'Số 92, đường Phạm Văn Đồng, phường Sông Cầu, tỉnh Đắk Lắk',
-        phone: '0262-123-4567',
-        email: 'daklak@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection'],
-        isActive: true,
-        rating: 4.6,
-        totalReviews: 142,
-        coordinates: { lat: 12.6676, lng: 108.0432 }
-      },
-      {
-        id: 'center5',
-        name: 'VinFast Phú Mỹ Hưng',
-        address: 'Số 1489, đường Nguyễn Văn Linh, phường Tân Hưng, thành phố Hồ Chí Minh',
-        phone: '028-987-6543',
-        email: 'hcmc@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection', 'battery'],
-        isActive: true,
-        rating: 4.9,
-        totalReviews: 189,
-        coordinates: { lat: 10.7769, lng: 106.7009 }
-      },
-      {
-        id: 'center6',
-        name: 'VinFast Võ Thị Sáu',
-        address: 'Số 468, đường Võ Thị Sáu, phường Bạc Liêu, tỉnh Cà Mau',
-        phone: '0290-123-4567',
-        email: 'camau@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection'],
-        isActive: true,
-        rating: 4.5,
-        totalReviews: 128,
-        coordinates: { lat: 9.1768, lng: 105.1524 }
+  // Generate time slots when entering step 4
+  useEffect(() => {
+    if (step === 4 && selectedCenter) {
+      // Set today's date if not already set
+      if (!formData.scheduledDate) {
+        const today = new Date().toISOString().split('T')[0];
+        setFormData(prev => ({ ...prev, scheduledDate: today }));
+        const slots = generateTimeSlots(today, selectedCenter);
+        setAvailableTimeSlots(slots);
+      } else {
+        // Generate time slots for existing date
+        const slots = generateTimeSlots(formData.scheduledDate, selectedCenter);
+        setAvailableTimeSlots(slots);
       }
-    ];
-    setServiceCenters(mockCenters);
+    }
+  }, [step, selectedCenter]);
+
+  const loadServiceCenters = async () => {
+    try {
+      const response = await serviceCenterService.getAllServiceCenters({ isActive: true });
+      
+      // Convert backend ServiceCenter to frontend ServiceCenter
+      const centers: ServiceCenter[] = response.serviceCenters.map(center => {
+        // Parse operatingHours - backend có thể trả về string hoặc object
+        let parsedHours = null;
+        if (center.operatingHours) {
+          // Nếu đã là object (PostgreSQL JSONB tự parse)
+          if (typeof center.operatingHours === 'object') {
+            parsedHours = center.operatingHours;
+          } 
+          // Nếu là string, parse JSON
+          else if (typeof center.operatingHours === 'string') {
+            try {
+              parsedHours = JSON.parse(center.operatingHours);
+            } catch (e) {
+              // Nếu parse lỗi, có thể là format đơn giản "08:00-18:00"
+              // Tạo default schedule cho tất cả các ngày
+              const timeRange = center.operatingHours;
+              parsedHours = {
+                monday: timeRange,
+                tuesday: timeRange,
+                wednesday: timeRange,
+                thursday: timeRange,
+                friday: timeRange,
+                saturday: timeRange,
+                sunday: 'Closed'
+              };
+            }
+          }
+        }
+        
+        const opHours = convertWorkingHoursToOperatingHours(parsedHours);
+        return {
+          id: center.id,
+          name: center.name,
+          address: center.address,
+          phone: center.phone || '',
+          email: center.email || '',
+          operatingHours: opHours,
+          services: center.services || [],
+          isActive: center.isActive || true,
+          rating: center.rating || 0,
+          totalReviews: center.totalReviews || 0,
+          coordinates: { lat: 0, lng: 0 } // Backend chưa có coordinates
+        };
+      });
+      setServiceCenters(centers);
+    } catch (err) {
+      console.error('Error loading service centers:', err);
+      setServiceCenters([]);
+    }
   };
 
-  const loadServiceTypes = () => {
-    // Mock service types
-    const mockServices: ServiceType[] = [
-      {
-        id: 'service1',
-        name: 'Bảo dưỡng định kỳ',
-        description: 'Kiểm tra và bảo dưỡng toàn diện xe điện',
-        basePrice: 500000,
-        estimatedDuration: 120,
-        category: ServiceCategory.REGULAR_MAINTENANCE,
-        isActive: true
-      },
-      {
-        id: 'service2',
-        name: 'Kiểm tra pin',
-        description: 'Kiểm tra tình trạng và hiệu suất pin xe điện',
-        basePrice: 300000,
-        estimatedDuration: 60,
-        category: ServiceCategory.BATTERY_SERVICE,
-        isActive: true
-      },
-      {
-        id: 'service3',
-        name: 'Sửa chữa tổng quát',
-        description: 'Sửa chữa các lỗi phát sinh trên xe',
-        basePrice: 200000,
-        estimatedDuration: 180,
-        category: ServiceCategory.REPAIR,
-        isActive: true
-      },
-      {
-        id: 'service4',
-        name: 'Cập nhật phần mềm',
-        description: 'Cập nhật firmware và phần mềm hệ thống',
-        basePrice: 100000,
-        estimatedDuration: 30,
-        category: ServiceCategory.SOFTWARE_UPDATE,
-        isActive: true
-      },
-      {
-        id: 'service5',
-        name: 'Kiểm tra an toàn',
-        description: 'Kiểm tra toàn diện các hệ thống an toàn',
-        basePrice: 400000,
-        estimatedDuration: 90,
-        category: ServiceCategory.INSPECTION,
-        isActive: true
-      }
-    ];
-    setServiceTypes(mockServices);
+  const loadServiceTypes = async () => {
+    try {
+      const packages = await servicePackageService.getAllServicePackages();
+      // Convert backend ServicePackage to frontend ServiceType
+      const types: ServiceType[] = packages.map(pkg => ({
+        id: pkg.id,
+        name: pkg.name,
+        description: pkg.description,
+        basePrice: pkg.price,
+        estimatedDuration: pkg.durationMinutes,
+        category: ServiceCategory.REGULAR_MAINTENANCE, // Default category
+        isActive: pkg.isActive
+      }));
+      setServiceTypes(types);
+    } catch (err) {
+      console.error('Error loading service types:', err);
+      setServiceTypes([]);
+    }
   };
 
-  const loadVehicles = () => {
-    // Mock vehicles for current user
-    const mockVehicles: Vehicle[] = [
-      {
-        id: 'vehicle1',
-        customerId: user?.id || '',
-        make: 'VinFast',
-        model: 'VF8',
-        year: 2023,
-        vin: 'VF8ABC123456789',
-        licensePlate: '30A-123.45',
-        color: 'Đen',
-        batteryCapacity: 87.7,
-        mileage: 14800,
-        purchaseDate: new Date('2023-05-15'),
-        warrantyExpiration: new Date('2026-05-15'),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: 'vehicle2',
-        customerId: user?.id || '',
-        make: 'VinFast',
-        model: 'VF9',
-        year: 2023,
-        vin: 'VF9XYZ987654321',
-        licensePlate: '30B-678.90',
-        color: 'Trắng',
-        batteryCapacity: 123,
-        mileage: 8500,
-        purchaseDate: new Date('2023-08-10'),
-        warrantyExpiration: new Date('2026-08-10'),
-        createdAt: new Date(),
-        updatedAt: new Date()
+  // Helper function to convert workingHours to operatingHours format
+  const convertWorkingHoursToOperatingHours = (workingHours?: any) => {
+    if (!workingHours) {
+      return [];
+    }
+    
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return days.map((day, index) => {
+      const hours = workingHours[day];
+      
+      if (hours && hours !== 'Closed') {
+        const [openTime, closeTime] = hours.split('-').map((t: string) => t.trim());
+        return {
+          dayOfWeek: index,
+          openTime: openTime || '08:00',
+          closeTime: closeTime || '18:00',
+          isOpen: true
+        };
       }
-    ];
-    setVehicles(mockVehicles);
+      return {
+        dayOfWeek: index,
+        openTime: '08:00',
+        closeTime: '18:00',
+        isOpen: false
+      };
+    });
+  };
+
+  const loadVehicles = async () => {
+    try {
+      const data = await vehicleService.getMyVehicles();
+      setVehicles(data);
+    } catch (err) {
+      console.error('Error loading vehicles:', err);
+      setVehicles([]);
+    }
   };
 
   const generateTimeSlots = (date: string, center: ServiceCenter) => {
@@ -335,32 +258,34 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!selectedVehicle || selectedServices.length === 0 || !formData.scheduledDate || !formData.scheduledTime) {
+    if (!selectedVehicle || selectedServices.length === 0 || !formData.scheduledDate || !formData.scheduledTime || !customerId || !selectedCenter) {
       alert('Vui lòng điền đầy đủ thông tin');
       return;
     }
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const scheduledDateTime = `${formData.scheduledDate}T${formData.scheduledTime}:00`;
       
-      const appointmentId = 'appointment_' + Date.now();
-      console.log('Booking appointment:', {
-        center: selectedCenter,
-        services: selectedServices,
-        vehicle: selectedVehicle,
-        formData
-      });
+      const createRequest = {
+        customerId: customerId,
+        vehicleId: selectedVehicle.id,
+        serviceCenterId: selectedCenter.id,
+        servicePackageId: selectedServices[0].id,
+        appointmentDate: scheduledDateTime,
+        notes: formData.notes || ''
+      };
+
+      const appointment = await appointmentService.createAppointment(createRequest);
 
       if (onBookingComplete) {
-        onBookingComplete(appointmentId);
+        onBookingComplete(appointment.id);
       } else {
-        navigate('/appointments/success', { state: { appointmentId } });
+        navigate('/appointments/success', { state: { appointmentId: appointment.id } });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error booking appointment:', error);
-      alert('Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.');
+      alert(error.response?.data?.message || 'Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -417,33 +342,42 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         {step === 1 && (
           <div className="step-content">
             <h2>Chọn trung tâm dịch vụ</h2>
-            <div className="centers-grid">
-              {serviceCenters.map(center => (
-                <div
-                  key={center.id}
-                  className={`center-card ${selectedCenter?.id === center.id ? 'selected' : ''}`}
-                  onClick={() => handleCenterSelect(center)}
-                >
-                  <div className="center-header">
-                    <h3>{center.name}</h3>
-                    <div className="center-rating">
-                      <span className="rating">⭐ {center.rating}</span>
-                      <span className="reviews">({center.totalReviews})</span>
+            {serviceCenters.length === 0 ? (
+              <div className="empty-state">
+                <p style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                  ⚠️ Chức năng đặt lịch đang được phát triển.<br/>
+                  Vui lòng quay lại sau hoặc liên hệ hotline để được hỗ trợ.
+                </p>
+              </div>
+            ) : (
+              <div className="centers-grid">
+                {serviceCenters.map(center => (
+                  <div
+                    key={center.id}
+                    className={`center-card ${selectedCenter?.id === center.id ? 'selected' : ''}`}
+                    onClick={() => handleCenterSelect(center)}
+                  >
+                    <div className="center-header">
+                      <h3>{center.name}</h3>
+                      <div className="center-rating">
+                        <span className="rating">⭐ {center.rating}</span>
+                        <span className="reviews">({center.totalReviews})</span>
+                      </div>
+                    </div>
+                    <div className="center-address">
+                      <p>{center.address}</p>
+                    </div>
+                    <div className="center-contact">
+                      <p>📞 {center.phone}</p>
+                      <p>✉️ {center.email}</p>
+                    </div>
+                    <div className="center-services">
+                      <span>Dịch vụ: {center.services.join(', ')}</span>
                     </div>
                   </div>
-                  <div className="center-address">
-                    <p>{center.address}</p>
-                  </div>
-                  <div className="center-contact">
-                    <p>📞 {center.phone}</p>
-                    <p>✉️ {center.email}</p>
-                  </div>
-                  <div className="center-services">
-                    <span>Dịch vụ: {center.services.join(', ')}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -454,8 +388,16 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
             <div className="selected-center-info">
               <h3>Trung tâm đã chọn: {selectedCenter?.name}</h3>
             </div>
-            <div className="services-grid">
-              {serviceTypes.map(service => (
+            {serviceTypes.length === 0 ? (
+              <div className="empty-state">
+                <p style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                  ⚠️ Không có dịch vụ nào khả dụng.<br/>
+                  Vui lòng liên hệ trung tâm để biết thêm chi tiết.
+                </p>
+              </div>
+            ) : (
+              <div className="services-grid">
+                {serviceTypes.map(service => (
                 <div
                   key={service.id}
                   className={`service-card ${selectedServices.some(s => s.id === service.id) ? 'selected' : ''}`}
@@ -477,6 +419,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                 </div>
               ))}
             </div>
+            )}
             {selectedServices.length > 0 && (
               <div className="selection-summary">
                 <h3>Tóm tắt dịch vụ đã chọn:</h3>
@@ -513,26 +456,43 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         {step === 3 && (
           <div className="step-content">
             <h2>Chọn xe</h2>
-            <div className="vehicles-grid">
-              {vehicles.map(vehicle => (
-                <div
-                  key={vehicle.id}
-                  className={`vehicle-card ${selectedVehicle?.id === vehicle.id ? 'selected' : ''}`}
-                  onClick={() => handleVehicleSelect(vehicle)}
-                >
-                  <div className="vehicle-header">
-                    <h3>{vehicle.make} {vehicle.model}</h3>
-                    <span className="vehicle-year">{vehicle.year}</span>
-                  </div>
-                  <div className="vehicle-details">
-                    <p><strong>Biển số:</strong> {vehicle.licensePlate}</p>
-                    <p><strong>Màu sắc:</strong> {vehicle.color}</p>
-                    <p><strong>Số km đã đi:</strong> {vehicle.mileage.toLocaleString()}</p>
-                    <p><strong>Dung lượng pin:</strong> {vehicle.batteryCapacity} kWh</p>
-                  </div>
+            {vehicles.length === 0 ? (
+              <div className="empty-state">
+                <p style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                  ⚠️ Bạn chưa có xe nào trong hệ thống.<br/>
+                  Vui lòng thêm xe trước khi đặt lịch dịch vụ.
+                </p>
+                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                  <MDButton
+                    variant="filled"
+                    onClick={() => navigate('/customer/vehicles')}
+                  >
+                    Đi tới quản lý xe
+                  </MDButton>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="vehicles-grid">
+                {vehicles.map(vehicle => (
+                  <div
+                    key={vehicle.id}
+                    className={`vehicle-card ${selectedVehicle?.id === vehicle.id ? 'selected' : ''}`}
+                    onClick={() => handleVehicleSelect(vehicle)}
+                  >
+                    <div className="vehicle-header">
+                      <h3>{vehicle.make} {vehicle.model}</h3>
+                      <span className="vehicle-year">{vehicle.year}</span>
+                    </div>
+                    <div className="vehicle-details">
+                      <p><strong>Biển số:</strong> {vehicle.licensePlate}</p>
+                      <p><strong>Màu sắc:</strong> {vehicle.color || 'N/A'}</p>
+                      <p><strong>Số km đã đi:</strong> {vehicle.mileage ? vehicle.mileage.toLocaleString() : 'N/A'}</p>
+                      <p><strong>Dung lượng pin:</strong> {vehicle.batteryCapacity || 'N/A'} kWh</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="step-actions">
               <MDButton variant="outlined" onClick={() => setStep(2)}>
                 Quay lại
@@ -564,21 +524,27 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                 />
               </div>
 
-              {availableTimeSlots.length > 0 && (
-                <div className="time-slots">
-                  <label>Chọn giờ:</label>
-                  <div className="time-grid">
-                    {availableTimeSlots.map(time => (
-                      <button
-                        key={time}
-                        className={`time-slot ${formData.scheduledTime === time ? 'selected' : ''}`}
-                        onClick={() => setFormData(prev => ({ ...prev, scheduledTime: time }))}
-                      >
-                        {time}
-                      </button>
-                    ))}
+              {formData.scheduledDate && (
+                availableTimeSlots.length > 0 ? (
+                  <div className="time-slots">
+                    <label>Chọn giờ:</label>
+                    <div className="time-grid">
+                      {availableTimeSlots.map(time => (
+                        <button
+                          key={time}
+                          className={`time-slot ${formData.scheduledTime === time ? 'selected' : ''}`}
+                          onClick={() => setFormData(prev => ({ ...prev, scheduledTime: time }))}
+                        >
+                          {time}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="no-slots-message" style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                    ⚠️ Trung tâm không mở cửa vào ngày này. Vui lòng chọn ngày khác.
+                  </div>
+                )
               )}
 
               <div className="notes-section">
