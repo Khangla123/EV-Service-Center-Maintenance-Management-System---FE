@@ -11,6 +11,7 @@ import HomePage from './pages/HomePage';
 import CustomerDashboard from './components/customer/CustomerDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import StaffDashboard from './components/staff/StaffDashboard';
+import { TechnicianDashboard } from './components/technician';
 import AppointmentSuccessPage from './pages/AppointmentSuccessPage';
 import MaintenanceReminderPopup from './components/customer/notifications/MaintenanceReminderPopup';
 import PaymentReminderPopup from './components/customer/notifications/PaymentReminderPopup';
@@ -196,10 +197,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/technician/*" element={
         <ProtectedRoute allowedRoles={[UserRole.TECHNICIAN]}>
           <Layout>
-            <div className="dashboard-placeholder">
-              <h1>Technician Dashboard</h1>
-              <p>Chức năng dành cho kỹ thuật viên đang được phát triển...</p>
-            </div>
+            <TechnicianDashboard />
           </Layout>
         </ProtectedRoute>
       } />
