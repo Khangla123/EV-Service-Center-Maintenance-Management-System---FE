@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, LogOut, Menu, X, Bell, Settings, Wrench, CreditCard } from 'lucide-react';
+import { User, LogOut, Menu, X, Bell, Wrench, CreditCard } from 'lucide-react';
 import { UserRole } from '../../../types';
 import Button from '../Button';
 import './Header.css';
@@ -443,10 +443,6 @@ const Header: React.FC<HeaderProps> = ({
                     <Link to="/profile" className="header__user-dropdown-item">
                       <User size={16} />
                       Hồ sơ cá nhân
-                    </Link>
-                    <Link to="/settings" className="header__user-dropdown-item">
-                      <Settings size={16} />
-                      Cài đặt
                     </Link>
                     <div className="header__user-dropdown-divider"></div>
                     <button

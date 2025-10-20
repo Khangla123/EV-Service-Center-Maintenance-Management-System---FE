@@ -230,6 +230,29 @@
   text-align: left;
   border-bottom: 1px solid #e2e8f0;
   vertical-align: middle;
+  min-width: 100px;
+}
+
+.records-table th:nth-child(5),
+.records-table td:nth-child(5) {
+  /* Cột "Loại" - cho category badges */
+  min-width: 120px;
+  text-align: center;
+}
+
+.records-table th:nth-child(7),
+.records-table td:nth-child(7) {
+  /* Cột "Trạng thái" - cho status badges */
+  min-width: 140px;
+  text-align: center;
+}
+
+.records-table th:nth-child(8),
+.records-table td:nth-child(8) {
+  /* Cột "Thao tác" - cho action buttons */
+  min-width: 100px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .records-table th {
@@ -250,50 +273,70 @@
   text-align: right;
 }
 
+/* Action buttons in table */
+.records-table td button,
+.records-table td .md-button {
+  white-space: nowrap;
+  min-width: auto;
+  font-size: 0.85rem;
+  padding: 6px 12px;
+}
+
 /* Badges */
 .category-badge,
 .status-badge {
-  padding: 4px 12px;
+  display: inline-block;
+  padding: 6px 14px;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  line-height: 1.2;
+  vertical-align: middle;
 }
 
 .category-badge.maintenance {
   background: #e6fffa;
   color: #1a7f72;
+  border: 1px solid #b2f5ea;
 }
 
 .category-badge.repair {
   background: #fef5e7;
   color: #b7791f;
+  border: 1px solid #fce8c6;
 }
 
 .category-badge.inspection {
   background: #e3f2fd;
   color: #1976d2;
+  border: 1px solid #bbdefb;
 }
 
 .category-badge.emergency {
   background: #ffebee;
   color: #c62828;
+  border: 1px solid #ffcdd2;
 }
 
 .status-badge.paid {
   background: #e8f5e8;
   color: #2e7d31;
+  border: 1px solid #c8e6c9;
 }
 
 .status-badge.pending {
   background: #fff3e0;
   color: #f57c00;
+  border: 1px solid #ffe0b2;
 }
 
 .status-badge.overdue {
   background: #ffebee;
   color: #d32f2f;
+  border: 1px solid #ffcdd2;
 }
 
 /* Chart View */
@@ -601,6 +644,32 @@
   .records-table td {
     padding: 8px 6px;
   }
+  
+  /* Đảm bảo badges vẫn hiển thị tốt trên mobile */
+  .category-badge,
+  .status-badge {
+    font-size: 0.7rem;
+    padding: 5px 10px;
+    letter-spacing: 0.2px;
+  }
+  
+  .records-table th:nth-child(5),
+  .records-table td:nth-child(5),
+  .records-table th:nth-child(7),
+  .records-table td:nth-child(7) {
+    min-width: 100px;
+  }
+  
+  .records-table th:nth-child(8),
+  .records-table td:nth-child(8) {
+    min-width: 85px;
+  }
+  
+  .records-table td button,
+  .records-table td .md-button {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
 
   .modal-content {
     margin: 10px;
@@ -654,6 +723,32 @@
 
   .card-value {
     font-size: 1.2rem;
+  }
+  
+  /* Giữ badges đẹp trên màn hình rất nhỏ */
+  .category-badge,
+  .status-badge {
+    font-size: 0.65rem;
+    padding: 4px 8px;
+    letter-spacing: 0.1px;
+  }
+  
+  .records-table th:nth-child(5),
+  .records-table td:nth-child(5),
+  .records-table th:nth-child(7),
+  .records-table td:nth-child(7) {
+    min-width: 90px;
+  }
+  
+  .records-table th:nth-child(8),
+  .records-table td:nth-child(8) {
+    min-width: 75px;
+  }
+  
+  .records-table td button,
+  .records-table td .md-button {
+    font-size: 0.7rem;
+    padding: 4px 8px;
   }
 
   .modal-header {
