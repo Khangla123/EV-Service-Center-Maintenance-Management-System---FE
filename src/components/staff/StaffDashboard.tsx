@@ -1,24 +1,16 @@
 import React, { useState } from 'react';
 import { 
-  Users, Calendar, Wrench, Package, UserCog, DollarSign,
-  MessageSquare, ClipboardList, TrendingUp, Bell
+  Users, Calendar, Wrench, Package,
+  MessageSquare, TrendingUp, Bell
 } from 'lucide-react';
 import { CustomerManagement } from './customers';
 import { AppointmentManagement } from './appointments';
-import { ServiceWorkflow } from './service';
-import { PartInventory } from './inventory';
-import { StaffManagement } from './personnel';
-import { FinanceReports } from './finance';
 import './StaffDashboard.css';
 
 type StaffView = 
   | 'overview'
   | 'customers'
-  | 'appointments'
-  | 'service'
-  | 'inventory'
-  | 'personnel'
-  | 'finance';
+  | 'appointments';
 
 const StaffDashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<StaffView>('overview');
@@ -57,11 +49,7 @@ const StaffDashboard: React.FC = () => {
   const menuItems = [
     { id: 'overview', icon: <TrendingUp />, label: 'Tổng quan', color: '#667eea' },
     { id: 'customers', icon: <Users />, label: 'Quản lý Khách hàng', color: '#10b981' },
-    { id: 'appointments', icon: <Calendar />, label: 'Quản lý Lịch hẹn', color: '#3b82f6' },
-    { id: 'service', icon: <Wrench />, label: 'Quy trình Bảo dưỡng', color: '#f59e0b' },
-    { id: 'inventory', icon: <Package />, label: 'Quản lý Phụ tùng', color: '#8b5cf6' },
-    { id: 'personnel', icon: <UserCog />, label: 'Quản lý Nhân sự', color: '#ec4899' },
-    { id: 'finance', icon: <DollarSign />, label: 'Tài chính & Báo cáo', color: '#06b6d4' }
+    { id: 'appointments', icon: <Calendar />, label: 'Quản lý Lịch hẹn', color: '#3b82f6' }
   ] as const;
 
   const renderContent = () => {
@@ -70,14 +58,6 @@ const StaffDashboard: React.FC = () => {
         return <CustomerManagement />;
       case 'appointments':
         return <AppointmentManagement />;
-      case 'service':
-        return <ServiceWorkflow />;
-      case 'inventory':
-        return <PartInventory />;
-      case 'personnel':
-        return <StaffManagement />;
-      case 'finance':
-        return <FinanceReports />;
       case 'overview':
       default:
         return (
@@ -107,14 +87,6 @@ const StaffDashboard: React.FC = () => {
                 <button className="action-btn" onClick={() => setCurrentView('customers')}>
                   <Users />
                   <span>Thêm khách hàng</span>
-                </button>
-                <button className="action-btn" onClick={() => setCurrentView('service')}>
-                  <ClipboardList />
-                  <span>Tạo phiếu dịch vụ</span>
-                </button>
-                <button className="action-btn" onClick={() => setCurrentView('inventory')}>
-                  <Package />
-                  <span>Kiểm tra tồn kho</span>
                 </button>
               </div>
             </div>

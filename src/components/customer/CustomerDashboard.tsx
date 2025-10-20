@@ -25,21 +25,27 @@ const CustomerDashboard: React.FC = () => {
   const appointments = [
     {
       id: 1,
-      vehicle: 'VinFast VF8',
       service: 'Bảo dưỡng định kỳ',
+      vehicle: 'VinFast VF8',
       date: '2025-01-20',
       time: '09:00',
-      status: 'confirmed',
-      priority: 'high'
+      type: 'maintenance'
     },
     {
       id: 2,
-      vehicle: 'VinFast VF5',
       service: 'Kiểm tra pin',
+      vehicle: 'VinFast VF5',
       date: '2025-01-22',
       time: '14:00',
-      status: 'pending',
-      priority: 'medium'
+      type: 'checkup'
+    },
+    {
+      id: 3,
+      service: 'Cập nhật phần mềm',
+      vehicle: 'VinFast VF8',
+      date: '2025-01-25',
+      time: '10:30',
+      type: 'update'
     }
   ];
 
@@ -57,6 +63,13 @@ const CustomerDashboard: React.FC = () => {
       amount: '1.2M VND',
       date: '2025-01-14',
       type: 'payment'
+    },
+    {
+      id: 3,
+      action: 'Đặt lịch kiểm tra pin',
+      vehicle: 'VinFast VF5',
+      date: '2025-01-12',
+      type: 'booking'
     }
   ];
 
@@ -79,33 +92,6 @@ const CustomerDashboard: React.FC = () => {
     
     loadUserData();
   }, []);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'text-green-600 bg-green-100';
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
-      case 'completed': return 'text-blue-600 bg-blue-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'Đã xác nhận';
-      case 'pending': return 'Chờ xác nhận';
-      case 'completed': return 'Hoàn thành';
-      default: return 'Không xác định';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'border-l-red-500';
-      case 'medium': return 'border-l-yellow-500';
-      case 'low': return 'border-l-green-500';
-      default: return 'border-l-gray-300';
-    }
-  };
 
   const isActivePath = (path: string) => {
     return location.pathname === path || (path === '/customer/dashboard' && location.pathname === '/customer');
@@ -207,18 +193,30 @@ const CustomerDashboard: React.FC = () => {
                   </div>
                   <div className="appointments-list">
                     {appointments.map((appointment) => (
-                      <div key={appointment.id} className={`appointment-card ${getPriorityColor(appointment.priority)}`}>
-                        <div className="appointment-content">
+                      <div key={appointment.id} className="appointment-card">
+                        <div className="appointment-content-wrapper">
+                          <div className="appointment-icon-wrapper">
+                            <div className={`appointment-icon ${
+                              appointment.type === 'maintenance' ? 'bg-blue-100' : 
+                              appointment.type === 'checkup' ? 'bg-green-100' : 
+                              'bg-purple-100'
+                            }`}>
+                              {appointment.type === 'maintenance' ? (
+                                <Car className="h-5 w-5 text-blue-600" />
+                              ) : appointment.type === 'checkup' ? (
+                                <CheckCircle className="h-5 w-5 text-green-600" />
+                              ) : (
+                                <AlertCircle className="h-5 w-5 text-purple-600" />
+                              )}
+                            </div>
+                          </div>
                           <div className="appointment-info">
-                            <h4>{appointment.vehicle}</h4>
-                            <p>{appointment.service}</p>
+                            <h4>{appointment.service}</h4>
+                            <p>{appointment.vehicle}</p>
                             <div className="appointment-time">
                               <Clock className="h-4 w-4" />
                               <span>{appointment.date} - {appointment.time}</span>
                             </div>
-                          </div>
-                          <div className={`appointment-status ${getStatusColor(appointment.status)}`}>
-                            {getStatusText(appointment.status)}
                           </div>
                         </div>
                       </div>
@@ -232,53 +230,53 @@ const CustomerDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Sidebar */}
-                <div className="dashboard-sidebar">
-                  {/* Quick Actions */}
-                  <div className="quick-actions">
-                    <h3>Thao tác nhanh</h3>
-                    <div className="actions-grid">
-                      {[
-                        { path: '/customer/booking', icon: Calendar, label: 'Đặt lịch dịch vụ', color: 'bg-blue-500' },
-                        { path: '/customer/vehicles', icon: Car, label: 'Quản lý xe', color: 'bg-green-500' },
-                        { path: '/customer/history', icon: History, label: 'Lịch sử bảo dưỡng', color: 'bg-purple-500' },
-                        { path: '/customer/payment', icon: CreditCard, label: 'Thanh toán bảo dưỡng', color: 'bg-orange-500' }
-                      ].map((action, index) => (
-                        <button
-                          key={index}
-                          onClick={() => navigate(action.path)}
-                          className="action-btn"
-                        >
-                          <div className={`action-icon ${action.color}`}>
-                            <action.icon className="h-6 w-6 text-white" />
-                          </div>
-                          <p>{action.label}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Recent Activity */}
-                  <div className="recent-activity">
+                {/* Recent Activity Section */}
+                <div className="recent-activity-section">
+                  <div className="section-header">
                     <h3>Hoạt động gần đây</h3>
-                    <div className="activity-list">
-                      {recentActivity.map((activity) => (
-                        <div key={activity.id} className="activity-item">
-                          <div className={`activity-icon ${activity.type === 'maintenance' ? 'bg-blue-100' : 'bg-green-100'}`}>
-                            {activity.type === 'maintenance' ? (
-                              <Car className="h-4 w-4 text-blue-600" />
-                            ) : (
-                              <CreditCard className="h-4 w-4 text-green-600" />
-                            )}
+                    <MDButton 
+                      variant="text" 
+                      onClick={() => navigate('/customer/history')}
+                    >
+                      Xem tất cả →
+                    </MDButton>
+                  </div>
+                  <div className="activity-list">
+                    {recentActivity.map((activity) => (
+                      <div key={activity.id} className="activity-card">
+                        <div className="activity-content-wrapper">
+                          <div className="activity-icon-wrapper">
+                            <div className={`activity-icon ${
+                              activity.type === 'maintenance' ? 'bg-blue-100' : 
+                              activity.type === 'payment' ? 'bg-green-100' : 
+                              'bg-purple-100'
+                            }`}>
+                              {activity.type === 'maintenance' ? (
+                                <Car className="h-5 w-5 text-blue-600" />
+                              ) : activity.type === 'payment' ? (
+                                <CreditCard className="h-5 w-5 text-green-600" />
+                              ) : (
+                                <Calendar className="h-5 w-5 text-purple-600" />
+                              )}
+                            </div>
                           </div>
-                          <div className="activity-content">
-                            <p className="activity-action">{activity.action}</p>
-                            <p className="activity-detail">{activity.vehicle || activity.amount}</p>
-                            <p className="activity-date">{activity.date}</p>
+                          <div className="activity-info">
+                            <h4>{activity.action}</h4>
+                            <p>{activity.vehicle || activity.amount}</p>
+                            <div className="activity-date">
+                              <Clock className="h-4 w-4" />
+                              <span>{activity.date}</span>
+                            </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
+                    {recentActivity.length === 0 && (
+                      <div className="empty-state">
+                        <History className="h-12 w-12" />
+                        <p>Không có hoạt động gần đây</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

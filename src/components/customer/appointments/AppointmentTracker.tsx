@@ -68,7 +68,7 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
           vehicleId: 'vehicle2',
           serviceTypeId: 'service2',
           scheduledDate: new Date('2024-09-28T14:00:00'),
-          status: AppointmentStatus.IN_PROGRESS,
+          status: AppointmentStatus.CONFIRMED,
           priority: 'high' as any,
           notes: 'Bảo dưỡng định kỳ 15000km',
           estimatedCompletion: new Date('2024-09-28T16:30:00'),
@@ -81,11 +81,10 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
           vehicleId: 'vehicle1',
           serviceTypeId: 'service3',
           scheduledDate: new Date('2024-09-15T10:00:00'),
-          status: AppointmentStatus.COMPLETED,
+          status: AppointmentStatus.CONFIRMED,
           priority: 'low' as any,
           notes: 'Cập nhật phần mềm',
           estimatedCompletion: new Date('2024-09-15T10:30:00'),
-          actualCompletion: new Date('2024-09-15T10:25:00'),
           createdAt: new Date('2024-09-10'),
           updatedAt: new Date('2024-09-15')
         }
