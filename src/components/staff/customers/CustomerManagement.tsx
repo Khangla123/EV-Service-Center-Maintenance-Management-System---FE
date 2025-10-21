@@ -4,7 +4,7 @@ import {
   Eye, Edit, Trash2, Filter, Download
 } from 'lucide-react';
 import { MDButton } from '../../ui';
-import { getAllCustomers, Customer } from '../../../services/mockData';
+import customerService, { Customer } from '../../../services/customerService';
 import './CustomerManagement.css';
 
 const CustomerManagement: React.FC = () => {
@@ -21,20 +21,26 @@ const CustomerManagement: React.FC = () => {
 
   const loadCustomers = async () => {
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Use shared mock data
-    const sharedMockCustomers = getAllCustomers();
-    setCustomers(sharedMockCustomers);
-    setLoading(false);
+    try {
+      const response = await customerService.getAllCustomers();
+      // Backend returns paginated response
+      const customersList = response.content || response || [];
+      setCustomers(customersList);
+    } catch (err) {
+      console.error('Error loading customers:', err);
+      setCustomers([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.phone.includes(searchTerm) ||
-    customer.vehicles.some(v => v.licensePlate.includes(searchTerm.toUpperCase()))
-  );
+  const filteredCustomers = customers.filter(customer => {
+    const fullName = `${customer.firstName} ${customer.lastName}`.toLowerCase();
+    const search = searchTerm.toLowerCase();
+    return fullName.includes(search) ||
+           customer.email.toLowerCase().includes(search) ||
+           (customer.phone && customer.phone.includes(searchTerm));
+  });
 
   const viewCustomerDetails = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -96,19 +102,23 @@ const CustomerManagement: React.FC = () => {
         </div>
         <div className="stat-item">
           <div className="stat-label">Khách hàng mới (tháng này)</div>
-          <div className="stat-value">5</div>
+          <div className="stat-value">
+            {customers.filter(c => {
+              const createdDate = c.createdAt ? new Date(c.createdAt) : null;
+              if (!createdDate) return false;
+              const now = new Date();
+              return createdDate.getMonth() === now.getMonth() && 
+                     createdDate.getFullYear() === now.getFullYear();
+            }).length}
+          </div>
         </div>
         <div className="stat-item">
           <div className="stat-label">Tổng xe đăng ký</div>
-          <div className="stat-value">
-            {customers.reduce((sum, c) => sum + c.vehicles.length, 0)}
-          </div>
+          <div className="stat-value">N/A</div>
         </div>
         <div className="stat-item">
           <div className="stat-label">Dịch vụ hoàn thành</div>
-          <div className="stat-value">
-            {customers.reduce((sum, c) => sum + c.totalServices, 0)}
-          </div>
+          <div className="stat-value">N/A</div>
         </div>
       </div>
 
@@ -132,10 +142,10 @@ const CustomerManagement: React.FC = () => {
                 <td>
                   <div className="customer-info">
                     <div className="customer-avatar">
-                      {customer.name.charAt(0)}
+                      {customer.firstName.charAt(0)}
                     </div>
                     <div>
-                      <div className="customer-name">{customer.name}</div>
+                      <div className="customer-name">{customer.firstName} {customer.lastName}</div>
                       <div className="customer-id">#{customer.id}</div>
                     </div>
                   </div>
@@ -155,23 +165,17 @@ const CustomerManagement: React.FC = () => {
                 <td>
                   <div className="vehicle-count">
                     <Car size={16} />
-                    <span>{customer.vehicles.length} xe</span>
+                    <span>N/A</span>
                   </div>
                 </td>
                 <td>
-                  <span className="service-count">{customer.totalServices}</span>
+                  <span className="service-count">N/A</span>
                 </td>
                 <td>
-                  {customer.lastServiceDate ? (
-                    <span className="last-service">
-                      {new Intl.DateTimeFormat('vi-VN').format(customer.lastServiceDate)}
-                    </span>
-                  ) : (
-                    <span className="no-service">Chưa có</span>
-                  )}
+                  <span className="no-service">N/A</span>
                 </td>
                 <td>
-                  {new Intl.DateTimeFormat('vi-VN').format(customer.registeredDate)}
+                  {customer.createdAt ? new Intl.DateTimeFormat('vi-VN').format(new Date(customer.createdAt)) : 'N/A'}
                 </td>
                 <td>
                   <div className="action-buttons">
@@ -218,7 +222,7 @@ const CustomerManagement: React.FC = () => {
                   <div className="detail-grid">
                     <div className="detail-item">
                       <strong>Họ tên:</strong>
-                      <span>{selectedCustomer.name}</span>
+                      <span>{selectedCustomer.firstName} {selectedCustomer.lastName}</span>
                     </div>
                     <div className="detail-item">
                       <strong>Mã KH:</strong>
@@ -230,65 +234,29 @@ const CustomerManagement: React.FC = () => {
                     </div>
                     <div className="detail-item">
                       <strong>Điện thoại:</strong>
-                      <span>{selectedCustomer.phone}</span>
+                      <span>{selectedCustomer.phone || 'N/A'}</span>
                     </div>
                     <div className="detail-item full-width">
                       <strong>Địa chỉ:</strong>
-                      <span>{selectedCustomer.address}</span>
+                      <span>{selectedCustomer.address || 'N/A'}</span>
                     </div>
                     <div className="detail-item">
                       <strong>Ngày đăng ký:</strong>
                       <span>
-                        {new Intl.DateTimeFormat('vi-VN').format(selectedCustomer.registeredDate)}
+                        {selectedCustomer.createdAt ? new Intl.DateTimeFormat('vi-VN').format(new Date(selectedCustomer.createdAt)) : 'N/A'}
                       </span>
                     </div>
                     <div className="detail-item">
                       <strong>Tổng dịch vụ:</strong>
-                      <span>{selectedCustomer.totalServices}</span>
+                      <span>N/A</span>
                     </div>
                   </div>
-                  {selectedCustomer.notes && (
-                    <div className="notes-section">
-                      <strong>Ghi chú:</strong>
-                      <p>{selectedCustomer.notes}</p>
-                    </div>
-                  )}
                 </div>
 
                 <div className="detail-section">
-                  <h4>Danh sách Xe ({selectedCustomer.vehicles.length})</h4>
+                  <h4>Danh sách Xe (Chưa tải)</h4>
                   <div className="vehicles-list">
-                    {selectedCustomer.vehicles.map(vehicle => (
-                      <div key={vehicle.id} className="vehicle-card">
-                        <div className="vehicle-header">
-                          <div className="vehicle-model">{vehicle.model}</div>
-                          <div className="vehicle-year">{vehicle.year}</div>
-                        </div>
-                        <div className="vehicle-details">
-                          <div className="vehicle-detail">
-                            <strong>Biển số:</strong>
-                            <span>{vehicle.licensePlate}</span>
-                          </div>
-                          <div className="vehicle-detail">
-                            <strong>VIN:</strong>
-                            <span className="vin-code">{vehicle.vin}</span>
-                          </div>
-                          <div className="vehicle-detail">
-                            <strong>Màu sắc:</strong>
-                            <span>{vehicle.color}</span>
-                          </div>
-                          <div className="vehicle-detail">
-                            <strong>Km đã chạy:</strong>
-                            <span>{vehicle.mileage.toLocaleString()} km</span>
-                          </div>
-                        </div>
-                        <div className="vehicle-actions">
-                          <MDButton variant="outlined" size="small">
-                            Lịch sử dịch vụ
-                          </MDButton>
-                        </div>
-                      </div>
-                    ))}
+                    <p>Cần gọi API riêng để lấy danh sách xe của khách hàng</p>
                   </div>
                 </div>
               </div>
@@ -303,7 +271,7 @@ const CustomerManagement: React.FC = () => {
           <div className="modal-content chat-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div className="chat-header-info">
-                <h3>Chat với {selectedCustomer.name}</h3>
+                <h3>Chat với {selectedCustomer.firstName} {selectedCustomer.lastName}</h3>
                 <span className="online-status">● Online</span>
               </div>
               <button className="close-btn" onClick={closeModals}>×</button>

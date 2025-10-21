@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { Vehicle } from '../../../types';
+import vehicleService from '../../../services/vehicleService';
 import { Car, Calendar, Battery, Gauge, Plus, Edit, Trash2 } from 'lucide-react';
 import './VehicleManagement.css';
 
@@ -13,48 +14,17 @@ const VehicleManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const loadVehicles = () => {
+    const loadVehicles = async () => {
       setLoading(true);
-      // Mock vehicles for current user (same data as AppointmentBooking)
-      const mockVehicles: Vehicle[] = [
-        {
-          id: 'vehicle1',
-          customerId: user?.id || '',
-          make: 'VinFast',
-          model: 'VF8',
-          year: 2023,
-          vin: 'VF8ABC123456789',
-          licensePlate: '30A-123.45',
-          color: 'Đen',
-          batteryCapacity: 87.7,
-          mileage: 14800,
-          purchaseDate: new Date('2023-05-15'),
-          warrantyExpiration: new Date('2026-05-15'),
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: 'vehicle2',
-          customerId: user?.id || '',
-          make: 'VinFast',
-          model: 'VF9',
-          year: 2023,
-          vin: 'VF9XYZ987654321',
-          licensePlate: '30B-678.90',
-          color: 'Trắng',
-          batteryCapacity: 123,
-          mileage: 8500,
-          purchaseDate: new Date('2023-08-10'),
-          warrantyExpiration: new Date('2026-08-10'),
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      ];
-      
-      setTimeout(() => {
-        setVehicles(mockVehicles);
+      try {
+        const vehiclesList = await vehicleService.getMyVehicles();
+        setVehicles(vehiclesList);
+      } catch (error) {
+        console.error('Error loading vehicles:', error);
+        setVehicles([]);
+      } finally {
         setLoading(false);
-      }, 500);
+      }
     };
 
     loadVehicles();

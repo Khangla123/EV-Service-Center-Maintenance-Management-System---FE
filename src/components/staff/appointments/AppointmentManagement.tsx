@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, User, Car, Check, X, Edit, Filter, Plus } from 'lucide-react';
 import { MDButton } from '../../ui';
-import { getAllAppointments, Appointment } from '../../../services/mockData';
+import appointmentService, { Appointment } from '../../../services/appointmentService';
 import './AppointmentManagement.css';
 
 const AppointmentManagement: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'today'>('all');
-  // const [selectedDate, setSelectedDate] = useState(new Date()); // Reserved for future date filtering
+  const [filter, setFilter] = useState<'all' | 'PENDING' | 'CONFIRMED' | 'today'>('all');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadAppointments();
@@ -16,59 +16,66 @@ const AppointmentManagement: React.FC = () => {
 
   const loadAppointments = async () => {
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    // Use shared mock data
-    const sharedMockAppointments = getAllAppointments();
-    setAppointments(sharedMockAppointments);
-    setLoading(false);
+    setError(null);
+    try {
+      const response = await appointmentService.getAllAppointments();
+      setAppointments(response.appointments || []);
+    } catch (err) {
+      setError('Không thể tải danh sách lịch hẹn');
+      console.error('Error loading appointments:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredAppointments = appointments.filter(apt => {
     if (filter === 'all') return true;
     if (filter === 'today') {
       const today = new Date();
-      return apt.scheduledDate.toDateString() === today.toDateString();
+      const aptDate = new Date(apt.appointmentDate);
+      return aptDate.toDateString() === today.toDateString();
     }
     return apt.status === filter;
   });
 
   const getStatusColor = (status: Appointment['status']) => {
-    const colors = {
-      pending: 'warning',
-      confirmed: 'info',
-      'in-progress': 'primary',
-      completed: 'success',
-      cancelled: 'error'
+    const colors: Record<Appointment['status'], string> = {
+      PENDING: 'warning',
+      CONFIRMED: 'info',
+      IN_PROGRESS: 'primary',
+      COMPLETED: 'success',
+      CANCELLED: 'error'
     };
     return colors[status];
   };
 
   const getStatusLabel = (status: Appointment['status']) => {
-    const labels = {
-      pending: 'Chờ xác nhận',
-      confirmed: 'Đã xác nhận',
-      'in-progress': 'Đang xử lý',
-      completed: 'Hoàn thành',
-      cancelled: 'Đã hủy'
+    const labels: Record<Appointment['status'], string> = {
+      PENDING: 'Chờ xác nhận',
+      CONFIRMED: 'Đã xác nhận',
+      IN_PROGRESS: 'Đang xử lý',
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Đã hủy'
     };
     return labels[status];
   };
 
-  const confirmAppointment = (id: string) => {
-    setAppointments(prev =>
-      prev.map(apt =>
-        apt.id === id ? { ...apt, status: 'confirmed' as const } : apt
-      )
-    );
+  const confirmAppointment = async (id: string) => {
+    try {
+      await appointmentService.updateAppointment(id, { status: 'CONFIRMED' });
+      await loadAppointments();
+    } catch (err) {
+      console.error('Error confirming appointment:', err);
+    }
   };
 
-  const cancelAppointment = (id: string) => {
-    setAppointments(prev =>
-      prev.map(apt =>
-        apt.id === id ? { ...apt, status: 'cancelled' as const } : apt
-      )
-    );
+  const cancelAppointment = async (id: string) => {
+    try {
+      await appointmentService.cancelAppointment(id);
+      await loadAppointments();
+    } catch (err) {
+      console.error('Error cancelling appointment:', err);
+    }
   };
 
   if (loading) {
@@ -94,19 +101,22 @@ const AppointmentManagement: React.FC = () => {
             className={`filter-tab ${filter === 'today' ? 'active' : ''}`}
             onClick={() => setFilter('today')}
           >
-            Hôm nay ({appointments.filter(a => a.scheduledDate.toDateString() === new Date().toDateString()).length})
+            Hôm nay ({appointments.filter(a => {
+              const aptDate = new Date(a.appointmentDate);
+              return aptDate.toDateString() === new Date().toDateString();
+            }).length})
           </button>
           <button
-            className={`filter-tab ${filter === 'pending' ? 'active' : ''}`}
-            onClick={() => setFilter('pending')}
+            className={`filter-tab ${filter === 'PENDING' ? 'active' : ''}`}
+            onClick={() => setFilter('PENDING')}
           >
-            Chờ xác nhận ({appointments.filter(a => a.status === 'pending').length})
+            Chờ xác nhận ({appointments.filter(a => a.status === 'PENDING').length})
           </button>
           <button
-            className={`filter-tab ${filter === 'confirmed' ? 'active' : ''}`}
-            onClick={() => setFilter('confirmed')}
+            className={`filter-tab ${filter === 'CONFIRMED' ? 'active' : ''}`}
+            onClick={() => setFilter('CONFIRMED')}
           >
-            Đã xác nhận ({appointments.filter(a => a.status === 'confirmed').length})
+            Đã xác nhận ({appointments.filter(a => a.status === 'CONFIRMED').length})
           </button>
         </div>
         <div className="action-buttons">
@@ -137,7 +147,6 @@ const AppointmentManagement: React.FC = () => {
                 </div>
                 <div className="section-content">
                   <div className="customer-name">{appointment.customerName}</div>
-                  <div className="customer-phone">{appointment.phone}</div>
                 </div>
               </div>
 
@@ -146,31 +155,24 @@ const AppointmentManagement: React.FC = () => {
                   <Car size={18} />
                 </div>
                 <div className="section-content">
-                  <div className="vehicle-model">{appointment.vehicleModel}</div>
-                  <div className="license-plate">{appointment.licensePlate}</div>
+                  <div className="vehicle-model">Trung tâm: {appointment.serviceCenterName}</div>
                 </div>
               </div>
 
               <div className="schedule-section">
                 <div className="schedule-item">
                   <CalendarIcon size={16} />
-                  <span>{new Intl.DateTimeFormat('vi-VN').format(appointment.scheduledDate)}</span>
+                  <span>{new Intl.DateTimeFormat('vi-VN').format(new Date(appointment.appointmentDate))}</span>
                 </div>
                 <div className="schedule-item">
                   <Clock size={16} />
-                  <span>{appointment.scheduledTime}</span>
+                  <span>{new Date(appointment.appointmentDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               </div>
 
               <div className="service-type">
-                <strong>Dịch vụ:</strong> {appointment.serviceType}
+                <strong>Gói dịch vụ:</strong> {appointment.servicePackageName}
               </div>
-
-              {appointment.technicianName && (
-                <div className="technician-info">
-                  <strong>KTV:</strong> {appointment.technicianName}
-                </div>
-              )}
 
               {appointment.notes && (
                 <div className="appointment-notes">
@@ -180,7 +182,7 @@ const AppointmentManagement: React.FC = () => {
             </div>
 
             <div className="card-footer">
-              {appointment.status === 'pending' && (
+              {appointment.status === 'PENDING' && (
                 <>
                   <MDButton
                     variant="filled"
@@ -200,7 +202,7 @@ const AppointmentManagement: React.FC = () => {
                   </MDButton>
                 </>
               )}
-              {(appointment.status === 'confirmed' || appointment.status === 'in-progress') && (
+              {(appointment.status === 'CONFIRMED' || appointment.status === 'IN_PROGRESS') && (
                 <>
                   <MDButton variant="outlined" size="small" startIcon={<Edit />}>
                     Chỉnh sửa
@@ -210,7 +212,7 @@ const AppointmentManagement: React.FC = () => {
                   </MDButton>
                 </>
               )}
-              {appointment.status === 'completed' && (
+              {appointment.status === 'COMPLETED' && (
                 <MDButton variant="outlined" size="small">
                   Xem chi tiết
                 </MDButton>

@@ -3,9 +3,34 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, Shield, UserCheck, Users, Wrench } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
-import { getDemoAccounts } from '../services/mockAuth';
 import { MDButton, MDTextField, MDCard } from '../components/ui';
 import './LoginPage.css';
+
+// Demo accounts info (for display only)
+const getDemoAccounts = () => {
+  return {
+    customer: {
+      email: 'customer@evservice.vn',
+      password: '123456',
+      name: 'Nguyễn Văn Khách'
+    },
+    staff: {
+      email: 'staff@evservice.vn',
+      password: '123456',
+      name: 'Lê Văn Nhân'
+    },
+    technician: {
+      email: 'technician@evservice.vn',
+      password: '123456',
+      name: 'Hoàng Văn Kỹ'
+    },
+    admin: {
+      email: 'admin@evservice.vn',
+      password: '123456',
+      name: 'Vũ Thị Quản'
+    }
+  };
+};
 
 const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState({

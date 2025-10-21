@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { ServiceCenter, ServiceType, Vehicle, AppointmentFormData, Priority, ServiceCategory } from '../../../types';
+import { ServiceCenter, ServiceType, Vehicle, AppointmentFormData, Priority } from '../../../types';
 import { MDButton } from '../../ui';
 import './AppointmentBooking.css';
+import serviceCenterService from '../../../services/serviceCenterService';
+import servicePackageService from '../../../services/servicePackageService';
+import vehicleService from '../../../services/vehicleService';
 
 interface AppointmentBookingProps {
   onBookingComplete?: (appointmentId: string) => void;
@@ -15,7 +18,6 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { state } = useAuth();
-  const { user } = state;
 
   // Get pre-selected vehicle ID from navigation state
   const preSelectedVehicleId = location.state?.selectedVehicleId;
@@ -59,233 +61,51 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
     }
   }, [preSelectedVehicleId, vehicles]);
 
-  const loadServiceCenters = () => {
-    // Mock service centers
-    const mockCenters: ServiceCenter[] = [
-      {
-        id: 'center1',
-        name: 'VinFast Bãi Cháy',
-        address: 'Số 950, đường Hạ Long, phường Bãi Cháy, tỉnh Quảng Ninh',
-        phone: '0203-123-4567',
-        email: 'quangninh@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection', 'battery'],
-        isActive: true,
-        rating: 4.8,
-        totalReviews: 178,
-        coordinates: { lat: 20.9568, lng: 107.0433 }
-      },
-      {
-        id: 'center2',
-        name: 'VinFast Trường Chinh',
-        address: 'Số 162, phố Trường Chinh, phường Kim Liên, thành phố Hà Nội',
-        phone: '0243-123-4567',
-        email: 'hanoi@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection'],
-        isActive: true,
-        rating: 4.8,
-        totalReviews: 245,
-        coordinates: { lat: 21.0285, lng: 105.8542 }
-      },
-      {
-        id: 'center3',
-        name: 'VinFast Hải Thành',
-        address: 'Số 591, đường Hùng Vương, phường Quy Nhơn Bắc, tỉnh Gia Lai',
-        phone: '0257-123-4567',
-        email: 'gialai@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection'],
-        isActive: true,
-        rating: 4.7,
-        totalReviews: 156,
-        coordinates: { lat: 13.7830, lng: 109.2198 }
-      },
-      {
-        id: 'center4',
-        name: 'VinFast Sông Cầu',
-        address: 'Số 92, đường Phạm Văn Đồng, phường Sông Cầu, tỉnh Đắk Lắk',
-        phone: '0262-123-4567',
-        email: 'daklak@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection'],
-        isActive: true,
-        rating: 4.6,
-        totalReviews: 142,
-        coordinates: { lat: 12.6676, lng: 108.0432 }
-      },
-      {
-        id: 'center5',
-        name: 'VinFast Phú Mỹ Hưng',
-        address: 'Số 1489, đường Nguyễn Văn Linh, phường Tân Hưng, thành phố Hồ Chí Minh',
-        phone: '028-987-6543',
-        email: 'hcmc@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection', 'battery'],
-        isActive: true,
-        rating: 4.9,
-        totalReviews: 189,
-        coordinates: { lat: 10.7769, lng: 106.7009 }
-      },
-      {
-        id: 'center6',
-        name: 'VinFast Võ Thị Sáu',
-        address: 'Số 468, đường Võ Thị Sáu, phường Bạc Liêu, tỉnh Cà Mau',
-        phone: '0290-123-4567',
-        email: 'camau@vinfast.vn',
-        operatingHours: [
-          { dayOfWeek: 1, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 2, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 3, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 4, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 5, openTime: '08:00', closeTime: '18:00', isOpen: true },
-          { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', isOpen: true },
-          { dayOfWeek: 0, openTime: '09:00', closeTime: '16:00', isOpen: true }
-        ],
-        services: ['maintenance', 'repair', 'inspection'],
-        isActive: true,
-        rating: 4.5,
-        totalReviews: 128,
-        coordinates: { lat: 9.1768, lng: 105.1524 }
-      }
-    ];
-    setServiceCenters(mockCenters);
+  const loadServiceCenters = async () => {
+    try {
+      const response = await serviceCenterService.getAllServiceCenters();
+      setServiceCenters(response.serviceCenters as any);
+    } catch (error) {
+      console.error('Failed to load service centers:', error);
+      setServiceCenters([]);
+    }
   };
 
-  const loadServiceTypes = () => {
-    // Mock service types
-    const mockServices: ServiceType[] = [
-      {
-        id: 'service1',
-        name: 'Bảo dưỡng định kỳ',
-        description: 'Kiểm tra và bảo dưỡng toàn diện xe điện',
-        basePrice: 500000,
-        estimatedDuration: 120,
-        category: ServiceCategory.REGULAR_MAINTENANCE,
-        isActive: true
-      },
-      {
-        id: 'service2',
-        name: 'Kiểm tra pin',
-        description: 'Kiểm tra tình trạng và hiệu suất pin xe điện',
-        basePrice: 300000,
-        estimatedDuration: 60,
-        category: ServiceCategory.BATTERY_SERVICE,
-        isActive: true
-      },
-      {
-        id: 'service3',
-        name: 'Sửa chữa tổng quát',
-        description: 'Sửa chữa các lỗi phát sinh trên xe',
-        basePrice: 200000,
-        estimatedDuration: 180,
-        category: ServiceCategory.REPAIR,
-        isActive: true
-      },
-      {
-        id: 'service4',
-        name: 'Cập nhật phần mềm',
-        description: 'Cập nhật firmware và phần mềm hệ thống',
-        basePrice: 100000,
-        estimatedDuration: 30,
-        category: ServiceCategory.SOFTWARE_UPDATE,
-        isActive: true
-      },
-      {
-        id: 'service5',
-        name: 'Kiểm tra an toàn',
-        description: 'Kiểm tra toàn diện các hệ thống an toàn',
-        basePrice: 400000,
-        estimatedDuration: 90,
-        category: ServiceCategory.INSPECTION,
-        isActive: true
-      }
-    ];
-    setServiceTypes(mockServices);
+  const loadServiceTypes = async () => {
+    try {
+      const packages = await servicePackageService.getAllServicePackages();
+      setServiceTypes(packages as any);
+    } catch (error) {
+      console.error('Failed to load service types:', error);
+      setServiceTypes([]);
+    }
   };
 
-  const loadVehicles = () => {
-    // Mock vehicles for current user
-    const mockVehicles: Vehicle[] = [
-      {
-        id: 'vehicle1',
-        customerId: user?.id || '',
-        make: 'VinFast',
-        model: 'VF8',
-        year: 2023,
-        vin: 'VF8ABC123456789',
-        licensePlate: '30A-123.45',
-        color: 'Đen',
-        batteryCapacity: 87.7,
-        mileage: 14800,
-        purchaseDate: new Date('2023-05-15'),
-        warrantyExpiration: new Date('2026-05-15'),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: 'vehicle2',
-        customerId: user?.id || '',
-        make: 'VinFast',
-        model: 'VF9',
-        year: 2023,
-        vin: 'VF9XYZ987654321',
-        licensePlate: '30B-678.90',
-        color: 'Trắng',
-        batteryCapacity: 123,
-        mileage: 8500,
-        purchaseDate: new Date('2023-08-10'),
-        warrantyExpiration: new Date('2026-08-10'),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ];
-    setVehicles(mockVehicles);
+  const loadVehicles = async () => {
+    try {
+      const vehiclesList = await vehicleService.getMyVehicles();
+      setVehicles(vehiclesList);
+    } catch (error) {
+      console.error('Failed to load vehicles:', error);
+      setVehicles([]);
+    }
   };
 
   const generateTimeSlots = (date: string, center: ServiceCenter) => {
     const selectedDate = new Date(date);
     const dayOfWeek = selectedDate.getDay();
+    
+    // Check if operatingHours exists and is an array
+    if (!center.operatingHours || !Array.isArray(center.operatingHours)) {
+      // Default time slots if no operating hours defined
+      const slots: string[] = [];
+      for (let hour = 8; hour < 18; hour++) {
+        slots.push(`${hour.toString().padStart(2, '0')}:00`);
+        slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      }
+      return slots;
+    }
+    
     const operatingHours = center.operatingHours.find(h => h.dayOfWeek === dayOfWeek);
     
     if (!operatingHours || !operatingHours.isOpen) {
@@ -342,17 +162,24 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const appointmentId = 'appointment_' + Date.now();
-      console.log('Booking appointment:', {
-        center: selectedCenter,
-        services: selectedServices,
-        vehicle: selectedVehicle,
-        formData
-      });
-
+      // Chuẩn bị dữ liệu gửi lên API
+      if (!selectedCenter || !selectedVehicle || selectedServices.length === 0) {
+        alert('Vui lòng chọn đầy đủ thông tin!');
+        setLoading(false);
+        return;
+      }
+      const appointmentData = {
+        customerId: state?.user?.id,
+        vehicleId: selectedVehicle.id,
+        serviceCenterId: selectedCenter.id,
+        servicePackageId: selectedServices[0].id, // Nếu nhiều dịch vụ, cần sửa lại backend hoặc FE
+        appointmentDate: `${formData.scheduledDate}T${formData.scheduledTime}:00`,
+        notes: formData.notes
+      };
+      // Gọi API tạo lịch hẹn
+      const appointmentService = (await import('../../../services/appointmentService')).default;
+      const result = await appointmentService.createAppointment(appointmentData);
+      const appointmentId = result.id;
       if (onBookingComplete) {
         onBookingComplete(appointmentId);
       } else {
@@ -439,7 +266,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                     <p>✉️ {center.email}</p>
                   </div>
                   <div className="center-services">
-                    <span>Dịch vụ: {center.services.join(', ')}</span>
+                    <span>Dịch vụ: {center.services?.join(', ') || 'Đang cập nhật'}</span>
                   </div>
                 </div>
               ))}

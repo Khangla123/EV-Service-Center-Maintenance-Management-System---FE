@@ -8,70 +8,27 @@ import MaintenanceHistory from './maintenance/MaintenanceHistory';
 import CostManagement from './cost/CostManagement';
 import OnlinePayment from './payment/OnlinePayment';
 import VehicleManagement from './vehicles/VehicleManagement';
+import vehicleService from '../../services/vehicleService';
+import appointmentService from '../../services/appointmentService';
 import './CustomerDashboard.css';
 
 const CustomerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [vehicleCount, setVehicleCount] = useState(0);
+  const [appointmentCount, setAppointmentCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
 
   const stats = [
-    { label: 'Xe của tôi', value: '2', icon: Car, gradient: 'from-blue-500 to-blue-600', link: '/customer/vehicles' },
-    { label: 'Lịch dịch vụ', value: '3', icon: Calendar, gradient: 'from-green-500 to-green-600', link: '/customer/appointments' },
-    { label: 'Hoàn tất', value: '12', icon: CheckCircle, gradient: 'from-purple-500 to-purple-600', link: '/customer/history' },
-    { label: 'Chi phí tháng', value: '2.5M', icon: CreditCard, gradient: 'from-orange-500 to-orange-600', link: '/customer/costs' }
+    { label: 'Xe của tôi', value: vehicleCount.toString(), icon: Car, gradient: 'from-blue-500 to-blue-600', link: '/customer/vehicles' },
+    { label: 'Lịch dịch vụ', value: appointmentCount.toString(), icon: Calendar, gradient: 'from-green-500 to-green-600', link: '/customer/appointments' },
+    { label: 'Hoàn tất', value: completedCount.toString(), icon: CheckCircle, gradient: 'from-purple-500 to-purple-600', link: '/customer/history' },
+    { label: 'Chi phí tháng', value: 'N/A', icon: CreditCard, gradient: 'from-orange-500 to-orange-600', link: '/customer/costs' }
   ];
 
-  const appointments = [
-    {
-      id: 1,
-      service: 'Bảo dưỡng định kỳ',
-      vehicle: 'VinFast VF8',
-      date: '2025-01-20',
-      time: '09:00',
-      type: 'maintenance'
-    },
-    {
-      id: 2,
-      service: 'Kiểm tra pin',
-      vehicle: 'VinFast VF5',
-      date: '2025-01-22',
-      time: '14:00',
-      type: 'checkup'
-    },
-    {
-      id: 3,
-      service: 'Cập nhật phần mềm',
-      vehicle: 'VinFast VF8',
-      date: '2025-01-25',
-      time: '10:30',
-      type: 'update'
-    }
-  ];
-
-  const recentActivity = [
-    {
-      id: 1,
-      action: 'Bảo dưỡng định kỳ hoàn tất',
-      vehicle: 'VinFast VF8',
-      date: '2025-01-15',
-      type: 'maintenance'
-    },
-    {
-      id: 2,
-      action: 'Thanh toán hóa đơn',
-      amount: '1.2M VND',
-      date: '2025-01-14',
-      type: 'payment'
-    },
-    {
-      id: 3,
-      action: 'Đặt lịch kiểm tra pin',
-      vehicle: 'VinFast VF5',
-      date: '2025-01-12',
-      type: 'booking'
-    }
-  ];
+  const appointments: any[] = [];
+  const recentActivity: any[] = [];
 
   const menuItems = [
     { path: '/customer/dashboard', label: 'Tổng quan khách hàng', icon: Home },
@@ -84,10 +41,24 @@ const CustomerDashboard: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Load notifications or user data
+    // Load user data from API
     const loadUserData = async () => {
-      // Mock loading data
-      await new Promise(resolve => setTimeout(resolve, 500));
+      try {
+        // Load vehicles
+        const vehicles = await vehicleService.getMyVehicles();
+        setVehicleCount(vehicles.length);
+
+        // Load appointments
+        const { appointments } = await appointmentService.getMyAppointments();
+        setAppointmentCount(appointments.filter(a => 
+          a.status === 'PENDING' || a.status === 'CONFIRMED'
+        ).length);
+        setCompletedCount(appointments.filter(a => 
+          a.status === 'COMPLETED'
+        ).length);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      }
     };
     
     loadUserData();

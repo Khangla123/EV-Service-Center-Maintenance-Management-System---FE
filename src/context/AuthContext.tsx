@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { User, AuthState, UserRole } from '../types';
-import { authenticateUser, emailExists } from '../services/mockAuth';
+import authService from '../services/authService';
+import userService from '../services/userService';
+import { getErrorMessage } from '../services/api';
 
 interface AuthContextType {
   state: AuthState;
@@ -101,7 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check for existing token on app load
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const userData = localStorage.getItem('user');
     
     if (token && userData) {
@@ -109,7 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const user = JSON.parse(userData);
         dispatch({ type: 'LOAD_USER', payload: { user, token } });
       } catch (error) {
-        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
       }
     }
@@ -119,30 +121,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call API to authenticate
+      const response = await authService.login({ email, password });
       
-      // Authenticate using mock data
-      const user = authenticateUser(email, password);
-      
-      if (user) {
-        const mockToken = 'mock-jwt-token-' + Date.now();
+      // Convert response to User type
+      const user: User = {
+        id: response.user.id,
+        email: response.user.email,
+        firstName: response.user.firstName,
+        lastName: response.user.lastName,
+        phone: response.user.phone,
+        role: response.user.role as UserRole,
+        avatar: response.user.avatar,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
-        // Store in localStorage
-        localStorage.setItem('token', mockToken);
-        localStorage.setItem('user', JSON.stringify(user));
-
-        dispatch({ 
-          type: 'LOGIN_SUCCESS', 
-          payload: { user, token: mockToken } 
-        });
-        return true;
-      } else {
-        dispatch({ type: 'LOGIN_FAILURE' });
-        return false;
-      }
+      dispatch({ 
+        type: 'LOGIN_SUCCESS', 
+        payload: { user, token: response.token } 
+      });
+      return true;
     } catch (error) {
-      dispatch({ type: 'LOGIN_FAILURE' });
+      const errorMessage = getErrorMessage(error);
+      dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
       return false;
     }
   };
@@ -151,48 +153,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      // Check if email already exists
-      if (emailExists(userData.email)) {
-        dispatch({ type: 'LOGIN_FAILURE' });
-        return false;
-      }
-
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user creation
-      const newUser: User = {
-        id: Date.now().toString(),
+      // Call API to register new user
+      await userService.register({
         email: userData.email,
+        password: userData.password,
         firstName: userData.firstName,
         lastName: userData.lastName,
-        phone: userData.phone,
-        role: userData.role,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      const mockToken = 'mock-jwt-token-' + Date.now();
-
-      // Store in localStorage
-      localStorage.setItem('token', mockToken);
-      localStorage.setItem('user', JSON.stringify(newUser));
-
-      dispatch({ 
-        type: 'LOGIN_SUCCESS', 
-        payload: { user: newUser, token: mockToken } 
+        phone: userData.phone
       });
-      return true;
+
+      // After registration, login automatically
+      return await login(userData.email, userData.password);
     } catch (error) {
-      dispatch({ type: 'LOGIN_FAILURE' });
+      const errorMessage = getErrorMessage(error);
+      dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
       return false;
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    dispatch({ type: 'LOGOUT' });
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      // Ignore errors during logout
+      console.error('Logout error:', error);
+    } finally {
+      dispatch({ type: 'LOGOUT' });
+    }
   };
 
   const clearError = () => {

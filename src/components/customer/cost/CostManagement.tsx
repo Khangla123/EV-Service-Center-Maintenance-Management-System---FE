@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MDButton } from '../../ui';
 import './CostManagement.css';
+import maintenanceHistoryService, { MaintenanceRecord } from '../../../services/maintenanceHistoryService';
 
 export interface CostRecord {
   id: string;
@@ -57,139 +58,71 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
 
-  // Mock data
+  // Load data from API
   useEffect(() => {
     const loadCostData = async () => {
       setLoading(true);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockRecords: CostRecord[] = [
-        {
-          id: 'cost-001',
-          date: new Date('2024-01-15'),
-          vehicleId: 'vehicle-001',
-          vehicleName: 'VinFast VF8 - 29A-12345',
-          serviceType: 'Bảo dưỡng định kỳ',
-          serviceName: 'Bảo dưỡng 10,000km',
-          serviceCenter: 'VinFast Thảo Điền',
-          laborCost: 500000,
-          partsCost: 1200000,
-          additionalCosts: 0,
-          discount: 100000,
-          tax: 160000,
-          totalCost: 1760000,
-          paymentMethod: 'Thẻ tín dụng',
-          paymentStatus: 'paid',
-          category: 'maintenance',
-          warrantyExpiry: new Date('2025-01-15'),
-          parts: [
-            { name: 'Dầu động cơ', quantity: 4, unitCost: 150000, totalCost: 600000 },
-            { name: 'Lọc dầu', quantity: 1, unitCost: 200000, totalCost: 200000 },
-            { name: 'Lọc gió', quantity: 1, unitCost: 180000, totalCost: 180000 },
-            { name: 'Phanh sau', quantity: 2, unitCost: 110000, totalCost: 220000 }
-          ],
-          notes: 'Bảo dưỡng đúng lịch, xe hoạt động tốt'
-        },
-        {
-          id: 'cost-002',
-          date: new Date('2024-02-20'),
-          vehicleId: 'vehicle-002',
-          vehicleName: 'VinFast VF9 - 30B-67890',
-          serviceType: 'Sửa chữa',
-          serviceName: 'Thay pin sạc',
-          serviceCenter: 'VinFast Quận 7',
-          laborCost: 800000,
-          partsCost: 15000000,
-          additionalCosts: 500000,
-          discount: 0,
-          tax: 1630000,
-          totalCost: 17930000,
-          paymentMethod: 'Chuyển khoản',
-          paymentStatus: 'paid',
-          category: 'repair',
-          warrantyExpiry: new Date('2026-02-20'),
-          parts: [
-            { name: 'Pin lithium 75kWh', quantity: 1, unitCost: 15000000, totalCost: 15000000 }
-          ],
-          notes: 'Thay pin do hỏng cell, bảo hành 2 năm'
-        },
-        {
-          id: 'cost-003',
-          date: new Date('2024-03-10'),
-          vehicleId: 'vehicle-001',
-          vehicleName: 'VinFast VF8 - 29A-12345',
-          serviceType: 'Kiểm tra',
-          serviceName: 'Kiểm tra an toàn định kỳ',
-          serviceCenter: 'VinFast Thảo Điền',
-          laborCost: 200000,
-          partsCost: 0,
-          additionalCosts: 50000,
-          discount: 0,
-          tax: 25000,
-          totalCost: 275000,
-          paymentMethod: 'Tiền mặt',
-          paymentStatus: 'paid',
-          category: 'inspection',
-          parts: [],
-          notes: 'Kiểm tra định kỳ, mọi thứ bình thường'
-        },
-        {
-          id: 'cost-004',
-          date: new Date('2024-03-25'),
-          vehicleId: 'vehicle-003',
-          vehicleName: 'VinFast VF5 - 51C-11111',
-          serviceType: 'Cứu hộ khẩn cấp',
-          serviceName: 'Sửa hệ thống sạc',
-          serviceCenter: 'VinFast Bình Dương',
-          laborCost: 1200000,
-          partsCost: 3500000,
-          additionalCosts: 200000,
-          discount: 0,
-          tax: 490000,
-          totalCost: 5390000,
-          paymentMethod: 'Ví điện tử',
-          paymentStatus: 'pending',
-          category: 'emergency',
-          warrantyExpiry: new Date('2024-09-25'),
-          parts: [
-            { name: 'Bộ sạc onboard', quantity: 1, unitCost: 2500000, totalCost: 2500000 },
-            { name: 'Cáp sạc DC', quantity: 1, unitCost: 1000000, totalCost: 1000000 }
-          ],
-          notes: 'Sự cố hệ thống sạc, cần theo dõi'
-        }
-      ];
-
-      setCostRecords(mockRecords);
-      setFilteredRecords(mockRecords);
-      
-      // Calculate summary
-      const totalCosts = mockRecords.reduce((sum, record) => sum + record.totalCost, 0);
-      const avgCostPerService = totalCosts / mockRecords.length;
-      
-      const monthlyCosts: Record<string, number> = {};
-      const categoryBreakdown: Record<string, number> = {};
-      const vehicleBreakdown: Record<string, number> = {};
-      
-      mockRecords.forEach(record => {
-        const monthKey = `${record.date.getFullYear()}-${(record.date.getMonth() + 1).toString().padStart(2, '0')}`;
-        monthlyCosts[monthKey] = (monthlyCosts[monthKey] || 0) + record.totalCost;
+      try {
+        const data = await maintenanceHistoryService.getMaintenanceHistory();
         
-        categoryBreakdown[record.category] = (categoryBreakdown[record.category] || 0) + record.totalCost;
-        vehicleBreakdown[record.vehicleName] = (vehicleBreakdown[record.vehicleName] || 0) + record.totalCost;
-      });
-      
-      setSummary({
-        totalCosts,
-        avgCostPerService,
-        monthlyCosts,
-        yearlyComparison: { '2024': totalCosts },
-        categoryBreakdown,
-        vehicleBreakdown
-      });
-      
-      setLoading(false);
+        // Transform API data to CostRecord format
+        const records: CostRecord[] = data.maintenanceRecords.map((record: MaintenanceRecord) => ({
+          id: record.appointmentId,
+          date: new Date(record.serviceDate),
+          vehicleId: record.appointmentId, // Using appointmentId as fallback
+          vehicleName: `${record.vehicleModel} - ${record.licensePlate}`,
+          serviceType: record.serviceTitle,
+          serviceName: record.serviceTitle,
+          serviceCenter: 'VinFast Service Center',
+          laborCost: 0,
+          partsCost: 0,
+          additionalCosts: 0,
+          discount: 0,
+          tax: 0,
+          totalCost: record.totalAmount,
+          paymentMethod: 'N/A',
+          paymentStatus: (record.status === 'COMPLETED' ? 'paid' : 'pending') as 'paid' | 'pending' | 'overdue',
+          category: 'maintenance' as const,
+          parts: [],
+          notes: record.nextMaintenanceDate ? `Next maintenance: ${record.nextMaintenanceDate}` : undefined
+        }));
+        
+        setCostRecords(records);
+        setFilteredRecords(records);
+        
+        // Calculate summary using API data
+        const totalCosts = data.totalCost;
+        const avgCostPerService = data.averageCost;
+        
+        const monthlyCosts: Record<string, number> = {};
+        const categoryBreakdown: Record<string, number> = {};
+        const vehicleBreakdown: Record<string, number> = {};
+        
+        records.forEach(record => {
+          const monthKey = `${record.date.getFullYear()}-${(record.date.getMonth() + 1).toString().padStart(2, '0')}`;
+          monthlyCosts[monthKey] = (monthlyCosts[monthKey] || 0) + record.totalCost;
+          
+          categoryBreakdown[record.category] = (categoryBreakdown[record.category] || 0) + record.totalCost;
+          vehicleBreakdown[record.vehicleName] = (vehicleBreakdown[record.vehicleName] || 0) + record.totalCost;
+        });
+        
+        setSummary({
+          totalCosts,
+          avgCostPerService,
+          monthlyCosts,
+          yearlyComparison: { '2024': totalCosts },
+          categoryBreakdown,
+          vehicleBreakdown
+        });
+        
+      } catch (error) {
+        console.error('Failed to load cost data:', error);
+        setCostRecords([]);
+        setFilteredRecords([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadCostData();

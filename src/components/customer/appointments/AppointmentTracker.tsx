@@ -4,6 +4,10 @@ import { useAuth } from '../../../context/AuthContext';
 import { ServiceAppointment, AppointmentStatus, Vehicle, ServiceType, ServiceCenter } from '../../../types';
 import { MDButton } from '../../ui';
 import './AppointmentTracker.css';
+import appointmentService from '../../../services/appointmentService';
+import vehicleService from '../../../services/vehicleService';
+import servicePackageService from '../../../services/servicePackageService';
+import serviceCenterService from '../../../services/serviceCenterService';
 
 interface AppointmentTrackerProps {
   appointmentId?: string;
@@ -46,148 +50,45 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
     if (!user?.id) return;
 
     try {
-      // Mock appointments data
-      const mockAppointments: ServiceAppointment[] = [
-        {
-          id: 'app1',
-          customerId: user.id,
-          vehicleId: 'vehicle1',
-          serviceTypeId: 'service1',
-          technicianId: 'tech1',
-          scheduledDate: new Date('2024-10-01T09:00:00'),
-          status: AppointmentStatus.CONFIRMED,
-          priority: 'medium' as any,
-          notes: 'Kiểm tra pin và thay dầu',
-          estimatedCompletion: new Date('2024-10-01T11:00:00'),
-          createdAt: new Date('2024-09-25'),
-          updatedAt: new Date('2024-09-25')
-        },
-        {
-          id: 'app2',
-          customerId: user.id,
-          vehicleId: 'vehicle2',
-          serviceTypeId: 'service2',
-          scheduledDate: new Date('2024-09-28T14:00:00'),
-          status: AppointmentStatus.CONFIRMED,
-          priority: 'high' as any,
-          notes: 'Bảo dưỡng định kỳ 15000km',
-          estimatedCompletion: new Date('2024-09-28T16:30:00'),
-          createdAt: new Date('2024-09-20'),
-          updatedAt: new Date('2024-09-28')
-        },
-        {
-          id: 'app3',
-          customerId: user.id,
-          vehicleId: 'vehicle1',
-          serviceTypeId: 'service3',
-          scheduledDate: new Date('2024-09-15T10:00:00'),
-          status: AppointmentStatus.CONFIRMED,
-          priority: 'low' as any,
-          notes: 'Cập nhật phần mềm',
-          estimatedCompletion: new Date('2024-09-15T10:30:00'),
-          createdAt: new Date('2024-09-10'),
-          updatedAt: new Date('2024-09-15')
-        }
-      ];
-
-      setAppointments(mockAppointments);
-      setLoading(false);
+      setLoading(true);
+      const response = await appointmentService.getMyAppointments();
+      setAppointments(response.appointments as any);
     } catch (error) {
       console.error('Error loading appointments:', error);
+      setAppointments([]);
+    } finally {
       setLoading(false);
     }
   };
 
-  const loadVehicles = () => {
-    // Mock vehicles
-    const mockVehicles: Vehicle[] = [
-      {
-        id: 'vehicle1',
-        customerId: user?.id || '',
-        make: 'VinFast',
-        model: 'VF8',
-        year: 2023,
-        vin: 'VF8ABC123456789',
-        licensePlate: '30A-123.45',
-        color: 'Đen',
-        batteryCapacity: 87.7,
-        mileage: 14800,
-        purchaseDate: new Date('2023-05-15'),
-        warrantyExpiration: new Date('2026-05-15'),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: 'vehicle2',
-        customerId: user?.id || '',
-        make: 'VinFast',
-        model: 'VF9',
-        year: 2023,
-        vin: 'VF9XYZ987654321',
-        licensePlate: '30B-678.90',
-        color: 'Trắng',
-        batteryCapacity: 123,
-        mileage: 8500,
-        purchaseDate: new Date('2023-08-10'),
-        warrantyExpiration: new Date('2026-08-10'),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ];
-    setVehicles(mockVehicles);
+  const loadVehicles = async () => {
+    try {
+      const vehiclesList = await vehicleService.getMyVehicles();
+      setVehicles(vehiclesList);
+    } catch (error) {
+      console.error('Error loading vehicles:', error);
+      setVehicles([]);
+    }
   };
 
-  const loadServices = () => {
-    // Mock services
-    const mockServices: ServiceType[] = [
-      {
-        id: 'service1',
-        name: 'Bảo dưỡng định kỳ',
-        description: 'Kiểm tra và bảo dưỡng toàn diện xe điện',
-        basePrice: 500000,
-        estimatedDuration: 120,
-        category: 'regular_maintenance' as any,
-        isActive: true
-      },
-      {
-        id: 'service2',
-        name: 'Kiểm tra pin',
-        description: 'Kiểm tra tình trạng và hiệu suất pin xe điện',
-        basePrice: 300000,
-        estimatedDuration: 60,
-        category: 'battery_service' as any,
-        isActive: true
-      },
-      {
-        id: 'service3',
-        name: 'Cập nhật phần mềm',
-        description: 'Cập nhật firmware và phần mềm hệ thống',
-        basePrice: 100000,
-        estimatedDuration: 30,
-        category: 'software_update' as any,
-        isActive: true
-      }
-    ];
-    setServices(mockServices);
+  const loadServices = async () => {
+    try {
+      const servicesList = await servicePackageService.getAllServicePackages();
+      setServices(servicesList as any);
+    } catch (error) {
+      console.error('Error loading services:', error);
+      setServices([]);
+    }
   };
 
-  const loadCenters = () => {
-    // Mock centers
-    const mockCenters: ServiceCenter[] = [
-      {
-        id: 'center1',
-        name: 'VinFast Hà Nội',
-        address: 'Số 123, đường Láng, phường Đống Đa, thành phố Hà Nội',
-        phone: '0243-123-4567',
-        email: 'hanoi@vinfast.vn',
-        operatingHours: [],
-        services: ['maintenance', 'repair'],
-        isActive: true,
-        rating: 4.8,
-        totalReviews: 245
-      }
-    ];
-    setCenters(mockCenters);
+  const loadCenters = async () => {
+    try {
+      const response = await serviceCenterService.getAllServiceCenters();
+      setCenters(response.serviceCenters as any);
+    } catch (error) {
+      console.error('Error loading centers:', error);
+      setCenters([]);
+    }
   };
 
   const getVehicleInfo = (vehicleId: string) => {

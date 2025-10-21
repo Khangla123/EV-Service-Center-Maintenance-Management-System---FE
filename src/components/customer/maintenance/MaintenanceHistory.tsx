@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { ServiceRecord, Vehicle } from '../../../types';
 import { MDButton } from '../../ui';
+import maintenanceHistoryService from '../../../services/maintenanceHistoryService';
+import vehicleService from '../../../services/vehicleService';
 import './MaintenanceHistory.css';
 
 interface MaintenanceHistoryProps {
@@ -51,243 +53,51 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
     }
   };
 
-  const loadMaintenanceRecords = () => {
-    // Mock maintenance records
-    const mockRecords: ServiceRecord[] = [
-      {
-        id: 'record1',
-        appointmentId: 'app1',
-        vehicleId: 'vehicle1',
-        technicianId: 'tech1',
-        serviceType: {
-          id: 'service1',
-          name: 'Bảo dưỡng định kỳ 15000km',
-          description: 'Bảo dưỡng toàn diện theo chu kỳ',
-          basePrice: 1500000,
-          estimatedDuration: 180,
-          category: 'regular_maintenance' as any,
-          isActive: true
-        },
-        startTime: new Date('2024-09-15T08:00:00'),
-        endTime: new Date('2024-09-15T11:30:00'),
-        mileageAtService: 15000,
-        workPerformed: 'Thay dầu máy, kiểm tra phanh, thay lọc gió, kiểm tra hệ thống điện, cập nhật phần mềm',
-        partsUsed: [
-          {
-            partId: 'part1',
-            part: {
-              id: 'part1',
-              partNumber: 'VF-OIL-001',
-              name: 'Dầu máy tổng hợp',
-              description: 'Dầu máy chuyên dụng cho xe điện VinFast',
-              manufacturer: 'VinFast',
-              category: 'other' as any,
-              compatibleModels: ['VF8', 'VF9'],
-              unitPrice: 200000,
-              currentStock: 50,
-              minimumStock: 10,
-              location: 'KHO-A-01',
-              supplier: 'VinFast Parts',
-              isActive: true,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            },
-            quantity: 2,
-            unitPrice: 200000,
-            totalPrice: 400000
-          },
-          {
-            partId: 'part2',
-            part: {
-              id: 'part2',
-              partNumber: 'VF-FILTER-002',
-              name: 'Lọc gió cabin',
-              description: 'Lọc gió cabin chống bụi và vi khuẩn',
-              manufacturer: 'VinFast',
-              category: 'other' as any,
-              compatibleModels: ['VF8', 'VF9'],
-              unitPrice: 150000,
-              currentStock: 30,
-              minimumStock: 5,
-              location: 'KHO-A-02',
-              supplier: 'VinFast Parts',
-              isActive: true,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            },
-            quantity: 1,
-            unitPrice: 150000,
-            totalPrice: 150000
-          }
-        ],
-        laborCost: 500000,
-        partsCost: 550000,
-        totalCost: 1050000,
-        customerNotes: 'Xe chạy bình thường, không có vấn đề gì đặc biệt',
-        technicianNotes: 'Xe trong tình trạng tốt. Khuyến nghị kiểm tra lại sau 5000km.',
-        qualityCheckPassed: true,
-        nextServiceDue: new Date('2025-03-15'),
-        warrantyInfo: 'Bảo hành 6 tháng hoặc 5000km',
-        images: ['/images/service1_before.jpg', '/images/service1_after.jpg'],
-        createdAt: new Date('2024-09-15'),
-        updatedAt: new Date('2024-09-15')
-      },
-      {
-        id: 'record2',
-        appointmentId: 'app2',
-        vehicleId: 'vehicle1',
-        technicianId: 'tech2',
-        serviceType: {
-          id: 'service2',
-          name: 'Kiểm tra và bảo dưỡng pin',
-          description: 'Kiểm tra tình trạng pin và hệ thống sạc',
-          basePrice: 800000,
-          estimatedDuration: 120,
-          category: 'battery_service' as any,
-          isActive: true
-        },
-        startTime: new Date('2024-08-20T09:00:00'),
-        endTime: new Date('2024-08-20T11:00:00'),
-        mileageAtService: 12500,
-        workPerformed: 'Kiểm tra dung lượng pin, cân bằng cell, kiểm tra hệ thống quản lý pin (BMS)',
-        partsUsed: [],
-        laborCost: 800000,
-        partsCost: 0,
-        totalCost: 800000,
-        customerNotes: 'Pin có dấu hiệu sụt giảm dung lượng',
-        technicianNotes: 'Pin trong tình trạng bình thường. Dung lượng còn 95% so với ban đầu.',
-        qualityCheckPassed: true,
-        nextServiceDue: new Date('2025-02-20'),
-        warrantyInfo: 'Bảo hành 3 tháng',
-        createdAt: new Date('2024-08-20'),
-        updatedAt: new Date('2024-08-20')
-      },
-      {
-        id: 'record3',
-        appointmentId: 'app3',
-        vehicleId: 'vehicle2',
-        technicianId: 'tech1',
-        serviceType: {
-          id: 'service3',
-          name: 'Sửa chữa hệ thống phanh',
-          description: 'Thay má phanh và kiểm tra hệ thống phanh',
-          basePrice: 1200000,
-          estimatedDuration: 150,
-          category: 'repair' as any,
-          isActive: true
-        },
-        startTime: new Date('2024-07-10T13:00:00'),
-        endTime: new Date('2024-07-10T15:30:00'),
-        mileageAtService: 8000,
-        workPerformed: 'Thay má phanh trước và sau, thay dầu phanh, kiểm tra đĩa phanh',
-        partsUsed: [
-          {
-            partId: 'part3',
-            part: {
-              id: 'part3',
-              partNumber: 'VF-BRAKE-003',
-              name: 'Má phanh trước',
-              description: 'Má phanh ceramic cao cấp',
-              manufacturer: 'Brembo',
-              category: 'brake' as any,
-              compatibleModels: ['VF9'],
-              unitPrice: 300000,
-              currentStock: 20,
-              minimumStock: 5,
-              location: 'KHO-B-01',
-              supplier: 'Brembo Vietnam',
-              isActive: true,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            },
-            quantity: 4,
-            unitPrice: 300000,
-            totalPrice: 1200000
-          }
-        ],
-        laborCost: 400000,
-        partsCost: 1200000,
-        totalCost: 1600000,
-        customerNotes: 'Phanh kêu và rung khi dừng xe',
-        technicianNotes: 'Má phanh đã mòn hết. Đĩa phanh còn tốt. Đã thay má phanh mới.',
-        qualityCheckPassed: true,
-        nextServiceDue: new Date('2025-01-10'),
-        warrantyInfo: 'Bảo hành 12 tháng hoặc 10000km',
-        createdAt: new Date('2024-07-10'),
-        updatedAt: new Date('2024-07-10')
+  const loadMaintenanceRecords = async () => {
+    try {
+      const params: any = {};
+      if (selectedVehicle && selectedVehicle !== 'all') {
+        params.vehicleId = selectedVehicle;
       }
-    ];
+      if (dateRange.from) {
+        params.fromDate = dateRange.from;
+      }
+      if (dateRange.to) {
+        params.toDate = dateRange.to;
+      }
+      if (limit) {
+        params.size = limit;
+      }
 
-    // Filter by vehicle if specified
-    let filteredRecords = selectedVehicle === 'all' 
-      ? mockRecords 
-      : mockRecords.filter(r => r.vehicleId === selectedVehicle);
+      console.log('Loading maintenance records with params:', params);
+      const response = await maintenanceHistoryService.getMaintenanceHistory(params);
+      console.log('Maintenance records response:', response);
+      const fetchedRecords = response.maintenanceRecords || [];
 
-    // Filter by date range
-    if (dateRange.from) {
-      filteredRecords = filteredRecords.filter(r => 
-        new Date(r.startTime) >= new Date(dateRange.from)
-      );
+      setRecords(fetchedRecords as any);
+    } catch (error: any) {
+      console.error('Error loading maintenance records:', error);
+      console.error('Error response:', error?.response?.data);
+      console.error('Error status:', error?.response?.status);
+      
+      // Nếu lỗi 404, backend chưa có endpoint này
+      if (error?.response?.status === 404) {
+        console.warn('Backend endpoint /maintenance-history not found (404). Please implement this endpoint on backend.');
+      }
+      
+      setRecords([]);
     }
-    if (dateRange.to) {
-      filteredRecords = filteredRecords.filter(r => 
-        new Date(r.startTime) <= new Date(dateRange.to)
-      );
-    }
-
-    // Sort by date (newest first)
-    filteredRecords.sort((a, b) => 
-      new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-    );
-
-    // Apply limit if specified
-    if (limit) {
-      filteredRecords = filteredRecords.slice(0, limit);
-    }
-
-    setRecords(filteredRecords);
   };
 
-  const loadVehicles = () => {
-    // Mock vehicles
-    const mockVehicles: Vehicle[] = [
-      {
-        id: 'vehicle1',
-        customerId: user?.id || '',
-        make: 'VinFast',
-        model: 'VF8',
-        year: 2023,
-        vin: 'VF8ABC123456789',
-        licensePlate: '30A-123.45',
-        color: 'Đen',
-        batteryCapacity: 87.7,
-        mileage: 15200,
-        purchaseDate: new Date('2023-05-15'),
-        warrantyExpiration: new Date('2026-05-15'),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: 'vehicle2',
-        customerId: user?.id || '',
-        make: 'VinFast',
-        model: 'VF9',
-        year: 2023,
-        vin: 'VF9XYZ987654321',
-        licensePlate: '30B-678.90',
-        color: 'Trắng',
-        batteryCapacity: 123,
-        mileage: 8200,
-        purchaseDate: new Date('2023-08-10'),
-        warrantyExpiration: new Date('2026-08-10'),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ];
-    setVehicles(mockVehicles);
-  };
-
-  const getVehicleInfo = (vehicleId: string) => {
+  const loadVehicles = async () => {
+    try {
+      const response = await vehicleService.getMyVehicles();
+      setVehicles(response || []);
+    } catch (error) {
+      console.error('Error loading vehicles:', error);
+      setVehicles([]);
+    }
+  };  const getVehicleInfo = (vehicleId: string) => {
     return vehicles.find(v => v.id === vehicleId);
   };
 
