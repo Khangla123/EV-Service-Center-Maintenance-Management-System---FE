@@ -8,8 +8,7 @@ import './SignupPage.css';
 
 const SignupPage: React.FC = () => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    fullName: '',
     email: '',
     phone: '',
     password: '',
@@ -53,12 +52,10 @@ const SignupPage: React.FC = () => {
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'Tên là bắt buộc';
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Họ là bắt buộc';
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Họ và tên là bắt buộc';
+    } else if (formData.fullName.trim().split(' ').length < 2) {
+      newErrors.fullName = 'Vui lòng nhập đầy đủ họ và tên';
     }
 
     if (!formData.email) {
@@ -103,9 +100,14 @@ const SignupPage: React.FC = () => {
       return;
     }
 
+    // Split fullName into firstName and lastName
+    const nameParts = formData.fullName.trim().split(' ');
+    const firstName = nameParts[nameParts.length - 1]; // Last part is first name in Vietnamese
+    const lastName = nameParts.slice(0, -1).join(' '); // Everything else is last name
+
     await register({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
+      firstName,
+      lastName,
       email: formData.email,
       phone: formData.phone,
       password: formData.password,
@@ -213,26 +215,16 @@ const SignupPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="md-signup-page__name-fields">
-                <MDTextField
-                  placeholder="Họ"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  error={!!errors.lastName}
-                  helperText={errors.lastName}
-                  required
-                />
-                <MDTextField
-                  placeholder="Tên"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  error={!!errors.firstName}
-                  helperText={errors.firstName}
-                  required
-                />
-              </div>
+              <MDTextField
+                placeholder="Họ và tên"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                error={!!errors.fullName}
+                helperText={errors.fullName}
+                fullWidth
+                required
+              />
 
               <MDTextField
                 placeholder="Email"
