@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { LayoutDashboard, List, Play, Package, Calendar, Award, ChevronRight } from 'lucide-react';
 import './TechnicianDashboard.css';
 import TechnicianTasks from './tasks/TechnicianTasks';
@@ -10,97 +11,45 @@ import Training from './training/Training';
 type TechView = 'dashboard' | 'tasks' | 'work' | 'parts' | 'schedule' | 'training';
 
 const TechnicianDashboard: React.FC = () => {
-  const [activeView, setActiveView] = useState<TechView>('dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Redirect to tasks page on first load if at root
+  useEffect(() => {
+    if (location.pathname === '/technician' || location.pathname === '/technician/') {
+      navigate('/technician/tasks', { replace: true });
+    }
+  }, [location.pathname, navigate]);
+  
+  // Determine active view from URL
+  const getActiveView = (): TechView => {
+    const path = location.pathname;
+    if (path.includes('/tasks')) return 'tasks';
+    if (path.includes('/work')) return 'work'; // Match both /work and /work-processing
+    if (path.includes('/parts')) return 'parts';
+    if (path.includes('/schedule')) return 'schedule';
+    if (path.includes('/training')) return 'training';
+    return 'tasks'; // Default to tasks instead of dashboard
+  };
+  
+  const [activeView, setActiveView] = useState<TechView>(getActiveView());
+  
+  // Update active view when location changes
+  useEffect(() => {
+    setActiveView(getActiveView());
+  }, [location.pathname]);
 
   const menu = [
-    { id: 'dashboard' as TechView, label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-    { id: 'tasks' as TechView, label: 'Công việc', icon: <List size={18} /> },
-    { id: 'work' as TechView, label: 'Xử lý Công việc', icon: <Play size={18} /> },
-    { id: 'parts' as TechView, label: 'Phụ tùng', icon: <Package size={18} /> },
-    { id: 'schedule' as TechView, label: 'Lịch', icon: <Calendar size={18} /> },
-    { id: 'training' as TechView, label: 'Đào tạo', icon: <Award size={18} /> }
+    { id: 'tasks' as TechView, label: 'Công việc', icon: <List size={18} />, path: '/technician/tasks' },
+    { id: 'work' as TechView, label: 'Xử lý Công việc', icon: <Play size={18} />, path: '/technician/work' },
+    { id: 'parts' as TechView, label: 'Phụ tùng', icon: <Package size={18} />, path: '/technician/parts' },
+    { id: 'schedule' as TechView, label: 'Lịch', icon: <Calendar size={18} />, path: '/technician/schedule' },
+    { id: 'training' as TechView, label: 'Đào tạo', icon: <Award size={18} />, path: '/technician/training' }
   ];
 
-  const renderMain = () => {
-    switch (activeView) {
-      case 'dashboard':
-        return (
-          <div className="tech-dashboard-overview">
-            <div className="overview-header">
-              <h2>Dashboard Kỹ thuật viên</h2>
-              <p className="overview-subtitle">Theo dõi công việc và hiệu suất cá nhân</p>
-            </div>
-            
-            <div className="overview-cards">
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <Calendar size={24} />
-                </div>
-                <div className="stat-info">
-                  <div className="stat-label">Công việc hôm nay</div>
-                  <div className="stat-value">4</div>
-                  <div className="stat-trend positive">
-                    <span>+2 việc mới</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <Play size={24} />
-                </div>
-                <div className="stat-info">
-                  <div className="stat-label">Đang xử lý</div>
-                  <div className="stat-value">1</div>
-                  <div className="stat-trend neutral">
-                    <span>VF8 - XV123</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <LayoutDashboard size={24} />
-                </div>
-                <div className="stat-info">
-                  <div className="stat-label">Hoàn thành tháng này</div>
-                  <div className="stat-value">28</div>
-                  <div className="stat-trend positive">
-                    <span>+12% so với tháng trước</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <Award size={24} />
-                </div>
-                <div className="stat-info">
-                  <div className="stat-label">Đánh giá trung bình</div>
-                  <div className="stat-value">4.8/5</div>
-                  <div className="stat-trend positive">
-                    <span>+0.3 so với tháng trước</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <TechnicianTasks compact />
-          </div>
-        );
-      case 'tasks':
-        return <TechnicianTasks />;
-      case 'work':
-        return <WorkProcessing />;
-      case 'parts':
-        return <PartsPersonal />;
-      case 'schedule':
-        return <Schedule />;
-      case 'training':
-        return <Training />;
-      default:
-        return <div />;
-    }
+  const handleNavigation = (id: TechView, path: string) => {
+    setActiveView(id);
+    navigate(path);
   };
 
   return (
@@ -111,7 +60,7 @@ const TechnicianDashboard: React.FC = () => {
             <button 
               key={m.id} 
               className={`tech-nav-item ${m.id === activeView ? 'active' : ''}`} 
-              onClick={() => setActiveView(m.id as TechView)}
+              onClick={() => handleNavigation(m.id, m.path)}
             >
               <span className="icon">{m.icon}</span>
               <span className="label">{m.label}</span>
@@ -122,7 +71,16 @@ const TechnicianDashboard: React.FC = () => {
       </aside>
 
       <main className="tech-main">
-        {renderMain()}
+        <Routes key={location.pathname}>
+          {/* Redirect root to tasks */}
+          <Route index element={<Navigate to="/technician/tasks" replace />} />
+          <Route path="tasks" element={<TechnicianTasks />} />
+          <Route path="work" element={<WorkProcessing />} />
+          <Route path="work-processing/:appointmentId" element={<WorkProcessing />} />
+          <Route path="parts" element={<PartsPersonal />} />
+          <Route path="schedule" element={<Schedule />} />
+          <Route path="training" element={<Training />} />
+        </Routes>
       </main>
     </div>
   );

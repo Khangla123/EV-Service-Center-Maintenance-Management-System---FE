@@ -72,17 +72,16 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
       console.log('Loading maintenance records with params:', params);
       const response = await maintenanceHistoryService.getMaintenanceHistory(params);
       console.log('Maintenance records response:', response);
+      
+      // Backend response already mapped correctly by service
       const fetchedRecords = response.maintenanceRecords || [];
-
       setRecords(fetchedRecords as any);
     } catch (error: any) {
       console.error('Error loading maintenance records:', error);
-      console.error('Error response:', error?.response?.data);
-      console.error('Error status:', error?.response?.status);
       
-      // Nếu lỗi 404, backend chưa có endpoint này
-      if (error?.response?.status === 404) {
-        console.warn('Backend endpoint /maintenance-history not found (404). Please implement this endpoint on backend.');
+      // Show user-friendly error message
+      if (error?.message) {
+        console.warn(error.message);
       }
       
       setRecords([]);

@@ -16,6 +16,7 @@ export interface Staff {
   salary?: number;
   isAvailable?: boolean;
   isActive?: boolean;
+  currentStatus?: 'AVAILABLE' | 'BUSY' | 'INACTIVE';
   status?: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE';
   employeeCode?: string;
   createdAt?: string;
@@ -98,6 +99,19 @@ class StaffService {
   async updateMyProfile(data: UpdateStaffProfileRequest): Promise<Staff> {
     const response = await api.put('/staff/my-profile', data);
     return response.data.result || response.data;
+  }
+
+  // Check if staff is available at specific time
+  async checkAvailability(staffId: string, appointmentDate: string): Promise<boolean> {
+    console.log('Checking availability - Staff ID:', staffId);
+    console.log('Checking availability - Appointment Date:', appointmentDate);
+    
+    const response = await api.get(`/staff/${staffId}/availability`, {
+      params: { 
+        appointmentDate: appointmentDate 
+      }
+    });
+    return response.data.result;
   }
 }
 

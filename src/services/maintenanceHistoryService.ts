@@ -45,16 +45,34 @@ class MaintenanceHistoryService {
     totalCost: number;
     averageCost: number;
   }> {
-    const response = await api.get<ApiResponse<MaintenanceHistoryStatisticsResponse>>('/maintenance-history', { params });
-    
-    const result = response.data.result;
-    
-    return {
-      maintenanceRecords: result?.maintenanceHistory || [],
-      totalMaintenances: result?.totalMaintenances || 0,
-      totalCost: result?.totalCost || 0,
-      averageCost: result?.averageCost || 0
-    };
+    try {
+      const response = await api.get<ApiResponse<MaintenanceHistoryStatisticsResponse>>('/maintenance-history', { params });
+      
+      // Backend trả về format: { code, message, result }
+      const result = response.data.result;
+      
+      return {
+        maintenanceRecords: result?.maintenanceHistory || [],
+        totalMaintenances: result?.totalMaintenances || 0,
+        totalCost: result?.totalCost || 0,
+        averageCost: result?.averageCost || 0
+      };
+    } catch (error: any) {
+      console.error('Error fetching maintenance history:', error);
+      
+      // Nếu lỗi 401/403, có thể do chưa đăng nhập
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        throw new Error('Vui lòng đăng nhập để xem lịch sử bảo dưỡng');
+      }
+      
+      // Trả về dữ liệu rỗng thay vì throw error
+      return {
+        maintenanceRecords: [],
+        totalMaintenances: 0,
+        totalCost: 0,
+        averageCost: 0
+      };
+    }
   }
 
   // Lọc lịch sử bảo dưỡng (POST)
@@ -64,16 +82,31 @@ class MaintenanceHistoryService {
     totalCost: number;
     averageCost: number;
   }> {
-    const response = await api.post<ApiResponse<MaintenanceHistoryStatisticsResponse>>('/maintenance-history/filter', filter);
-    
-    const result = response.data.result;
-    
-    return {
-      maintenanceRecords: result?.maintenanceHistory || [],
-      totalMaintenances: result?.totalMaintenances || 0,
-      totalCost: result?.totalCost || 0,
-      averageCost: result?.averageCost || 0
-    };
+    try {
+      const response = await api.post<ApiResponse<MaintenanceHistoryStatisticsResponse>>('/maintenance-history/filter', filter);
+      
+      const result = response.data.result;
+      
+      return {
+        maintenanceRecords: result?.maintenanceHistory || [],
+        totalMaintenances: result?.totalMaintenances || 0,
+        totalCost: result?.totalCost || 0,
+        averageCost: result?.averageCost || 0
+      };
+    } catch (error: any) {
+      console.error('Error filtering maintenance history:', error);
+      
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        throw new Error('Vui lòng đăng nhập để lọc lịch sử bảo dưỡng');
+      }
+      
+      return {
+        maintenanceRecords: [],
+        totalMaintenances: 0,
+        totalCost: 0,
+        averageCost: 0
+      };
+    }
   }
 }
 

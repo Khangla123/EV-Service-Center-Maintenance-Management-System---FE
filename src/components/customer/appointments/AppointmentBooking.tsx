@@ -32,6 +32,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
   const [selectedServices, setSelectedServices] = useState<ServiceType[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+  const [customerId, setCustomerId] = useState<string>(''); // Store actual customer ID
   
   const [formData, setFormData] = useState<AppointmentFormData>({
     vehicleId: '',
@@ -44,6 +45,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
 
   // Load initial data
   useEffect(() => {
+    loadCustomerProfile();
     loadServiceCenters();
     loadServiceTypes();
     loadVehicles();
@@ -60,6 +62,20 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
       }
     }
   }, [preSelectedVehicleId, vehicles]);
+
+  const loadCustomerProfile = async () => {
+    try {
+      const customerService = (await import('../../../services/customerService')).default;
+      const profile = await customerService.getMyProfile();
+      console.log('Customer profile loaded:', profile);
+      setCustomerId(profile.id);
+    } catch (error: any) {
+      console.error('Failed to load customer profile:', error);
+      if (error?.response?.status === 404) {
+        alert('Không tìm thấy thông tin khách hàng. Vui lòng liên hệ admin để kích hoạt tài khoản.');
+      }
+    }
+  };
 
   const loadServiceCenters = async () => {
     try {
@@ -83,10 +99,31 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
 
   const loadVehicles = async () => {
     try {
+      console.log('Loading vehicles for current user...');
       const vehiclesList = await vehicleService.getMyVehicles();
+      console.log('Vehicles loaded:', vehiclesList);
+      
+      if (!Array.isArray(vehiclesList)) {
+        console.error('Vehicles response is not an array:', vehiclesList);
+        setVehicles([]);
+        return;
+      }
+      
+      // Kiểm tra nếu không có xe
+      if (vehiclesList.length === 0) {
+        console.warn('⚠️ Bạn chưa đăng ký xe nào. Vui lòng đăng ký xe trước khi đặt lịch.');
+      }
+      
       setVehicles(vehiclesList);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load vehicles:', error);
+      console.error('Error details:', error?.response?.data);
+      
+      // Nếu lỗi do chưa có customer profile
+      if (error?.response?.status === 404 || error?.response?.data?.code === 1006) {
+        console.error('❌ Không tìm thấy thông tin khách hàng. Vui lòng liên hệ admin để kích hoạt tài khoản.');
+      }
+      
       setVehicles([]);
     }
   };
@@ -168,26 +205,53 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         setLoading(false);
         return;
       }
+
+      // Validate dữ liệu trước khi gửi
+      if (!state?.user?.id) {
+        alert('Vui lòng đăng nhập để đặt lịch hẹn!');
+        setLoading(false);
+        return;
+      }
+
+      if (!customerId) {
+        alert('Không tìm thấy thông tin khách hàng. Vui lòng thử tải lại trang.');
+        setLoading(false);
+        return;
+      }
+
       const appointmentData = {
-        customerId: state?.user?.id,
+        customerId: customerId, // Use actual customer ID from profile
         vehicleId: selectedVehicle.id,
         serviceCenterId: selectedCenter.id,
         servicePackageId: selectedServices[0].id, // Nếu nhiều dịch vụ, cần sửa lại backend hoặc FE
         appointmentDate: `${formData.scheduledDate}T${formData.scheduledTime}:00`,
-        notes: formData.notes
+        notes: formData.notes || ''
       };
+
+      console.log('Creating appointment with data:', appointmentData);
+      
       // Gọi API tạo lịch hẹn
       const appointmentService = (await import('../../../services/appointmentService')).default;
       const result = await appointmentService.createAppointment(appointmentData);
+      
+      console.log('Appointment created successfully:', result);
       const appointmentId = result.id;
+      
       if (onBookingComplete) {
         onBookingComplete(appointmentId);
       } else {
         navigate('/appointments/success', { state: { appointmentId } });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error booking appointment:', error);
-      alert('Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.');
+      console.error('Error details:', {
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status
+      });
+      
+      const errorMessage = error?.response?.data?.message || error?.message || 'Có lỗi xảy ra khi đặt lịch';
+      alert(`Lỗi: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -340,26 +404,45 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         {step === 3 && (
           <div className="step-content">
             <h2>Chọn xe</h2>
-            <div className="vehicles-grid">
-              {vehicles.map(vehicle => (
-                <div
-                  key={vehicle.id}
-                  className={`vehicle-card ${selectedVehicle?.id === vehicle.id ? 'selected' : ''}`}
-                  onClick={() => handleVehicleSelect(vehicle)}
-                >
-                  <div className="vehicle-header">
-                    <h3>{vehicle.make} {vehicle.model}</h3>
-                    <span className="vehicle-year">{vehicle.year}</span>
-                  </div>
-                  <div className="vehicle-details">
-                    <p><strong>Biển số:</strong> {vehicle.licensePlate}</p>
-                    <p><strong>Màu sắc:</strong> {vehicle.color}</p>
-                    <p><strong>Số km đã đi:</strong> {vehicle.mileage.toLocaleString()}</p>
-                    <p><strong>Dung lượng pin:</strong> {vehicle.batteryCapacity} kWh</p>
-                  </div>
+            
+            {vehicles.length === 0 ? (
+              <div className="no-vehicles-message">
+                <p style={{color: '#ff6b6b', fontSize: '16px', textAlign: 'center', padding: '40px'}}>
+                  ⚠️ Bạn chưa đăng ký xe nào trong hệ thống.<br/>
+                  Vui lòng đăng ký xe trước khi đặt lịch bảo dưỡng.
+                </p>
+                <div style={{textAlign: 'center'}}>
+                  <MDButton 
+                    variant="filled" 
+                    onClick={() => navigate('/customer/vehicles/register')}
+                  >
+                    Đăng ký xe ngay
+                  </MDButton>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="vehicles-grid">
+                {vehicles.map(vehicle => (
+                  <div
+                    key={vehicle.id}
+                    className={`vehicle-card ${selectedVehicle?.id === vehicle.id ? 'selected' : ''}`}
+                    onClick={() => handleVehicleSelect(vehicle)}
+                  >
+                    <div className="vehicle-header">
+                      <h3>{vehicle.make} {vehicle.model}</h3>
+                      <span className="vehicle-year">{vehicle.year}</span>
+                    </div>
+                    <div className="vehicle-details">
+                      <p><strong>Biển số:</strong> {vehicle.licensePlate}</p>
+                      <p><strong>Màu sắc:</strong> {vehicle.color}</p>
+                      <p><strong>Số km đã đi:</strong> {vehicle.mileage.toLocaleString()}</p>
+                      <p><strong>Dung lượng pin:</strong> {vehicle.batteryCapacity} kWh</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
             <div className="step-actions">
               <MDButton variant="outlined" onClick={() => setStep(2)}>
                 Quay lại

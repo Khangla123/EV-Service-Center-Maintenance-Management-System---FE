@@ -30,12 +30,21 @@ const VehicleManagement: React.FC = () => {
     loadVehicles();
   }, [user]);
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(date);
+  const formatDate = (date: Date | null | undefined) => {
+    if (!date) return 'Chưa cập nhật';
+    
+    try {
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) return 'Không hợp lệ';
+      
+      return new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(dateObj);
+    } catch {
+      return 'Không hợp lệ';
+    }
   };
 
   const getBatteryStatusColor = (capacity: number) => {
@@ -45,9 +54,14 @@ const VehicleManagement: React.FC = () => {
     return '#ef4444'; // red
   };
 
-  const getWarrantyStatus = (warrantyExpiration: Date) => {
+  const getWarrantyStatus = (warrantyExpiration: Date | null) => {
+    if (!warrantyExpiration) {
+      return { status: 'Không xác định', color: '#6b7280' };
+    }
+    
     const today = new Date();
-    const timeDiff = warrantyExpiration.getTime() - today.getTime();
+    const expirationDate = new Date(warrantyExpiration);
+    const timeDiff = expirationDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
     if (daysDiff > 365) return { status: 'Còn hạn', color: '#10b981' };

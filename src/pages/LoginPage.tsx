@@ -64,7 +64,7 @@ const LoginPage: React.FC = () => {
           navigate('/staff/dashboard');
           break;
         case UserRole.TECHNICIAN:
-          navigate('/technician/dashboard');
+          navigate('/technician/tasks'); // Navigate directly to tasks page
           break;
         case UserRole.ADMIN:
           navigate('/admin/dashboard');
