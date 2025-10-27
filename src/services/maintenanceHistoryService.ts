@@ -48,6 +48,7 @@ class MaintenanceHistoryService {
     try {
       const response = await api.get<ApiResponse<MaintenanceHistoryStatisticsResponse>>('/maintenance-history', { params });
       
+      // Backend trả về format: { code, message, result }
       const result = response.data.result;
       
       return {
@@ -57,22 +58,20 @@ class MaintenanceHistoryService {
         averageCost: result?.averageCost || 0
       };
     } catch (error: any) {
-      console.error('❌ Error loading maintenance history:', error);
-      console.error('Response:', error.response?.data);
-      console.error('Status:', error.response?.status);
+      console.error('Error fetching maintenance history:', error);
       
-      // Nếu API chưa implement (404) hoặc không có quyền (403), trả về dữ liệu rỗng
-      if (error.response?.status === 404 || error.response?.status === 403) {
-        console.warn('⚠️ Maintenance history API not available or forbidden. Returning empty data.');
-        return {
-          maintenanceRecords: [],
-          totalMaintenances: 0,
-          totalCost: 0,
-          averageCost: 0
-        };
+      // Nếu lỗi 401/403, có thể do chưa đăng nhập
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        throw new Error('Vui lòng đăng nhập để xem lịch sử bảo dưỡng');
       }
       
-      throw error;
+      // Trả về dữ liệu rỗng thay vì throw error
+      return {
+        maintenanceRecords: [],
+        totalMaintenances: 0,
+        totalCost: 0,
+        averageCost: 0
+      };
     }
   }
 
@@ -95,20 +94,18 @@ class MaintenanceHistoryService {
         averageCost: result?.averageCost || 0
       };
     } catch (error: any) {
-      console.error('❌ Error filtering maintenance history:', error);
+      console.error('Error filtering maintenance history:', error);
       
-      // Nếu API chưa implement (404) hoặc không có quyền (403), trả về dữ liệu rỗng
-      if (error.response?.status === 404 || error.response?.status === 403) {
-        console.warn('⚠️ Maintenance history filter API not available or forbidden. Returning empty data.');
-        return {
-          maintenanceRecords: [],
-          totalMaintenances: 0,
-          totalCost: 0,
-          averageCost: 0
-        };
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        throw new Error('Vui lòng đăng nhập để lọc lịch sử bảo dưỡng');
       }
       
-      throw error;
+      return {
+        maintenanceRecords: [],
+        totalMaintenances: 0,
+        totalCost: 0,
+        averageCost: 0
+      };
     }
   }
 }

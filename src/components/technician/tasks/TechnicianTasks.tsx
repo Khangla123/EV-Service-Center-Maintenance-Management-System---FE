@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { Search, Filter, Clock, CheckCircle, Eye, Play, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter, Clock, CheckCircle, Eye, Play, X, Wrench } from 'lucide-react';
 import './TechnicianTasks.css';
+import appointmentService, { Appointment } from '../../../services/appointmentService';
+import staffService from '../../../services/staffService';
 
-type TaskStatus = 'pending' | 'in-progress' | 'done';
+type TaskStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 type Priority = 'Low' | 'Normal' | 'High' | 'Critical';
 
 type Task = {
@@ -25,110 +28,119 @@ type Task = {
   checklist?: { item: string; done: boolean }[];
 };
 
-const mockTasks: Task[] = [
-  {
-    id: 'T-1001',
-    vehicle: 'VinFast VF8',
-    vehicleModel: 'VF8 Eco',
-    licensePlate: 'XV123',
-    customer: 'Nguyễn Văn A',
-    customerPhone: '0901234567',
-    service: 'Kiểm tra pin & bảo dưỡng định kỳ',
-    serviceDetails: ['Kiểm tra dung lượng pin', 'Kiểm tra sức khỏe pin', 'Bảo dưỡng hệ thống làm mát'],
-    priority: 'High',
-    status: 'pending',
-    assignedDate: '2025-10-16 08:00',
-    checklist: [
-      { item: 'Kiểm tra pin (dung lượng, sức khỏe)', done: false },
-      { item: 'Kiểm tra động cơ điện', done: false },
-      { item: 'Kiểm tra hệ thống điện', done: false }
-    ]
-  },
-  {
-    id: 'T-1002',
-    vehicle: 'VinFast VF9',
-    vehicleModel: 'VF9 Plus',
-    licensePlate: 'VF456',
-    customer: 'Trần Thị B',
-    customerPhone: '0912345678',
-    service: 'Sửa hệ thống phanh',
-    serviceDetails: ['Thay má phanh trước', 'Kiểm tra dầu phanh', 'Test hệ thống ABS'],
-    priority: 'Critical',
-    status: 'in-progress',
-    assignedDate: '2025-10-16 09:00',
-    startedAt: '2025-10-16 09:15',
-    timeSpent: '00:45',
-    checklist: [
-      { item: 'Kiểm tra pin (dung lượng, sức khỏe)', done: true },
-      { item: 'Kiểm tra động cơ điện', done: true },
-      { item: 'Kiểm tra hệ thống điện', done: false },
-      { item: 'Kiểm tra phanh, lốp, đèn', done: false }
-    ]
-  },
-  {
-    id: 'T-1003',
-    vehicle: 'VinFast VF8',
-    vehicleModel: 'VF8 Plus',
-    licensePlate: 'AB789',
-    customer: 'Lê Văn C',
-    customerPhone: '0923456789',
-    service: 'Cập nhật phần mềm ECU',
-    serviceDetails: ['Cập nhật firmware ECU', 'Kiểm tra hệ thống sau update', 'Test drive'],
-    priority: 'Normal',
-    status: 'done',
-    assignedDate: '2025-10-15 10:00',
-    startedAt: '2025-10-15 10:30',
-    completedAt: '2025-10-15 11:45',
-    timeSpent: '01:15',
-    rating: 5,
-    notes: 'Khách hàng hài lòng. Xe chạy êm hơn sau update.'
-  },
-  {
-    id: 'T-1004',
-    vehicle: 'VinFast VF8',
-    vehicleModel: 'VF8 Eco',
-    licensePlate: 'CD321',
-    customer: 'Phạm Thị D',
-    customerPhone: '0934567890',
-    service: 'Thay lốp xe',
-    serviceDetails: ['Thay 4 lốp mới', 'Cân bằng lốp', 'Kiểm tra áp suất'],
-    priority: 'Normal',
-    status: 'pending',
-    assignedDate: '2025-10-16 10:30'
-  },
-  {
-    id: 'T-1005',
-    vehicle: 'VinFast VF9',
-    vehicleModel: 'VF9 Eco',
-    licensePlate: 'EF654',
-    customer: 'Hoàng Văn E',
-    customerPhone: '0945678901',
-    service: 'Bảo dưỡng 10,000 km',
-    serviceDetails: ['Kiểm tra tổng thể', 'Thay dầu phanh', 'Kiểm tra hệ thống treo'],
-    priority: 'Low',
-    status: 'done',
-    assignedDate: '2025-10-14 14:00',
-    startedAt: '2025-10-14 14:20',
-    completedAt: '2025-10-14 16:00',
-    timeSpent: '01:40',
-    rating: 4,
-    notes: 'Hoàn thành tốt.'
-  }
-];
-
 interface TechnicianTasksProps {
   compact?: boolean;
 }
 
 const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) => {
-  const [activeTab, setActiveTab] = useState<TaskStatus>('pending');
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<TaskStatus>('CONFIRMED'); // Changed from PENDING to CONFIRMED
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState<Priority | 'all'>('all');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredTasks = mockTasks.filter(task => {
-    const matchStatus = task.status === activeTab;
+  useEffect(() => {
+    console.log('🔄 TechnicianTasks component mounted, loading tasks...');
+    loadTasks();
+    
+    // Cleanup function
+    return () => {
+      console.log('🔄 TechnicianTasks component unmounted');
+    };
+  }, []); // Empty dependency array - only run on mount
+
+  const loadTasks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('=== Starting loadTasks ===');
+      
+      // Get user from localStorage
+      const userStr = localStorage.getItem('user');
+      console.log('User from localStorage:', userStr);
+      
+      if (!userStr) {
+        console.error('❌ No user found in localStorage');
+        setError('Không tìm thấy thông tin user. Vui lòng đăng nhập lại.');
+        setTasks([]);
+        return;
+      }
+      
+      const user = JSON.parse(userStr);
+      console.log('✓ Parsed user:', user);
+      
+      // Get staff ID by finding staff with matching userId
+      console.log('Fetching all staff...');
+      const allStaff = await staffService.getAllStaff();
+      console.log('✓ Received staff list:', allStaff.length, 'staff members');
+      
+      const myStaff = allStaff.find(s => s.userId === user.id);
+      
+      if (!myStaff) {
+        console.error('❌ Staff not found for userId:', user.id);
+        console.log('Available staff userIds:', allStaff.map(s => s.userId));
+        setError('Không tìm thấy thông tin kỹ thuật viên.');
+        setTasks([]);
+        return;
+      }
+      
+      console.log('✓ Found my staff:', myStaff);
+      const staffId = myStaff.id;
+      
+      // Load appointments assigned to this technician
+      console.log('Fetching appointments for staffId:', staffId);
+      const appointments = await appointmentService.getMyTasks(staffId);
+      console.log('✓ Received appointments:', appointments.length, 'items');
+      
+      // Convert appointments to tasks
+      const convertedTasks: Task[] = appointments.map((apt: Appointment) => {
+        // Map status from backend format to display format
+        let displayStatus: TaskStatus = apt.status;
+        
+        return {
+          id: apt.id,
+          vehicle: apt.vehicleModel || 'N/A',
+          vehicleModel: apt.vehicleModel || 'N/A',
+          licensePlate: apt.vehicleLicensePlate || 'N/A',
+          customer: apt.customerName || 'N/A',
+          customerPhone: apt.customerPhone || 'N/A',
+          service: apt.servicePackageName || 'N/A',
+          serviceDetails: apt.notes ? [apt.notes] : [],
+          priority: 'Normal' as Priority, // TODO: Add priority to appointment
+          status: displayStatus,
+          assignedDate: apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleString('vi-VN') : 'N/A',
+          startedAt: apt.status === 'IN_PROGRESS' ? new Date(apt.appointmentDate).toLocaleString('vi-VN') : undefined,
+          completedAt: apt.actualCompletion ? new Date(apt.actualCompletion).toLocaleString('vi-VN') : undefined,
+          notes: apt.notes
+        };
+      });
+      
+      console.log('✓ Converted tasks:', convertedTasks.length, 'tasks');
+      console.log('Task statuses:', convertedTasks.map(t => t.status));
+      setTasks(convertedTasks);
+      console.log('=== loadTasks completed successfully ===');
+    } catch (error) {
+      console.error('❌ Error loading tasks:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        setError('Không thể tải danh sách công việc: ' + error.message);
+      } else {
+        setError('Không thể tải danh sách công việc.');
+      }
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredTasks = tasks.filter(task => {
+    // In compact mode, show all tasks (no status filter)
+    const matchStatus = compact ? true : task.status === activeTab;
     const matchSearch = 
       task.vehicle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -139,13 +151,39 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
     return matchStatus && matchSearch && matchPriority;
   });
 
+  // Debug log for compact mode
+  if (compact) {
+    console.log('🔍 COMPACT MODE DEBUG:');
+    console.log('  Total tasks:', tasks.length);
+    console.log('  Filtered tasks:', filteredTasks.length);
+    console.log('  Tasks to display:', compact ? filteredTasks.slice(0, 5).length : filteredTasks.length);
+  }
+
   const getStatusStats = (status: TaskStatus) => {
-    return mockTasks.filter(t => t.status === status).length;
+    return tasks.filter(t => t.status === status).length;
   };
 
-  const handleStartTask = (task: Task) => {
-    console.log('Starting task:', task.id);
-    // Logic to start task
+  const handleStartTask = async (task: Task) => {
+    if (!window.confirm(`Bắt đầu công việc: ${task.vehicle} - ${task.licensePlate}?`)) {
+      return;
+    }
+
+    try {
+      console.log('🔄 Starting task:', task.id);
+      
+      // Call API to update appointment status to IN_PROGRESS
+      await appointmentService.updateAppointment(task.id, {
+        status: 'IN_PROGRESS'
+      });
+      
+      console.log('✓ Task started successfully');
+      
+      // Redirect to work processing page
+      navigate('/technician/work');
+    } catch (error) {
+      console.error('❌ Error starting task:', error);
+      alert('Không thể bắt đầu công việc: ' + (error as any)?.message);
+    }
   };
 
   const handleViewDetail = (task: Task) => {
@@ -275,7 +313,7 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
           </div>
 
           <div className="modal-footer">
-            {selectedTask.status === 'pending' && (
+            {selectedTask.status === 'CONFIRMED' && (
               <button className="btn-start" onClick={() => handleStartTask(selectedTask)}>
                 <Play size={16} />
                 Bắt đầu công việc
@@ -290,6 +328,13 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
 
   return (
     <div className={`tech-tasks ${compact ? 'compact' : ''}`}>
+      {compact && (
+        <div className="compact-header">
+          <h4>Công việc gần đây</h4>
+          <span className="task-count">{tasks.length} công việc</span>
+        </div>
+      )}
+      
       {!compact && (
         <>
           <div className="tasks-header">
@@ -319,37 +364,51 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
 
           <div className="tabs">
             <button
-              className={`tab ${activeTab === 'pending' ? 'active' : ''}`}
-              onClick={() => setActiveTab('pending')}
+              className={`tab ${activeTab === 'CONFIRMED' ? 'active' : ''}`}
+              onClick={() => setActiveTab('CONFIRMED')}
             >
               <Clock size={16} />
-              Chờ xử lý ({getStatusStats('pending')})
+              Đã phân công ({getStatusStats('CONFIRMED')})
             </button>
             <button
-              className={`tab ${activeTab === 'in-progress' ? 'active' : ''}`}
-              onClick={() => setActiveTab('in-progress')}
+              className={`tab ${activeTab === 'IN_PROGRESS' ? 'active' : ''}`}
+              onClick={() => setActiveTab('IN_PROGRESS')}
             >
               <Play size={16} />
-              Đang thực hiện ({getStatusStats('in-progress')})
+              Đang thực hiện ({getStatusStats('IN_PROGRESS')})
             </button>
             <button
-              className={`tab ${activeTab === 'done' ? 'active' : ''}`}
-              onClick={() => setActiveTab('done')}
+              className={`tab ${activeTab === 'COMPLETED' ? 'active' : ''}`}
+              onClick={() => setActiveTab('COMPLETED')}
             >
               <CheckCircle size={16} />
-              Đã hoàn thành ({getStatusStats('done')})
+              Đã hoàn thành ({getStatusStats('COMPLETED')})
             </button>
           </div>
         </>
       )}
 
       <div className="task-list">
-        {filteredTasks.length === 0 ? (
+        {loading ? (
+          <div className="loading-state">
+            <p>Đang tải danh sách công việc...</p>
+          </div>
+        ) : error ? (
+          <div className="error-state">
+            <p style={{color: 'red', fontWeight: 'bold'}}>❌ {error}</p>
+            <button onClick={loadTasks} style={{marginTop: '10px', padding: '8px 16px', cursor: 'pointer'}}>
+              Thử lại
+            </button>
+          </div>
+        ) : filteredTasks.length === 0 ? (
           <div className="empty-state">
             <p>Không có công việc nào</p>
+            <p style={{fontSize: '14px', color: '#666', marginTop: '8px'}}>
+              Tasks: {tasks.length} | Filtered: {filteredTasks.length}
+            </p>
           </div>
         ) : (
-          filteredTasks.map((task) => (
+          (compact ? filteredTasks.slice(0, 5) : filteredTasks).map((task) => (
             <div key={task.id} className={`task-card ${task.status}`}>
               <div className="task-row">
                 <div className="task-meta">
@@ -364,7 +423,7 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
                 </div>
               </div>
 
-              {task.status === 'in-progress' && task.timeSpent && (
+              {task.status === 'IN_PROGRESS' && task.timeSpent && (
                 <div className="progress-info">
                   <Clock size={14} />
                   <span>Đã làm: {task.timeSpent}</span>
@@ -376,7 +435,7 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
                 </div>
               )}
 
-              {task.status === 'done' && (
+              {task.status === 'COMPLETED' && (
                 <div className="done-info">
                   <CheckCircle size={14} />
                   <span>Hoàn thành • Thời gian: {task.timeSpent}</span>
@@ -389,10 +448,16 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
                   <Eye size={16} />
                   Xem chi tiết
                 </button>
-                {task.status === 'pending' && (
+                {task.status === 'CONFIRMED' && (
                   <button className="btn-start" onClick={() => handleStartTask(task)}>
                     <Play size={16} />
                     Bắt đầu
+                  </button>
+                )}
+                {task.status === 'IN_PROGRESS' && (
+                  <button className="btn-process" onClick={() => navigate('/technician/work')}>
+                    <Wrench size={16} />
+                    Xử lý công việc
                   </button>
                 )}
               </div>

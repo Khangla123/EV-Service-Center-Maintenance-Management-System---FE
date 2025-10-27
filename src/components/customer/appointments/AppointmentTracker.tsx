@@ -28,14 +28,22 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
   const [centers, setCenters] = useState<ServiceCenter[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState<ServiceAppointment | null>(null);
+  const [customerId, setCustomerId] = useState<string>('');
 
   useEffect(() => {
-    loadAppointments();
+    loadCustomerProfile();
     loadVehicles();
     loadServices();
     loadCenters();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  useEffect(() => {
+    if (customerId) {
+      loadAppointments();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerId]);
 
   useEffect(() => {
     if (appointmentId && appointments.length > 0) {
@@ -46,12 +54,25 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
     }
   }, [appointmentId, appointments]);
 
+  const loadCustomerProfile = async () => {
+    try {
+      const customerService = (await import('../../../services/customerService')).default;
+      const profile = await customerService.getMyProfile();
+      console.log('Customer profile loaded:', profile);
+      setCustomerId(profile.id);
+    } catch (error: any) {
+      console.error('Failed to load customer profile:', error);
+    }
+  };
+
   const loadAppointments = async () => {
-    if (!user?.id) return;
+    if (!customerId) return;
 
     try {
       setLoading(true);
-      const response = await appointmentService.getMyAppointments();
+      console.log('Loading appointments for customer:', customerId);
+      const response = await appointmentService.getMyAppointments({ customerId });
+      console.log('Appointments loaded:', response);
       setAppointments(response.appointments as any);
     } catch (error) {
       console.error('Error loading appointments:', error);
@@ -127,26 +148,55 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
     return colorMap[status] || 'default';
   };
 
-  const getProgressPercentage = (status: AppointmentStatus) => {
-    const progressMap = {
-      [AppointmentStatus.PENDING]: 25,
-      [AppointmentStatus.CONFIRMED]: 50,
-      [AppointmentStatus.IN_PROGRESS]: 75,
-      [AppointmentStatus.COMPLETED]: 100,
-      [AppointmentStatus.CANCELLED]: 0,
-      [AppointmentStatus.NO_SHOW]: 0
-    };
-    return progressMap[status] || 0;
+  const getProgressPercentage = (appointment: ServiceAppointment) => {
+    const { status, scheduledDate, estimatedCompletion, actualCompletion } = appointment;
+    
+    // Nếu đã hoàn thành hoặc hủy
+    if (status === AppointmentStatus.COMPLETED) return 100;
+    if (status === AppointmentStatus.CANCELLED || status === AppointmentStatus.NO_SHOW) return 0;
+    
+    // Nếu chưa bắt đầu
+    if (status === AppointmentStatus.PENDING) return 25;
+    if (status === AppointmentStatus.CONFIRMED) return 50;
+    
+    // Nếu đang thực hiện và có thời gian dự kiến
+    if (status === AppointmentStatus.IN_PROGRESS && scheduledDate && estimatedCompletion) {
+      const now = new Date().getTime();
+      const start = new Date(scheduledDate).getTime();
+      const end = new Date(estimatedCompletion).getTime();
+      
+      if (now >= end) return 95; // Gần hoàn thành
+      if (now <= start) return 50; // Chưa đến giờ
+      
+      // Tính % dựa trên thời gian đã qua
+      const elapsed = now - start;
+      const total = end - start;
+      const progress = Math.floor((elapsed / total) * 45) + 50; // 50% -> 95%
+      
+      return Math.min(95, Math.max(50, progress));
+    }
+    
+    // Mặc định cho IN_PROGRESS không có thời gian
+    return 75;
   };
 
-  const formatDateTime = (date: Date) => {
-    return new Intl.DateTimeFormat('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(new Date(date));
+  const formatDateTime = (date: Date | null | undefined) => {
+    if (!date) return 'Chưa xác định';
+    
+    try {
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) return 'Không hợp lệ';
+      
+      return new Intl.DateTimeFormat('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(dateObj);
+    } catch {
+      return 'Không hợp lệ';
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -266,7 +316,7 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
     onReschedule: (id: string) => void;
     detailed?: boolean;
   }) {
-    const progress = getProgressPercentage(appointment.status);
+    const progress = getProgressPercentage(appointment);
     const statusColor = getStatusColor(appointment.status);
     const canCancel = [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED].includes(appointment.status);
     const canReschedule = [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED].includes(appointment.status);
@@ -283,6 +333,12 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
         </div>
 
         <div className="progress-section">
+          <div className="progress-header">
+            <span className="progress-label">Tiến độ thực hiện</span>
+            {appointment.status === AppointmentStatus.IN_PROGRESS && (
+              <span className="progress-percentage">{progress}%</span>
+            )}
+          </div>
           <div className="progress-bar">
             <div 
               className="progress-fill" 
@@ -315,6 +371,11 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
           <div className="info-row">
             <strong>Thời gian:</strong> {formatDateTime(appointment.appointmentDate)}
           </div>
+          {appointment.status === AppointmentStatus.IN_PROGRESS && appointment.estimatedCompletion && (
+            <div className="info-row highlight">
+              <strong>Dự kiến hoàn thành:</strong> {formatDateTime(appointment.estimatedCompletion)}
+            </div>
+          )}
           {detailed && (
             <>
               <div className="info-row">

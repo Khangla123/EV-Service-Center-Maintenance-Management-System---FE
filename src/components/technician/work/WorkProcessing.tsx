@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Play, Upload, Plus, Trash2, Clock, AlertCircle, CheckCircle2, X, Package } from 'lucide-react';
 import './WorkProcessing.css';
+import appointmentService, { Appointment } from '../../../services/appointmentService';
 
 type ChecklistItem = {
   id: number;
@@ -29,22 +31,16 @@ type ServiceSuggestion = {
   estimatedCost: string;
 };
 
-type ActiveTask = {
-  id: string;
-  vehicle: string;
-  licensePlate: string;
-  customer: string;
-  service: string;
-  startedAt: string;
-};
-
-const mockActiveTasks: ActiveTask[] = [
-  { id: 'T-1002', vehicle: 'VinFast VF9 Plus', licensePlate: 'VF456', customer: 'Trần Thị B', service: 'Sửa hệ thống phanh', startedAt: '2025-10-16 09:15' },
-];
-
 const WorkProcessing: React.FC = () => {
-  const [selectedTask, setSelectedTask] = useState<ActiveTask | null>(mockActiveTasks[0] || null);
-  const [currentTime, setCurrentTime] = useState('00:45');
+  const { appointmentId } = useParams<{ appointmentId: string }>();
+  const navigate = useNavigate();
+  
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [startTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState('00:00');
   const [checklist, setChecklist] = useState<ChecklistItem[]>([
     { id: 1, title: 'Kiểm tra pin (dung lượng, sức khỏe)', done: true },
     { id: 2, title: 'Kiểm tra động cơ điện', done: true },
@@ -62,6 +58,104 @@ const WorkProcessing: React.FC = () => {
   const [suggestion, setSuggestion] = useState<ServiceSuggestion>({ service: '', reason: '', estimatedCost: '' });
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [completionNotes, setCompletionNotes] = useState('');
+
+  // Load appointments for current technician
+  useEffect(() => {
+    const loadAppointments = async () => {
+      try {
+        console.log('🔄 Loading appointments for work processing...');
+        
+        // Get user from localStorage
+        const userStr = localStorage.getItem('user');
+        if (!userStr) {
+          console.error('❌ No user found');
+          navigate('/login');
+          return;
+        }
+        
+        const user = JSON.parse(userStr);
+        
+        // Get staff info
+        const staffService = await import('../../../services/staffService');
+        const allStaff = await staffService.default.getAllStaff();
+        const myStaff = allStaff.find(s => s.userId === user.id);
+        
+        if (!myStaff) {
+          console.error('❌ Staff not found');
+          return;
+        }
+        
+        // Load all appointments
+        const allAppointments = await appointmentService.getMyTasks(myStaff.id);
+        console.log('✓ Loaded appointments:', allAppointments);
+        
+        // Filter only IN_PROGRESS appointments (đang xử lý thực sự)
+        const inProgressAppts = allAppointments.filter(
+          apt => apt.status === 'IN_PROGRESS'
+        );
+        console.log('✓ In-progress appointments:', inProgressAppts.length);
+        
+        setAppointments(inProgressAppts);
+        
+        // If appointmentId provided, select that one
+        if (appointmentId) {
+          const selected = inProgressAppts.find(apt => apt.id === appointmentId);
+          if (selected) {
+            setSelectedAppointment(selected);
+            setAppointment(selected);
+            initializeChecklist(selected);
+          }
+        } else if (inProgressAppts.length > 0) {
+          // Auto-select first appointment
+          setSelectedAppointment(inProgressAppts[0]);
+          setAppointment(inProgressAppts[0]);
+          initializeChecklist(inProgressAppts[0]);
+        }
+        
+      } catch (error) {
+        console.error('❌ Error loading appointments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAppointments();
+  }, [appointmentId, navigate]);
+
+  const initializeChecklist = (appt: Appointment) => {
+    if (appt.servicePackageName?.includes('Bảo dưỡng')) {
+      setChecklist([
+        { id: 1, title: 'Kiểm tra pin (dung lượng, sức khỏe)', done: false },
+        { id: 2, title: 'Kiểm tra động cơ điện', done: false },
+        { id: 3, title: 'Kiểm tra hệ thống điện', done: false },
+        { id: 4, title: 'Kiểm tra phanh, lốp, đèn', done: false },
+        { id: 5, title: 'Kiểm tra hệ thống làm mát', done: false }
+      ]);
+    }
+  };
+
+  const selectAppointment = (appt: Appointment) => {
+    setSelectedAppointment(appt);
+    setAppointment(appt);
+    initializeChecklist(appt);
+    // Reset states
+    setIssues([]);
+    setPartsUsed([]);
+    setSuggestion({ service: '', reason: '', estimatedCost: '' });
+  };
+
+  // Timer effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      const diff = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+      const hours = Math.floor(diff / 3600);
+      const minutes = Math.floor((diff % 3600) / 60);
+      setCurrentTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [startTime]);
 
   const toggleChecklistItem = (id: number) => {
     setChecklist(prev => prev.map(item => 
@@ -123,10 +217,21 @@ const WorkProcessing: React.FC = () => {
     setShowSuggestionForm(false);
   };
 
-  const completeWork = () => {
-    console.log('Completing work with notes:', completionNotes);
-    alert('Công việc đã được hoàn thành!');
-    setShowCompleteModal(false);
+  const completeWork = async () => {
+    if (!appointment) return;
+
+    try {
+      await appointmentService.updateAppointment(appointment.id, {
+        status: 'COMPLETED',
+        notes: completionNotes
+      });
+      alert('Công việc đã được hoàn thành!');
+      setShowCompleteModal(false);
+      navigate('/technician/tasks');
+    } catch (error) {
+      console.error('Error completing work:', error);
+      alert('Lỗi khi hoàn thành công việc. Vui lòng thử lại!');
+    }
   };
 
   const getSeverityBadge = (severity: string) => {
@@ -143,13 +248,57 @@ const WorkProcessing: React.FC = () => {
   const completedCount = checklist.filter(item => item.done).length;
   const progressPercentage = Math.round((completedCount / checklist.length) * 100);
 
-  if (!selectedTask) {
+  if (loading) {
     return (
       <div className="work-processing">
         <div className="empty-work">
           <Clock size={48} />
-          <h3>Chưa có công việc đang xử lý</h3>
-          <p>Hãy bắt đầu một công việc từ danh sách "Chờ xử lý"</p>
+          <h3>Đang tải thông tin công việc...</h3>
+        </div>
+      </div>
+    );
+  }
+
+  if (appointments.length === 0) {
+    return (
+      <div className="work-processing">
+        <div className="empty-work">
+          <Clock size={48} />
+          <h3>Không có công việc nào đang thực hiện</h3>
+          <p>Vui lòng bắt đầu công việc từ danh sách trước</p>
+          <button className="btn-primary" onClick={() => navigate('/technician/tasks')}>
+            Quay lại danh sách công việc
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!appointment) {
+    return (
+      <div className="work-processing">
+        <div className="empty-work">
+          <Clock size={48} />
+          <h3>Vui lòng chọn công việc để xử lý</h3>
+          <button className="btn-primary" onClick={() => navigate('/technician/tasks')}>
+            Quay lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (appointment.status !== 'IN_PROGRESS') {
+    return (
+      <div className="work-processing">
+        <div className="empty-work">
+          <AlertCircle size={48} />
+          <h3>Công việc chưa được bắt đầu hoặc đã hoàn thành</h3>
+          <p>Status hiện tại: {appointment.status}</p>
+          <p>Vui lòng bắt đầu công việc từ danh sách trước</p>
+          <button className="btn-primary" onClick={() => navigate('/technician/tasks')}>
+            Quay lại danh sách công việc
+          </button>
         </div>
       </div>
     );
@@ -157,15 +306,47 @@ const WorkProcessing: React.FC = () => {
 
   return (
     <div className="work-processing">
+      {/* Sidebar: List of appointments */}
+      {appointments.length > 1 && (
+        <div className="work-sidebar">
+          <h4>Công việc đang xử lý ({appointments.length})</h4>
+          <div className="appointment-list">
+            {appointments.map(apt => (
+              <div
+                key={apt.id}
+                className={`appointment-item ${selectedAppointment?.id === apt.id ? 'selected' : ''}`}
+                onClick={() => selectAppointment(apt)}
+              >
+                <div className="apt-header">
+                  <span className="apt-id">{apt.id.substring(0, 8)}</span>
+                  <span className={`apt-status ${apt.status.toLowerCase()}`}>{apt.status}</span>
+                </div>
+                <div className="apt-vehicle">{apt.vehicleModel} - {apt.vehicleLicensePlate}</div>
+                <div className="apt-customer">{apt.customerName}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
       <div className="work-header">
         <div className="work-info">
           <h2>Xử lý Công việc</h2>
           <div className="task-summary">
-            <span className="task-id">{selectedTask.id}</span>
+            <span className="task-id">{appointment.id.substring(0, 8)}</span>
             <span className="separator">•</span>
-            <span>{selectedTask.vehicle} - {selectedTask.licensePlate}</span>
+            <span>{appointment.vehicleModel} - {appointment.vehicleLicensePlate}</span>
             <span className="separator">•</span>
-            <span>Khách: {selectedTask.customer}</span>
+            <span>Khách: {appointment.customerName}</span>
+            {appointment.customerPhone && (
+              <>
+                <span className="separator">•</span>
+                <span>{appointment.customerPhone}</span>
+              </>
+            )}
+          </div>
+          <div className="service-info" style={{ marginTop: '8px', fontSize: '14px', color: '#6b7280' }}>
+            Dịch vụ: <strong>{appointment.servicePackageName}</strong>
           </div>
         </div>
         <div className="timer">

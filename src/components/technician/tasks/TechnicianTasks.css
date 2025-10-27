@@ -8,6 +8,31 @@
   margin-top: 24px;
 }
 
+.compact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.compact-header h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.compact-header .task-count {
+  font-size: 14px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
 .tasks-header {
   margin-bottom: 20px;
 }
@@ -233,7 +258,8 @@
 }
 
 .btn-view,
-.btn-start {
+.btn-start,
+.btn-process {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -263,6 +289,16 @@
 .btn-start:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.btn-process {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.btn-process:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 /* Modal */

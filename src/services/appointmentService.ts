@@ -4,10 +4,16 @@ export interface Appointment {
   id: string;
   customerId: string;
   customerName: string;
+  customerPhone?: string;
+  vehicleId: string;
+  vehicleLicensePlate: string;
+  vehicleModel: string;
   serviceCenterId: string;
   serviceCenterName: string;
   servicePackageId: string;
   servicePackageName: string;
+  technicianId?: string;
+  technicianName?: string;
   appointmentDate: Date;
   status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
@@ -153,6 +159,14 @@ class AppointmentService {
   }): Promise<AvailableSlot[]> {
     const response = await api.get('/appointments/available', { params });
     return response.data;
+  }
+
+  // Lấy công việc được phân công cho technician
+  async getMyTasks(technicianId: string): Promise<Appointment[]> {
+    const response = await api.get('/appointments/my-tasks', {
+      params: { technicianId }
+    });
+    return response.data.result || response.data;
   }
 }
 
