@@ -11,6 +11,8 @@ export interface Appointment {
   appointmentDate: Date;
   status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
+  technicianId?: string;
+  technicianName?: string;
   estimatedCompletion?: Date;
   actualCompletion?: Date;
   createdAt?: Date;
@@ -33,6 +35,7 @@ export interface UpdateAppointmentRequest {
   serviceType?: string;
   status?: string;
   notes?: string;
+  technicianId?: string;
 }
 
 export interface AvailableSlot {
@@ -97,7 +100,46 @@ class AppointmentService {
     fromDate?: string;
     toDate?: string;
   }): Promise<{ appointments: Appointment[]; total: number; page: number; size: number }> {
-    const response = await api.get('/appointments/me', { params });
+    // Lấy customerId từ localStorage nếu không được truyền vào
+    let customerId = params?.customerId;
+    
+    if (!customerId) {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          const userId = user.id;
+          console.log('📌 getMyAppointments - userId from localStorage:', userId);
+          
+          // Gọi API /customers/me để lấy customer profile (bao gồm customerId)
+          try {
+            const customerResponse = await api.get('/customers/me');
+            const customerData = customerResponse.data.result || customerResponse.data;
+            customerId = customerData.id;
+            console.log('✅ Got customerId from /customers/me:', customerId);
+          } catch (error) {
+            console.error('❌ Error getting customer profile:', error);
+            // Fallback: thử dùng userId làm customerId
+            customerId = userId;
+            console.log('⚠️ Fallback to userId as customerId:', customerId);
+          }
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
+    }
+    
+    // Nếu vẫn không có customerId, trả về danh sách rỗng
+    if (!customerId) {
+      console.warn('⚠️ No customerId available for getMyAppointments');
+      return { appointments: [], total: 0, page: 1, size: 0 };
+    }
+    
+    console.log('🔍 Calling /appointments/me with customerId:', customerId);
+    const response = await api.get('/appointments/me', { 
+      params: { ...params, customerId } 
+    });
+    console.log('✅ Response from /appointments/me:', response.data);
     // Backend trả về format: {message: string, result: Appointment[]}
     const appointments = response.data.result || response.data;
     return { appointments, total: appointments.length, page: 1, size: appointments.length };

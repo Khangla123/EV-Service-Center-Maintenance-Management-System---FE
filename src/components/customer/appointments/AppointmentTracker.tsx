@@ -210,8 +210,8 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
           <AppointmentCard
             appointment={selectedAppointment}
             vehicle={getVehicleInfo(selectedAppointment.vehicleId)}
-            service={getServiceInfo(selectedAppointment.serviceTypeId)}
-            center={getCenterInfo('center1')}
+            service={getServiceInfo(selectedAppointment.servicePackageId)}
+            center={getCenterInfo(selectedAppointment.serviceCenterId || 'center1')}
             onCancel={handleCancelAppointment}
             onReschedule={handleReschedule}
             detailed={true}
@@ -234,8 +234,8 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
                   key={appointment.id}
                   appointment={appointment}
                   vehicle={getVehicleInfo(appointment.vehicleId)}
-                  service={getServiceInfo(appointment.serviceTypeId)}
-                  center={getCenterInfo('center1')}
+                  service={getServiceInfo(appointment.servicePackageId)}
+                  center={getCenterInfo(appointment.serviceCenterId || 'center1')}
                   onCancel={handleCancelAppointment}
                   onReschedule={handleReschedule}
                   detailed={false}
@@ -313,7 +313,7 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
             <strong>Dịch vụ:</strong> {service?.name}
           </div>
           <div className="info-row">
-            <strong>Thời gian:</strong> {formatDateTime(appointment.scheduledDate)}
+            <strong>Thời gian:</strong> {formatDateTime(appointment.appointmentDate)}
           </div>
           {detailed && (
             <>

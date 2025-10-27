@@ -3,6 +3,9 @@ export { default as MDButton } from './MDButton';
 export { default as MDTextField } from './MDTextField';
 export { default as MDCard } from './MDCard';
 
+// Utility Components
+export { default as ImageUploader } from './ImageUploader/ImageUploader';
+
 // Legacy components (to be replaced)
 export { default as GlassPanel } from './GlassPanel';
 export { default as GradientButton } from './GradientButton';

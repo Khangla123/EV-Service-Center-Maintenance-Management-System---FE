@@ -39,7 +39,8 @@ export interface Vehicle {
   batteryCapacity: number;
   mileage: number;
   purchaseDate: Date;
-  warrantyExpiration: Date;
+  warrantyExpiration: Date | null;
+  imageUrl?: string; // URL ảnh xe từ database
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,17 +67,25 @@ export enum ServiceCategory {
 export interface ServiceAppointment {
   id: string;
   customerId: string;
+  customerName?: string;
   vehicleId: string;
-  serviceTypeId: string;
+  vehicleLicensePlate?: string;
+  vehicleModel?: string;
+  servicePackageId: string;
+  servicePackageName?: string;
+  serviceCenterId?: string;
+  serviceCenterName?: string;
   technicianId?: string;
-  scheduledDate: Date;
+  appointmentDate: Date;
+  scheduledDate?: Date; // deprecated, use appointmentDate
+  serviceTypeId?: string; // deprecated, use servicePackageId
   status: AppointmentStatus;
-  priority: Priority;
+  priority?: Priority;
   notes?: string;
   estimatedCompletion?: Date;
   actualCompletion?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export enum AppointmentStatus {

@@ -142,10 +142,10 @@ const CustomerManagement: React.FC = () => {
                 <td>
                   <div className="customer-info">
                     <div className="customer-avatar">
-                      {customer.firstName.charAt(0)}
+                      {customer.firstName?.charAt(0) || '?'}
                     </div>
                     <div>
-                      <div className="customer-name">{customer.firstName} {customer.lastName}</div>
+                      <div className="customer-name">{customer.firstName || ''} {customer.lastName || ''}</div>
                       <div className="customer-id">#{customer.id}</div>
                     </div>
                   </div>
@@ -154,11 +154,11 @@ const CustomerManagement: React.FC = () => {
                   <div className="contact-info">
                     <div className="contact-item">
                       <Phone size={14} />
-                      <span>{customer.phone}</span>
+                      <span>{customer.phone || 'N/A'}</span>
                     </div>
                     <div className="contact-item">
                       <Mail size={14} />
-                      <span>{customer.email}</span>
+                      <span>{customer.email || 'N/A'}</span>
                     </div>
                   </div>
                 </td>

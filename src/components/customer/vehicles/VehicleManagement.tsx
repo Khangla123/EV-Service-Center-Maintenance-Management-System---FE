@@ -18,6 +18,8 @@ const VehicleManagement: React.FC = () => {
       setLoading(true);
       try {
         const vehiclesList = await vehicleService.getMyVehicles();
+        console.log('🚗 Vehicles loaded:', vehiclesList); // Debug log
+        console.log('🖼️ First vehicle imageUrl:', vehiclesList[0]?.imageUrl); // Debug imageUrl
         setVehicles(vehiclesList);
       } catch (error) {
         console.error('Error loading vehicles:', error);
@@ -30,12 +32,26 @@ const VehicleManagement: React.FC = () => {
     loadVehicles();
   }, [user]);
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(date);
+  const formatDate = (date: Date | string | null | undefined) => {
+    if (!date) {
+      return 'N/A';
+    }
+    
+    try {
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) {
+        return 'N/A';
+      }
+      
+      return new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(dateObj);
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'N/A';
+    }
   };
 
   const getBatteryStatusColor = (capacity: number) => {
@@ -45,9 +61,21 @@ const VehicleManagement: React.FC = () => {
     return '#ef4444'; // red
   };
 
-  const getWarrantyStatus = (warrantyExpiration: Date) => {
+  const getWarrantyStatus = (warrantyExpiration: Date | null | undefined) => {
+    // Kiểm tra nếu warrantyExpiration null hoặc undefined
+    if (!warrantyExpiration) {
+      return { status: 'Không có thông tin', color: '#6b7280' };
+    }
+    
     const today = new Date();
-    const timeDiff = warrantyExpiration.getTime() - today.getTime();
+    const warrantyDate = new Date(warrantyExpiration);
+    
+    // Kiểm tra nếu warrantyDate không hợp lệ
+    if (isNaN(warrantyDate.getTime())) {
+      return { status: 'Không hợp lệ', color: '#6b7280' };
+    }
+    
+    const timeDiff = warrantyDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
     if (daysDiff > 365) return { status: 'Còn hạn', color: '#10b981' };
@@ -56,17 +84,30 @@ const VehicleManagement: React.FC = () => {
     return { status: 'Hết hạn', color: '#6b7280' };
   };
 
-  const getVehicleImage = (make: string, model: string) => {
-    // Map vehicle model to image path
-    if (make === 'VinFast') {
-      if (model === 'VF8') {
-        return '/assets/images/VinFast VF8.png';
+  const getVehicleImage = (vehicle: Vehicle) => {
+    console.log(`🔍 Getting image for ${vehicle.make} ${vehicle.model}:`, vehicle.imageUrl); // Debug
+    
+    // Ưu tiên lấy ảnh từ database (imageUrl)
+    if (vehicle.imageUrl) {
+      console.log('✅ Using imageUrl from database:', vehicle.imageUrl);
+      return vehicle.imageUrl;
+    }
+    
+    // Fallback: Map vehicle model to image path (legacy code)
+    if (vehicle.make === 'VinFast') {
+      if (vehicle.model === 'VF8' || vehicle.model === 'VF 8') {
+        console.log('⚠️ Fallback to legacy VF8 path');
+        return '/assets/images/vehicles/vinfast-vf8.png'; // Updated path
       }
-      if (model === 'VF9') {
-        return '/assets/images/VinFast VF9.png';
+      if (vehicle.model === 'VF9' || vehicle.model === 'VF 9') {
+        console.log('⚠️ Fallback to legacy VF9 path');
+        return '/assets/images/vehicles/vinfast-vf9.png'; // Updated path
       }
     }
-    return null; // Return null if no image available
+    
+    // Default placeholder nếu không có ảnh
+    console.log('⚠️ No image found, using default');
+    return null; // Return null để hiển thị placeholder icon
   };
 
   const handleBookService = (vehicleId: string) => {
@@ -116,7 +157,7 @@ const VehicleManagement: React.FC = () => {
         <div className="vehicles-grid">
           {vehicles.map((vehicle) => {
             const warrantyStatus = getWarrantyStatus(vehicle.warrantyExpiration);
-            const vehicleImageSrc = getVehicleImage(vehicle.make, vehicle.model);
+            const vehicleImageSrc = getVehicleImage(vehicle); // Truyền toàn bộ vehicle object
             
             return (
               <div key={vehicle.id} className="vehicle-card">

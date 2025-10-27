@@ -137,6 +137,19 @@ class ServiceOrderService {
     const response = await api.get('/service-orders/my-assignments', { params });
     return response.data;
   }
+
+  // Tạo Service Order từ Appointment và phân công Technician (FLOW CHUẨN)
+  async createServiceOrderFromAppointment(
+    appointmentId: string,
+    technicianId: string
+  ): Promise<ServiceOrder> {
+    const response = await api.post(
+      `/service-orders/from-appointment/${appointmentId}/assign`,
+      null,
+      { params: { technicianId } }
+    );
+    return response.data.result;
+  }
 }
 
 export default new ServiceOrderService();
