@@ -105,14 +105,18 @@ const SignupPage: React.FC = () => {
     const firstName = nameParts[nameParts.length - 1]; // Last part is first name in Vietnamese
     const lastName = nameParts.slice(0, -1).join(' '); // Everything else is last name
 
-    await register({
+    const registerData = {
       firstName,
       lastName,
       email: formData.email,
       phone: formData.phone,
       password: formData.password,
       role: formData.role
-    });
+    };
+    
+    console.log('SignupPage - Submitting registration:', registerData); // Debug log
+
+    await register(registerData);
     // Navigation is handled by useEffect based on user role
   };
 

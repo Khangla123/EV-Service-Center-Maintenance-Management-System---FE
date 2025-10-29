@@ -153,19 +153,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      // Call API to register new user
-      await userService.register({
+      console.log('AuthContext - Register called with:', userData); // Debug log
+      
+      // Backend might expect 'username' instead of 'email'
+      // Try simplest format first
+      const fullName = `${userData.lastName} ${userData.firstName}`.trim();
+      const registerPayload = {
         email: userData.email,
+        username: userData.email,  // Backend error says "email và mật khẩu" but might check 'username' field
         password: userData.password,
         firstName: userData.firstName,
         lastName: userData.lastName,
+        fullName: fullName,
         phone: userData.phone
-      });
+      };
+      
+      console.log('AuthContext - Sending register payload (simple format):', registerPayload); // Debug log
+      
+      await userService.register(registerPayload);
 
       // After registration, login automatically
       return await login(userData.email, userData.password);
     } catch (error) {
       const errorMessage = getErrorMessage(error);
+      console.error('AuthContext - Register error:', error); // Debug log
       dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
       return false;
     }
