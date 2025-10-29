@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { Vehicle } from '../../../types';
 import vehicleService from '../../../services/vehicleService';
-import { Car, Calendar, Battery, Gauge, Plus, Edit, Trash2 } from 'lucide-react';
+import { Car, Calendar, Battery, Gauge, Plus, Edit, Trash2, X } from 'lucide-react';
 import './VehicleManagement.css';
 
 const VehicleManagement: React.FC = () => {
@@ -12,6 +12,7 @@ const VehicleManagement: React.FC = () => {
   const { user } = state;
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     const loadVehicles = async () => {
@@ -108,6 +109,27 @@ const VehicleManagement: React.FC = () => {
     navigate('/customer/history', { state: { selectedVehicleId: vehicleId } });
   };
 
+  const handleAddVehicle = () => {
+    setShowAddModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+  };
+
+  const handleSubmitVehicle = async (vehicleData: any) => {
+    try {
+      await vehicleService.registerMyVehicle(vehicleData);
+      setShowAddModal(false);
+      // Reload vehicles
+      const vehiclesList = await vehicleService.getMyVehicles();
+      setVehicles(vehiclesList);
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+      alert('Có lỗi xảy ra khi thêm xe. Vui lòng thử lại.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="vehicle-management">
@@ -125,7 +147,7 @@ const VehicleManagement: React.FC = () => {
         <div className="vehicle-title">
           <h1>Quản lý xe</h1>
         </div>
-        <button className="add-vehicle-btn">
+        <button className="add-vehicle-btn" onClick={handleAddVehicle}>
           <Plus size={20} />
           THÊM XE MỚI
         </button>
@@ -136,7 +158,7 @@ const VehicleManagement: React.FC = () => {
           <Car className="empty-icon" />
           <h2>Chưa có xe nào</h2>
           <p>Thêm xe đầu tiên để bắt đầu quản lý dịch vụ bảo trì</p>
-          <button className="add-first-vehicle-btn">
+          <button className="add-first-vehicle-btn" onClick={handleAddVehicle}>
             <Plus size={20} />
             Thêm xe đầu tiên
           </button>
@@ -272,6 +294,228 @@ const VehicleManagement: React.FC = () => {
           </div>
           <div className="stat-label">Km trung bình</div>
         </div>
+      </div>
+
+      {/* Add Vehicle Modal */}
+      {showAddModal && <AddVehicleModal onClose={handleCloseModal} onSubmit={handleSubmitVehicle} />}
+    </div>
+  );
+};
+
+// Add Vehicle Modal Component
+const AddVehicleModal: React.FC<{
+  onClose: () => void;
+  onSubmit: (data: any) => void;
+}> = ({ onClose, onSubmit }) => {
+  const [formData, setFormData] = useState({
+    make: 'VinFast',
+    model: '',
+    year: new Date().getFullYear(),
+    licensePlate: '',
+    vin: '',
+    color: '',
+    batteryCapacity: 0,
+    mileage: 0,
+    purchaseDate: '',
+    warrantyExpiration: '',
+  });
+
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'year' || name === 'batteryCapacity' || name === 'mileage' 
+        ? Number(value) 
+        : value
+    }));
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!formData.model.trim()) newErrors.model = 'Vui lòng nhập model xe';
+    if (!formData.licensePlate.trim()) newErrors.licensePlate = 'Vui lòng nhập biển số';
+    if (!formData.vin.trim()) newErrors.vin = 'Vui lòng nhập VIN';
+    if (!formData.color.trim()) newErrors.color = 'Vui lòng nhập màu xe';
+    if (formData.batteryCapacity <= 0) newErrors.batteryCapacity = 'Dung lượng pin phải lớn hơn 0';
+    if (formData.mileage < 0) newErrors.mileage = 'Số km phải lớn hơn hoặc bằng 0';
+    if (!formData.purchaseDate) newErrors.purchaseDate = 'Vui lòng chọn ngày mua';
+    if (!formData.warrantyExpiration) newErrors.warrantyExpiration = 'Vui lòng chọn ngày hết hạn bảo hành';
+
+    return newErrors;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    onSubmit({
+      ...formData,
+      purchaseDate: new Date(formData.purchaseDate),
+      warrantyExpiration: new Date(formData.warrantyExpiration),
+    });
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content add-vehicle-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Thêm xe mới</h2>
+          <button className="close-btn" onClick={onClose}>
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="vehicle-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label>Hãng xe *</label>
+              <select name="make" value={formData.make} onChange={handleChange}>
+                <option value="VinFast">VinFast</option>
+                <option value="Tesla">Tesla</option>
+                <option value="BYD">BYD</option>
+                <option value="Hyundai">Hyundai</option>
+                <option value="Kia">Kia</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Model *</label>
+              <input
+                type="text"
+                name="model"
+                value={formData.model}
+                onChange={handleChange}
+                placeholder="VD: VF8, VF9"
+              />
+              {errors.model && <span className="error-text">{errors.model}</span>}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Năm sản xuất *</label>
+              <input
+                type="number"
+                name="year"
+                value={formData.year}
+                onChange={handleChange}
+                min="2020"
+                max={new Date().getFullYear() + 1}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Biển số *</label>
+              <input
+                type="text"
+                name="licensePlate"
+                value={formData.licensePlate}
+                onChange={handleChange}
+                placeholder="VD: 30A-12345"
+              />
+              {errors.licensePlate && <span className="error-text">{errors.licensePlate}</span>}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>VIN (Số khung) *</label>
+            <input
+              type="text"
+              name="vin"
+              value={formData.vin}
+              onChange={handleChange}
+              placeholder="VD: VF8ABC123XYZ456789"
+            />
+            {errors.vin && <span className="error-text">{errors.vin}</span>}
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Màu sắc *</label>
+              <input
+                type="text"
+                name="color"
+                value={formData.color}
+                onChange={handleChange}
+                placeholder="VD: Xanh dương"
+              />
+              {errors.color && <span className="error-text">{errors.color}</span>}
+            </div>
+
+            <div className="form-group">
+              <label>Dung lượng pin (kWh) *</label>
+              <input
+                type="number"
+                name="batteryCapacity"
+                value={formData.batteryCapacity}
+                onChange={handleChange}
+                min="0"
+                step="0.1"
+              />
+              {errors.batteryCapacity && <span className="error-text">{errors.batteryCapacity}</span>}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Số km đã đi *</label>
+              <input
+                type="number"
+                name="mileage"
+                value={formData.mileage}
+                onChange={handleChange}
+                min="0"
+              />
+              {errors.mileage && <span className="error-text">{errors.mileage}</span>}
+            </div>
+
+            <div className="form-group">
+              <label>Ngày mua xe *</label>
+              <input
+                type="date"
+                name="purchaseDate"
+                value={formData.purchaseDate}
+                onChange={handleChange}
+                max={new Date().toISOString().split('T')[0]}
+              />
+              {errors.purchaseDate && <span className="error-text">{errors.purchaseDate}</span>}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Ngày hết hạn bảo hành *</label>
+            <input
+              type="date"
+              name="warrantyExpiration"
+              value={formData.warrantyExpiration}
+              onChange={handleChange}
+              min={new Date().toISOString().split('T')[0]}
+            />
+            {errors.warrantyExpiration && <span className="error-text">{errors.warrantyExpiration}</span>}
+          </div>
+
+          <div className="modal-actions">
+            <button type="button" className="btn-cancel" onClick={onClose}>
+              Hủy
+            </button>
+            <button type="submit" className="btn-submit">
+              <Plus size={20} />
+              Thêm xe
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
