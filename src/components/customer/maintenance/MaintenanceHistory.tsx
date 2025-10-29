@@ -73,9 +73,44 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
       const response = await maintenanceHistoryService.getMaintenanceHistory(params);
       console.log('Maintenance records response:', response);
       
-      // Backend response already mapped correctly by service
+      // Backend returns MaintenanceRecord[], need to map to ServiceRecord[]
       const fetchedRecords = response.maintenanceRecords || [];
-      setRecords(fetchedRecords as any);
+      
+      // Map MaintenanceRecord to ServiceRecord format
+      const mappedRecords = fetchedRecords.map((record: any) => ({
+        id: record.appointmentId,
+        appointmentId: record.appointmentId,
+        vehicleId: selectedVehicle || '',
+        technicianId: '',
+        serviceType: {
+          id: '',
+          name: record.serviceTitle || 'Bảo dưỡng',
+          description: record.serviceTitle || 'Dịch vụ bảo dưỡng định kỳ',
+          basePrice: Number(record.totalAmount) || 0,
+          estimatedDuration: 60,
+          category: 'REGULAR_MAINTENANCE' as any,
+          isActive: true
+        },
+        startTime: new Date(record.serviceDate),
+        endTime: record.serviceDate ? new Date(record.serviceDate) : undefined,
+        mileageAtService: record.mileage || 0,
+        workPerformed: record.serviceTitle || 'Bảo dưỡng định kỳ',
+        partsUsed: [],
+        laborCost: 0,
+        partsCost: 0,
+        totalCost: Number(record.totalAmount) || 0,
+        customerNotes: '',
+        technicianNotes: '',
+        qualityCheckPassed: record.inspectionPassed || false,
+        nextServiceDue: record.nextMaintenanceDate ? new Date(record.nextMaintenanceDate) : undefined,
+        warrantyInfo: 'Bảo hành theo chính sách',
+        images: [],
+        createdAt: new Date(record.serviceDate),
+        updatedAt: new Date(record.serviceDate)
+      }));
+      
+      console.log('Mapped records:', mappedRecords);
+      setRecords(mappedRecords);
     } catch (error: any) {
       console.error('Error loading maintenance records:', error);
       

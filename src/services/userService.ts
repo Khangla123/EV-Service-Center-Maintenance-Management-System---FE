@@ -33,10 +33,30 @@ export interface UpdateRoleRequest {
 }
 
 class UserService {
-  // Đăng ký tài khoản mới
+  // Đăng ký tài khoản mới - gọi endpoint /customers để tạo cả user + customer
   async register(data: RegisterRequest): Promise<User> {
-    const response = await api.post('/users/register', data);
-    return response.data;
+    // Map RegisterRequest to CustomerCreateRequest format
+    const customerData = {
+      email: data.email,
+      fullName: `${data.lastName} ${data.firstName}`.trim(), // Combine lastName + firstName
+      phone: data.phone,
+      password: data.password, // Send the user's chosen password
+    };
+    
+    const response = await api.post('/customers', customerData);
+    
+    // Backend returns CustomerResponse, map to User format
+    const result = response.data.result || response.data;
+    return {
+      id: result.id,
+      email: result.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: result.phone,
+      role: 'customer',
+      createdAt: new Date(result.createdAt),
+      updatedAt: new Date(result.createdAt)
+    };
   }
 
   // Lấy danh sách tất cả users (admin)
