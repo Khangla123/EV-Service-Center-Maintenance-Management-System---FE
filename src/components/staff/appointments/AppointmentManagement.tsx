@@ -12,7 +12,7 @@ import { Vehicle } from '../../../types';
 import './AppointmentManagement.css';
 
 // Utility function to generate short display code from UUID
-const generateDisplayCode = (id: string, date?: Date): string => {
+const generateDisplayCode = (id: string, date?: Date | string): string => {
   if (!id) return 'N/A';
   
   // Take first 8 characters of UUID and convert to uppercase
@@ -20,7 +20,7 @@ const generateDisplayCode = (id: string, date?: Date): string => {
   
   // If date is available, add date prefix
   if (date) {
-    const d = new Date(date);
+    const d = typeof date === 'string' ? new Date(date) : date;
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `APT${month}${day}-${shortId}`;

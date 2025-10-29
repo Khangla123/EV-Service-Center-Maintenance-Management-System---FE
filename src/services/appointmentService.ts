@@ -1,26 +1,26 @@
 import api from './api';
 
 export interface Appointment {
-  id: string;
-  customerId: string;
+  id: string; // UUID from backend
+  customerId: string; // UUID
   customerName: string;
   customerPhone?: string;
-  vehicleId: string;
+  vehicleId: string; // UUID
   vehicleLicensePlate: string;
   vehicleModel: string;
-  serviceCenterId: string;
+  serviceCenterId: string; // UUID
   serviceCenterName: string;
-  servicePackageId: string;
+  servicePackageId: string; // UUID
   servicePackageName: string;
-  technicianId?: string;
+  technicianId?: string; // UUID
   technicianName?: string;
-  appointmentDate: Date;
+  appointmentDate: Date | string; // Can be Date or ISO string
   status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
-  estimatedCompletion?: Date;
-  actualCompletion?: Date;
-  createdAt?: Date;
-  updatedAt?: Date;
+  estimatedCompletion?: Date | string;
+  actualCompletion?: Date | string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export interface CreateAppointmentRequest {
@@ -34,12 +34,11 @@ export interface CreateAppointmentRequest {
 
 export interface UpdateAppointmentRequest {
   appointmentDate?: string;
-  appointmentTime?: string;
   serviceCenterId?: string;
-  serviceType?: string;
-  status?: string;
+  servicePackageId?: string;
+  status?: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
-  technicianId?: string;
+  technicianId?: string; // UUID
 }
 
 export interface AvailableSlot {

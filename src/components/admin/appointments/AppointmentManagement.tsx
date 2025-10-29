@@ -29,7 +29,7 @@ const AppointmentManagement: React.FC = () => {
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
-  const [editStatus, setEditStatus] = useState<string>('');
+  const [editStatus, setEditStatus] = useState<'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'>('PENDING');
   const [editNotes, setEditNotes] = useState<string>('');
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailAppointment, setDetailAppointment] = useState<Appointment | null>(null);
@@ -89,7 +89,11 @@ const AppointmentManagement: React.FC = () => {
     setShowAssignModal(true);
     
     // Check availability for each technician
-    await checkTechniciansAvailability(appointment.appointmentDate);
+    // Convert appointmentDate to Date if it's a string
+    const dateToCheck = typeof appointment.appointmentDate === 'string' 
+      ? new Date(appointment.appointmentDate) 
+      : appointment.appointmentDate;
+    await checkTechniciansAvailability(dateToCheck);
   };
 
   const checkTechniciansAvailability = async (appointmentDate: Date) => {
@@ -512,7 +516,7 @@ const AppointmentManagement: React.FC = () => {
                   <label>Trạng thái</label>
                   <select 
                     value={editStatus} 
-                    onChange={(e) => setEditStatus(e.target.value)}
+                    onChange={(e) => setEditStatus(e.target.value as 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED')}
                     className="form-select"
                   >
                     <option value="PENDING">Chờ xác nhận</option>

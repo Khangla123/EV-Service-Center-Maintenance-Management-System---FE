@@ -306,109 +306,184 @@ const WorkProcessing: React.FC = () => {
 
   return (
     <div className="work-processing">
-      {/* Sidebar: List of appointments */}
+      {/* Sidebar: List of In-Progress Jobs */}
       {appointments.length > 1 && (
         <div className="work-sidebar">
-          <h4>Công việc đang xử lý ({appointments.length})</h4>
-          <div className="appointment-list">
-            {appointments.map(apt => (
+          <div className="sidebar-header">
+            <h3>🔧 Công việc đang xử lý</h3>
+            <span className="job-count">{appointments.length}</span>
+          </div>
+          <div className="jobs-list">
+            {appointments.map((apt) => (
               <div
                 key={apt.id}
-                className={`appointment-item ${selectedAppointment?.id === apt.id ? 'selected' : ''}`}
+                className={`job-card ${selectedAppointment?.id === apt.id ? 'active' : ''}`}
                 onClick={() => selectAppointment(apt)}
               >
-                <div className="apt-header">
-                  <span className="apt-id">{apt.id.substring(0, 8)}</span>
-                  <span className={`apt-status ${apt.status.toLowerCase()}`}>{apt.status}</span>
+                <div className="job-header">
+                  <span className="job-id">#{apt.id.substring(0, 8)}</span>
+                  <span className={`status-badge ${apt.status.toLowerCase()}`}>
+                    {apt.status === 'IN_PROGRESS' ? 'Đang xử lý' : apt.status}
+                  </span>
                 </div>
-                <div className="apt-vehicle">{apt.vehicleModel} - {apt.vehicleLicensePlate}</div>
-                <div className="apt-customer">{apt.customerName}</div>
+                <div className="job-vehicle">
+                  <strong>{apt.vehicleModel}</strong>
+                  <span className="plate">{apt.vehicleLicensePlate}</span>
+                </div>
+                <div className="job-customer">
+                  👤 {apt.customerName}
+                </div>
+                <div className="job-service">
+                  🔧 {apt.servicePackageName}
+                </div>
+                {apt.customerPhone && (
+                  <div className="job-phone">
+                    📞 {apt.customerPhone}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
       )}
-      
-      <div className="work-header">
-        <div className="work-info">
-          <h2>Xử lý Công việc</h2>
-          <div className="task-summary">
-            <span className="task-id">{appointment.id.substring(0, 8)}</span>
-            <span className="separator">•</span>
-            <span>{appointment.vehicleModel} - {appointment.vehicleLicensePlate}</span>
-            <span className="separator">•</span>
-            <span>Khách: {appointment.customerName}</span>
-            {appointment.customerPhone && (
-              <>
-                <span className="separator">•</span>
-                <span>{appointment.customerPhone}</span>
-              </>
-            )}
-          </div>
-          <div className="service-info" style={{ marginTop: '8px', fontSize: '14px', color: '#6b7280' }}>
-            Dịch vụ: <strong>{appointment.servicePackageName}</strong>
-          </div>
-        </div>
-        <div className="timer">
-          <Clock size={20} />
-          <span className="time">{currentTime}</span>
-        </div>
-      </div>
 
-      <div className="work-content">
-        {/* Checklist Section */}
-        <section className="work-section">
-          <div className="section-header">
-            <h3>
-              <CheckCircle2 size={20} />
-              Checklist Kỹ thuật EV
-            </h3>
-            <div className="progress-info">
-              <span>{completedCount}/{checklist.length} hoàn thành</span>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${progressPercentage}%` }} />
+      {/* Main Work Area */}
+      <div className="work-main">
+        {/* Header with Job Info */}
+        <div className="work-header">
+          <div className="work-info">
+            <h2>🔧 Xử lý Công việc</h2>
+            <div className="task-summary">
+              <span className="task-id">#{appointment.id.substring(0, 8)}</span>
+              <span className="separator">•</span>
+              <span className="vehicle-info">{appointment.vehicleModel} - {appointment.vehicleLicensePlate}</span>
+              <span className="separator">•</span>
+              <span>Khách: {appointment.customerName}</span>
+              {appointment.customerPhone && (
+                <>
+                  <span className="separator">•</span>
+                  <span>📞 {appointment.customerPhone}</span>
+                </>
+              )}
+            </div>
+            <div className="service-info">
+              <span className="service-badge">{appointment.servicePackageName}</span>
+            </div>
+          </div>
+          <div className="timer-section">
+            <div className="timer">
+              <Clock size={24} />
+              <div className="time-display">
+                <div className="time">{currentTime}</div>
+                <div className="time-label">Thời gian thực hiện</div>
               </div>
-              <span className="progress-percent">{progressPercentage}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Overview Card - NEW IMPROVED */}
+        <div className="progress-overview-card">
+          <div className="progress-header">
+            <h3>📊 Tiến độ công việc</h3>
+            <span className="progress-percentage">{progressPercentage}%</span>
+          </div>
+          
+          <div className="progress-bar-large">
+            <div 
+              className="progress-fill-large" 
+              style={{ width: `${progressPercentage}%` }}
+            >
+              <span className="progress-text">{completedCount} / {checklist.length} hạng mục</span>
             </div>
           </div>
 
-          <ul className="checklist">
-            {checklist.map(item => (
-              <li key={item.id} className={item.done ? 'done' : ''}>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={item.done}
-                    onChange={() => toggleChecklistItem(item.id)}
-                  />
-                  <span className="checkbox-custom" />
-                  <span className="checkbox-text">{item.title}</span>
-                </label>
-                <button
-                  className="btn-remove-small"
-                  onClick={() => removeChecklistItem(item.id)}
-                  title="Xóa"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          <div className="add-checklist">
-            <input
-              type="text"
-              placeholder="Thêm hạng mục kiểm tra..."
-              value={newChecklistItem}
-              onChange={(e) => setNewChecklistItem(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addChecklistItem()}
-            />
-            <button className="btn-add" onClick={addChecklistItem}>
-              <Plus size={16} />
-              Thêm
-            </button>
+          <div className="progress-stats">
+            <div className="stat-item">
+              <div className="stat-icon completed">
+                <CheckCircle2 size={20} />
+              </div>
+              <div className="stat-info">
+                <div className="stat-value">{completedCount}</div>
+                <div className="stat-label">Hoàn thành</div>
+              </div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-icon pending">
+                <Clock size={20} />
+              </div>
+              <div className="stat-info">
+                <div className="stat-value">{checklist.length - completedCount}</div>
+                <div className="stat-label">Còn lại</div>
+              </div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-icon issues">
+                <AlertCircle size={20} />
+              </div>
+              <div className="stat-info">
+                <div className="stat-value">{issues.length}</div>
+                <div className="stat-label">Vấn đề</div>
+              </div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-icon parts">
+                <Package size={20} />
+              </div>
+              <div className="stat-info">
+                <div className="stat-value">{partsUsed.length}</div>
+                <div className="stat-label">Phụ tùng</div>
+              </div>
+            </div>
           </div>
-        </section>
+        </div>
+
+        <div className="work-content">
+          {/* Checklist Section */}
+          <section className="work-section">
+            <div className="section-header">
+              <h3>
+                <CheckCircle2 size={20} />
+                Checklist Kỹ thuật EV
+              </h3>
+            </div>
+
+            <ul className="checklist">
+              {checklist.map(item => (
+                <li key={item.id} className={item.done ? 'done' : ''}>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={item.done}
+                      onChange={() => toggleChecklistItem(item.id)}
+                    />
+                    <span className="checkbox-custom" />
+                    <span className="checkbox-text">{item.title}</span>
+                  </label>
+                  <button
+                    className="btn-remove-small"
+                    onClick={() => removeChecklistItem(item.id)}
+                    title="Xóa"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            <div className="add-checklist">
+              <input
+                type="text"
+                placeholder="Thêm hạng mục kiểm tra..."
+                value={newChecklistItem}
+                onChange={(e) => setNewChecklistItem(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && addChecklistItem()}
+              />
+              <button className="btn-add" onClick={addChecklistItem}>
+                <Plus size={16} />
+                Thêm
+              </button>
+            </div>
+          </section>
 
         {/* Issues Section */}
         <section className="work-section">
@@ -597,12 +672,35 @@ const WorkProcessing: React.FC = () => {
         </section>
       </div>
 
-      {/* Complete Work Button */}
+      {/* Complete Work Button - IMPROVED */}
       <div className="work-footer">
-        <button className="btn-complete" onClick={() => setShowCompleteModal(true)}>
-          <CheckCircle2 size={20} />
+        <div className="footer-summary">
+          <div className="summary-item">
+            <CheckCircle2 size={18} />
+            <span>{completedCount}/{checklist.length} Checklist</span>
+          </div>
+          <div className="summary-item">
+            <AlertCircle size={18} />
+            <span>{issues.length} Vấn đề</span>
+          </div>
+          <div className="summary-item">
+            <Package size={18} />
+            <span>{partsUsed.length} Phụ tùng</span>
+          </div>
+          <div className="summary-item">
+            <Clock size={18} />
+            <span>{currentTime}</span>
+          </div>
+        </div>
+        <button 
+          className="btn-complete" 
+          onClick={() => setShowCompleteModal(true)}
+          disabled={completedCount < checklist.length}
+        >
+          <CheckCircle2 size={22} />
           Hoàn tất Công việc & Báo cáo
         </button>
+      </div>
       </div>
 
       {/* Complete Modal */}
