@@ -5,9 +5,12 @@ import AppointmentBooking from '../components/customer/appointments/AppointmentB
 const AppointmentBookingPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleBookingComplete = (appointmentId: string) => {
+  const handleBookingComplete = (appointmentId: string, appointmentDate: string) => {
     navigate('/appointments/success', { 
-      state: { appointmentId },
+      state: { 
+        appointmentId,
+        appointmentDate 
+      },
       replace: true 
     });
   };

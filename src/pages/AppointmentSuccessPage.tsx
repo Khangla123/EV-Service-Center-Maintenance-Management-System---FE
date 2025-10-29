@@ -5,7 +5,26 @@ import './AppointmentSuccessPage.css';
 
 interface LocationState {
   appointmentId: string;
+  appointmentDate?: string;
 }
+
+// Utility function to generate short display code from UUID
+const generateDisplayCode = (id: string, date?: string): string => {
+  if (!id || id === 'UNKNOWN') return 'N/A';
+  
+  // Take first 8 characters of UUID and convert to uppercase
+  const shortId = id.substring(0, 8).toUpperCase();
+  
+  // If date is available, add date prefix
+  if (date) {
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `APT${month}${day}-${shortId}`;
+  }
+  
+  return `APT-${shortId}`;
+};
 
 const AppointmentSuccessPage: React.FC = () => {
   const location = useLocation();
@@ -13,6 +32,8 @@ const AppointmentSuccessPage: React.FC = () => {
   const state = location.state as LocationState;
   
   const appointmentId = state?.appointmentId || 'UNKNOWN';
+  const appointmentDate = state?.appointmentDate;
+  const displayCode = generateDisplayCode(appointmentId, appointmentDate);
 
   const handleViewAppointments = () => {
     navigate('/customer/appointments');
@@ -38,8 +59,11 @@ const AppointmentSuccessPage: React.FC = () => {
 
         <div className="appointment-info">
           <h2>Thông tin đặt lịch</h2>
-          <div className="info-item">
-            <strong>Mã đặt lịch:</strong> {appointmentId}
+          <div className="info-item highlight-code">
+            <strong>Mã đặt lịch:</strong> 
+            <span className="appointment-code" title={`UUID đầy đủ: ${appointmentId}`}>
+              {displayCode}
+            </span>
           </div>
           <div className="info-item">
             <strong>Trạng thái:</strong> <span className="status pending">Chờ xác nhận</span>

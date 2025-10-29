@@ -9,7 +9,7 @@ import servicePackageService from '../../../services/servicePackageService';
 import vehicleService from '../../../services/vehicleService';
 
 interface AppointmentBookingProps {
-  onBookingComplete?: (appointmentId: string) => void;
+  onBookingComplete?: (appointmentId: string, appointmentDate: string) => void;
 }
 
 const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
@@ -90,6 +90,12 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
   const loadServiceTypes = async () => {
     try {
       const packages = await servicePackageService.getAllServicePackages();
+      console.log('📦 Service packages loaded:', packages);
+      if (packages && packages.length > 0) {
+        console.log('📦 First package structure:', packages[0]);
+        console.log('📦 First package price field:', packages[0].price);
+        console.log('📦 First package basePrice field:', (packages[0] as any).basePrice);
+      }
       setServiceTypes(packages as any);
     } catch (error) {
       console.error('Failed to load service types:', error);
@@ -238,9 +244,14 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
       const appointmentId = result.id;
       
       if (onBookingComplete) {
-        onBookingComplete(appointmentId);
+        onBookingComplete(appointmentId, appointmentData.appointmentDate);
       } else {
-        navigate('/appointments/success', { state: { appointmentId } });
+        navigate('/appointments/success', { 
+          state: { 
+            appointmentId,
+            appointmentDate: appointmentData.appointmentDate 
+          } 
+        });
       }
     } catch (error: any) {
       console.error('Error booking appointment:', error);
@@ -258,11 +269,22 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
   };
 
   const getTotalPrice = () => {
-    return selectedServices.reduce((total, service) => total + service.basePrice, 0);
+    const total = selectedServices.reduce((sum, service) => {
+      // Support both price (new API) and basePrice (old)
+      const price = (service as any).price || service.basePrice || 0;
+      console.log('💰 Service:', service.name, 'Price:', price);
+      return sum + price;
+    }, 0);
+    console.log('💰 Total price:', total);
+    return total;
   };
 
   const getTotalDuration = () => {
-    return selectedServices.reduce((total, service) => total + service.estimatedDuration, 0);
+    return selectedServices.reduce((total, service) => {
+      // Support both durationMinutes (new API) and estimatedDuration (old)
+      const duration = (service as any).durationMinutes || service.estimatedDuration || 0;
+      return total + duration;
+    }, 0);
   };
 
   const formatCurrency = (amount: number) => {
@@ -362,8 +384,8 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                   </div>
                   <p className="service-description">{service.description}</p>
                   <div className="service-details">
-                    <span className="price">{formatCurrency(service.basePrice)}</span>
-                    <span className="duration">{formatDuration(service.estimatedDuration)}</span>
+                    <span className="price">{formatCurrency((service as any).price || service.basePrice || 0)}</span>
+                    <span className="duration">{formatDuration((service as any).durationMinutes || service.estimatedDuration || 0)}</span>
                   </div>
                 </div>
               ))}
@@ -374,7 +396,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                 <ul>
                   {selectedServices.map(service => (
                     <li key={service.id}>
-                      {service.name} - {formatCurrency(service.basePrice)}
+                      {service.name} - {formatCurrency((service as any).price || service.basePrice || 0)}
                     </li>
                   ))}
                 </ul>

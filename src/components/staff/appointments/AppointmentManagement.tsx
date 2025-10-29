@@ -4,7 +4,30 @@ import { MDButton } from '../../ui';
 import appointmentService, { Appointment } from '../../../services/appointmentService';
 import staffService, { Staff } from '../../../services/staffService';
 import serviceOrderService from '../../../services/serviceOrderService';
+import customerService, { Customer } from '../../../services/customerService';
+import vehicleService from '../../../services/vehicleService';
+import serviceCenterService, { ServiceCenter } from '../../../services/serviceCenterService';
+import servicePackageService, { ServicePackage } from '../../../services/servicePackageService';
+import { Vehicle } from '../../../types';
 import './AppointmentManagement.css';
+
+// Utility function to generate short display code from UUID
+const generateDisplayCode = (id: string, date?: Date): string => {
+  if (!id) return 'N/A';
+  
+  // Take first 8 characters of UUID and convert to uppercase
+  const shortId = id.substring(0, 8).toUpperCase();
+  
+  // If date is available, add date prefix
+  if (date) {
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `APT${month}${day}-${shortId}`;
+  }
+  
+  return `APT-${shortId}`;
+};
 
 const AppointmentManagement: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -14,8 +37,30 @@ const AppointmentManagement: React.FC = () => {
   const [technicians, setTechnicians] = useState<Staff[]>([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>('');
+
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [serviceCenters, setServiceCenters] = useState<ServiceCenter[]>([]);
+  const [servicePackages, setServicePackages] = useState<ServicePackage[]>([]);
+  const [customerVehicles, setCustomerVehicles] = useState<Vehicle[]>([]);
+
+  const [phoneSearch, setPhoneSearch] = useState<string>('');
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+
+  const [newAppointment, setNewAppointment] = useState({
+    customerId: '',
+    vehicleId: '',
+    serviceCenterId: '',
+    servicePackageId: '',
+    appointmentDate: '',
+    appointmentTime: '',
+    notes: ''
+  });
 
   useEffect(() => {
     loadAppointments();
@@ -135,13 +180,40 @@ const AppointmentManagement: React.FC = () => {
   };
 
   const handleAssignTechnician = async () => {
-    if (!selectedAppointment || !selectedTechnicianId) return;
+    if (!selectedAppointment || !selectedTechnicianId) {
+      alert('Vui lòng chọn kỹ thuật viên!');
+      return;
+    }
     
     try {
+      const selectedTech = technicians.find(t => t.id === selectedTechnicianId);
+      
+      console.log('Selected technician full object:', selectedTech);
+      console.log('Selected technician userId:', selectedTech?.userId);
+      console.log('All technicians:', technicians);
+      
+      // CRITICAL FIX: Backend ServiceOrder.technician_id là FK đến users table, KHÔNG phải staff table
+      // Phải dùng staff.userId (user_id trong staff table), không dùng staff.id
+      const technicianUserId = selectedTech?.userId || selectedTech?.id;
+      
+      if (!technicianUserId) {
+        alert('Không tìm thấy User ID của kỹ thuật viên. Vui lòng chọn kỹ thuật viên khác.');
+        console.error('Staff record missing userId:', selectedTech);
+        return;
+      }
+      
+      console.log('Assigning technician:', {
+        appointmentId: selectedAppointment.id,
+        staffId: selectedTechnicianId,
+        technicianUserId: technicianUserId,
+        selectedTechnician: selectedTech
+      });
+      
       // Gọi API tạo Service Order từ Appointment và phân công Technician
+      // Truyền userId (từ users table), KHÔNG phải staff.id
       await serviceOrderService.createServiceOrderFromAppointment(
         selectedAppointment.id,
-        selectedTechnicianId
+        technicianUserId
       );
       
       // Reload danh sách appointments để cập nhật trạng thái
@@ -153,8 +225,13 @@ const AppointmentManagement: React.FC = () => {
       alert('Đã phân công kỹ thuật viên và tạo đơn dịch vụ thành công!');
     } catch (err: any) {
       console.error('Error assigning technician:', err);
-      const errorMsg = err?.response?.data?.message || 'Không thể phân công kỹ thuật viên. Vui lòng thử lại.';
-      alert(errorMsg);
+      console.error('Error details:', {
+        message: err?.message,
+        response: err?.response?.data,
+        status: err?.response?.status
+      });
+      const errorMsg = err?.response?.data?.message || err?.message || 'Không thể phân công kỹ thuật viên. Vui lòng thử lại.';
+      alert(`Lỗi: ${errorMsg}`);
     }
   };
 
@@ -176,6 +253,144 @@ const AppointmentManagement: React.FC = () => {
     } catch (err) {
       console.error('Error updating appointment:', err);
       alert('Không thể cập nhật lịch hẹn. Vui lòng thử lại.');
+    }
+  };
+
+  const loadFormData = async () => {
+    try {
+      console.log('Loading form data...');
+      const customersData = await customerService.getAllCustomers();
+      console.log('Customers response:', customersData);
+      console.log('Customers array:', customersData.content);
+      
+      // Log first customer to see structure
+      if (customersData.content && customersData.content.length > 0) {
+        console.log('First customer structure:', customersData.content[0]);
+        console.log('First customer keys:', Object.keys(customersData.content[0]));
+      }
+      
+      setCustomers(customersData.content || []);
+
+      const centersData = await serviceCenterService.getAllServiceCenters();
+      console.log('Service centers loaded:', centersData.serviceCenters?.length);
+      setServiceCenters(centersData.serviceCenters || []);
+
+      const packagesData = await servicePackageService.getAllServicePackages();
+      console.log('Service packages loaded:', packagesData?.length);
+      setServicePackages(packagesData || []);
+      
+      console.log('Form data loaded successfully. Total customers:', customersData.content?.length);
+    } catch (err) {
+      console.error('Error loading form data:', err);
+    }
+  };
+
+  const openCreateModal = async () => {
+    setNewAppointment({
+      customerId: '',
+      vehicleId: '',
+      serviceCenterId: '',
+      servicePackageId: '',
+      appointmentDate: '',
+      appointmentTime: '',
+      notes: ''
+    });
+    setCustomerVehicles([]);
+    setPhoneSearch('');
+    setSelectedCustomer(null);
+    setFilteredCustomers([]);
+    setShowCustomerDropdown(false);
+    await loadFormData();
+    setShowCreateModal(true);
+  };
+
+  const getCustomerName = (customer: Customer): string => {
+    // Try fullName first (actual field from API)
+    const fullName = (customer as any).fullName;
+    if (fullName) {
+      return fullName;
+    }
+    
+    // Try firstName + lastName as fallback
+    const firstName = (customer as any).firstName || (customer as any).first_name || '';
+    const lastName = (customer as any).lastName || (customer as any).last_name || '';
+    if (firstName || lastName) {
+      return `${firstName} ${lastName}`.trim();
+    }
+    
+    // Fallback to email or phone
+    return customer.email || customer.phone || 'Khách hàng';
+  };
+
+  const handlePhoneSearch = (phone: string) => {
+    setPhoneSearch(phone);
+    console.log('Searching phone:', phone, 'Total customers:', customers.length);
+    if (phone.trim().length >= 3) {
+      const filtered = customers.filter(customer => {
+        return customer.phone?.includes(phone.trim());
+      });
+      console.log(`Search results for "${phone}":`, filtered);
+      if (filtered.length > 0) {
+        console.log('First customer structure:', filtered[0]);
+        console.log('First customer keys:', Object.keys(filtered[0]));
+        console.log('Customer name would be:', getCustomerName(filtered[0]));
+      }
+      setFilteredCustomers(filtered);
+      setShowCustomerDropdown(filtered.length > 0);
+    } else {
+      setFilteredCustomers([]);
+      setShowCustomerDropdown(false);
+    }
+  };
+
+  const handleSelectCustomer = async (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setPhoneSearch(customer.phone || '');
+    setShowCustomerDropdown(false);
+    await handleCustomerChange(customer.id);
+  };
+
+  const handleCustomerChange = async (customerId: string) => {
+    setNewAppointment({ ...newAppointment, customerId, vehicleId: '' });
+    if (customerId) {
+      try {
+        const vehiclesData = await vehicleService.getVehiclesByCustomerId(customerId);
+        setCustomerVehicles(vehiclesData || []);
+      } catch (err) {
+        console.error('Error loading customer vehicles:', err);
+        setCustomerVehicles([]);
+      }
+    } else {
+      setCustomerVehicles([]);
+    }
+  };
+
+  const handleCreateAppointment = async () => {
+    try {
+      if (!newAppointment.customerId || !newAppointment.vehicleId || 
+          !newAppointment.serviceCenterId || !newAppointment.servicePackageId ||
+          !newAppointment.appointmentDate || !newAppointment.appointmentTime) {
+        alert('Vui lòng điền đầy đủ thông tin!');
+        return;
+      }
+
+      const appointmentDateTime = new Date(`${newAppointment.appointmentDate}T${newAppointment.appointmentTime}:00`);
+
+      await appointmentService.createAppointment({
+        customerId: newAppointment.customerId,
+        vehicleId: newAppointment.vehicleId,
+        serviceCenterId: newAppointment.serviceCenterId,
+        servicePackageId: newAppointment.servicePackageId,
+        appointmentDate: appointmentDateTime.toISOString(),
+        notes: newAppointment.notes
+      });
+
+      alert('Tạo lịch hẹn thành công!');
+      setShowCreateModal(false);
+      await loadAppointments();
+    } catch (err) {
+      console.error('Error creating appointment:', err);
+      alert('Không thể tạo lịch hẹn. Vui lòng thử lại.');
     }
   };
 
@@ -224,7 +439,7 @@ const AppointmentManagement: React.FC = () => {
           <MDButton variant="outlined" startIcon={<Filter />}>
             Lọc nâng cao
           </MDButton>
-          <MDButton variant="filled" startIcon={<Plus />}>
+          <MDButton variant="filled" startIcon={<Plus />} onClick={openCreateModal}>
             Tạo lịch hẹn mới
           </MDButton>
         </div>
@@ -235,7 +450,9 @@ const AppointmentManagement: React.FC = () => {
         {filteredAppointments.map(appointment => (
           <div key={appointment.id} className={`appointment-card ${appointment.status}`}>
             <div className="card-header">
-              <div className="appointment-id">#{appointment.id}</div>
+              <div className="appointment-id" title={`UUID: ${appointment.id}`}>
+                #{generateDisplayCode(appointment.id, appointment.appointmentDate)}
+              </div>
               <span className={`status-badge ${getStatusColor(appointment.status)}`}>
                 {getStatusLabel(appointment.status)}
               </span>
@@ -356,7 +573,7 @@ const AppointmentManagement: React.FC = () => {
             </div>
             <div className="modal-body">
               <div className="appointment-info">
-                <p><strong>Mã lịch hẹn:</strong> #{selectedAppointment.id.substring(0, 8)}</p>
+                <p><strong>Mã lịch hẹn:</strong> #{generateDisplayCode(selectedAppointment.id, selectedAppointment.appointmentDate)}</p>
                 <p><strong>Khách hàng:</strong> {selectedAppointment.customerName}</p>
                 <p><strong>Dịch vụ:</strong> {selectedAppointment.servicePackageName}</p>
               </div>
@@ -464,6 +681,201 @@ const AppointmentManagement: React.FC = () => {
                 </MDButton>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Appointment Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Tạo lịch hẹn mới</h3>
+              <button className="modal-close" onClick={() => setShowCreateModal(false)}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Số điện thoại khách hàng: <span className="required">*</span></label>
+                  <div className="customer-search-wrapper" style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={phoneSearch}
+                      onChange={(e) => handlePhoneSearch(e.target.value)}
+                      onFocus={() => {
+                        if (filteredCustomers.length > 0) {
+                          setShowCustomerDropdown(true);
+                        }
+                      }}
+                      placeholder="Nhập số điện thoại (tối thiểu 3 số)"
+                      required
+                    />
+                    {selectedCustomer && (
+                      <div className="selected-customer-info" style={{ 
+                        marginTop: '5px', 
+                        padding: '8px 12px', 
+                        backgroundColor: '#f0f9ff', 
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        color: '#0369a1',
+                        border: '1px solid #bae6fd'
+                      }}>
+                        ✓ Đã chọn: {getCustomerName(selectedCustomer)}
+                      </div>
+                    )}
+                    {showCustomerDropdown && filteredCustomers.length > 0 && (
+                      <div className="customer-dropdown" style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        backgroundColor: 'white',
+                        border: '2px solid #0ea5e9',
+                        borderRadius: '4px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        zIndex: 10000,
+                        marginTop: '4px'
+                      }}>
+                        {filteredCustomers.map(customer => (
+                          <div
+                            key={customer.id}
+                            className="customer-option"
+                            onClick={() => handleSelectCustomer(customer)}
+                            style={{
+                              padding: '12px 14px',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #e5e7eb',
+                              transition: 'background-color 0.2s',
+                              backgroundColor: 'white'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f9ff'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                          >
+                            <div style={{ fontWeight: 600, fontSize: '14px', color: '#1e293b' }}>
+                              {getCustomerName(customer)}
+                            </div>
+                            <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
+                              📱 {customer.phone}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <small className="form-helper-text">
+                    {phoneSearch.length > 0 && phoneSearch.length < 3 
+                      ? 'Nhập thêm để tìm kiếm' 
+                      : phoneSearch.length >= 3
+                      ? filteredCustomers.length > 0
+                        ? `Tìm thấy ${filteredCustomers.length} khách hàng: ${filteredCustomers.map(c => getCustomerName(c)).join(', ')}`
+                        : `Không tìm thấy khách hàng với SĐT "${phoneSearch}"`
+                      : 'Nhập SĐT để tìm khách hàng, chọn để tải danh sách xe'}
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label>Xe: <span className="required">*</span></label>
+                  <select
+                    className="form-control"
+                    value={newAppointment.vehicleId}
+                    onChange={(e) => setNewAppointment({ ...newAppointment, vehicleId: e.target.value })}
+                    disabled={!newAppointment.customerId}
+                    required
+                  >
+                    <option value="">Chọn xe</option>
+                    {customerVehicles.map(vehicle => (
+                      <option key={vehicle.id} value={vehicle.id}>
+                        {vehicle.licensePlate} - {vehicle.make} {vehicle.model}
+                      </option>
+                    ))}
+                  </select>
+                  <small className="form-helper-text">Chọn khách hàng trước để xem danh sách xe</small>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Trung tâm dịch vụ: <span className="required">*</span></label>
+                  <select
+                    className="form-control"
+                    value={newAppointment.serviceCenterId}
+                    onChange={(e) => setNewAppointment({ ...newAppointment, serviceCenterId: e.target.value })}
+                    required
+                  >
+                    <option value="">Chọn trung tâm</option>
+                    {serviceCenters.map(center => (
+                      <option key={center.id} value={center.id}>
+                        {center.name} - {center.address}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Gói dịch vụ: <span className="required">*</span></label>
+                  <select
+                    className="form-control"
+                    value={newAppointment.servicePackageId}
+                    onChange={(e) => setNewAppointment({ ...newAppointment, servicePackageId: e.target.value })}
+                    required
+                  >
+                    <option value="">Chọn gói dịch vụ</option>
+                    {servicePackages.map(pkg => (
+                      <option key={pkg.id} value={pkg.id}>
+                        {pkg.name} - {pkg.price?.toLocaleString()}đ
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Ngày hẹn: <span className="required">*</span></label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={newAppointment.appointmentDate}
+                    onChange={(e) => setNewAppointment({ ...newAppointment, appointmentDate: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Giờ hẹn: <span className="required">*</span></label>
+                  <input
+                    type="time"
+                    className="form-control"
+                    value={newAppointment.appointmentTime}
+                    onChange={(e) => setNewAppointment({ ...newAppointment, appointmentTime: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Ghi chú:</label>
+                <textarea
+                  className="form-control"
+                  rows={4}
+                  value={newAppointment.notes}
+                  onChange={(e) => setNewAppointment({ ...newAppointment, notes: e.target.value })}
+                  placeholder="Nhập ghi chú thêm về yêu cầu dịch vụ, tình trạng xe..."
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="secondary-btn" onClick={() => setShowCreateModal(false)}>
+                ✕ Hủy
+              </button>
+              <button type="button" className="primary-btn" onClick={handleCreateAppointment}>
+                ✓ Tạo lịch hẹn
+              </button>
+            </div>
           </div>
         </div>
       )}

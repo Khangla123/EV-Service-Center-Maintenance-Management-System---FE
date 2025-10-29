@@ -143,12 +143,18 @@ class ServiceOrderService {
     appointmentId: string,
     technicianId: string
   ): Promise<ServiceOrder> {
+    console.log('Creating service order:', { appointmentId, technicianId });
+    
+    // Backend endpoint: POST /service-orders/from-appointment/{appointmentId}/assign?technicianId=xxx
+    // Controller expects technicianId as @RequestParam (query parameter)
     const response = await api.post(
       `/service-orders/from-appointment/${appointmentId}/assign`,
-      null,
-      { params: { technicianId } }
+      {}, // Empty body
+      { params: { technicianId } } // technicianId as query param
     );
-    return response.data.result;
+    
+    console.log('Service order created:', response.data);
+    return response.data.result || response.data;
   }
 }
 

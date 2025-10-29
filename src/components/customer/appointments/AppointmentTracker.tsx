@@ -9,6 +9,24 @@ import vehicleService from '../../../services/vehicleService';
 import servicePackageService from '../../../services/servicePackageService';
 import serviceCenterService from '../../../services/serviceCenterService';
 
+// Utility function to generate short display code from UUID
+const generateDisplayCode = (id: string, date?: Date): string => {
+  if (!id) return 'N/A';
+  
+  // Take first 8 characters of UUID and convert to uppercase
+  const shortId = id.substring(0, 8).toUpperCase();
+  
+  // If date is available, add date prefix
+  if (date) {
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `APT${month}${day}-${shortId}`;
+  }
+  
+  return `APT-${shortId}`;
+};
+
 interface AppointmentTrackerProps {
   appointmentId?: string;
   onStatusChange?: (status: AppointmentStatus) => void;
@@ -151,33 +169,46 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
   const getProgressPercentage = (appointment: ServiceAppointment) => {
     const { status, scheduledDate, estimatedCompletion, actualCompletion } = appointment;
     
-    // Nếu đã hoàn thành hoặc hủy
-    if (status === AppointmentStatus.COMPLETED) return 100;
-    if (status === AppointmentStatus.CANCELLED || status === AppointmentStatus.NO_SHOW) return 0;
+    // Workflow: PENDING (0%) -> CONFIRMED (33%) -> IN_PROGRESS (66%) -> COMPLETED (100%)
+    // PENDING: Đã đặt lịch, chờ staff xác nhận
+    // CONFIRMED: Staff đã xác nhận, chờ đến ngày hẹn
+    // IN_PROGRESS: Đang thực hiện dịch vụ
+    // COMPLETED: Hoàn thành
     
-    // Nếu chưa bắt đầu
-    if (status === AppointmentStatus.PENDING) return 25;
-    if (status === AppointmentStatus.CONFIRMED) return 50;
+    // Normalize status to uppercase for comparison
+    const normalizedStatus = status?.toString().toUpperCase();
     
-    // Nếu đang thực hiện và có thời gian dự kiến
-    if (status === AppointmentStatus.IN_PROGRESS && scheduledDate && estimatedCompletion) {
-      const now = new Date().getTime();
-      const start = new Date(scheduledDate).getTime();
-      const end = new Date(estimatedCompletion).getTime();
-      
-      if (now >= end) return 95; // Gần hoàn thành
-      if (now <= start) return 50; // Chưa đến giờ
-      
-      // Tính % dựa trên thời gian đã qua
-      const elapsed = now - start;
-      const total = end - start;
-      const progress = Math.floor((elapsed / total) * 45) + 50; // 50% -> 95%
-      
-      return Math.min(95, Math.max(50, progress));
+    if (normalizedStatus === 'COMPLETED') return 100;
+    if (normalizedStatus === 'CANCELLED' || normalizedStatus === 'NO_SHOW') return 0;
+    
+    // PENDING: Đang ở step 1 (Đặt lịch) - hiển thị active nhưng chưa complete
+    if (normalizedStatus === 'PENDING') return 0;
+    
+    // CONFIRMED: Hoàn thành step 1, đang ở step 2 (Xác nhận)
+    if (normalizedStatus === 'CONFIRMED') return 33;
+    
+    // IN_PROGRESS: Hoàn thành step 2, đang ở step 3 (Thực hiện)
+    if (normalizedStatus === 'IN_PROGRESS') {
+      // Nếu có thời gian dự kiến, tính progress động
+      if (scheduledDate && estimatedCompletion) {
+        const now = new Date().getTime();
+        const start = new Date(scheduledDate).getTime();
+        const end = new Date(estimatedCompletion).getTime();
+        
+        if (now >= end) return 90; // Gần hoàn thành
+        if (now <= start) return 66; // Mới bắt đầu
+        
+        // Tính % dựa trên thời gian đã qua (66% -> 90%)
+        const elapsed = now - start;
+        const total = end - start;
+        const progress = Math.floor((elapsed / total) * 24) + 66;
+        
+        return Math.min(90, Math.max(66, progress));
+      }
+      return 66;
     }
     
-    // Mặc định cho IN_PROGRESS không có thời gian
-    return 75;
+    return 0;
   };
 
   const formatDateTime = (date: Date | null | undefined) => {
@@ -321,11 +352,22 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
     const canCancel = [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED].includes(appointment.status);
     const canReschedule = [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED].includes(appointment.status);
 
+    // Debug log
+    console.log('Appointment:', {
+      id: appointment.id.substring(0, 8),
+      status: appointment.status,
+      progress,
+      isPending: appointment.status === AppointmentStatus.PENDING,
+      isConfirmed: appointment.status === AppointmentStatus.CONFIRMED,
+      isInProgress: appointment.status === AppointmentStatus.IN_PROGRESS,
+      isCompleted: appointment.status === AppointmentStatus.COMPLETED
+    });
+
     return (
       <div className={`appointment-card ${detailed ? 'detailed' : ''}`}>
         <div className="card-header">
-          <div className="appointment-id">
-            <span>Mã lịch dịch vụ: {appointment.id}</span>
+          <div className="appointment-id" title={`UUID đầy đủ: ${appointment.id}`}>
+            <span>Mã lịch dịch vụ: {generateDisplayCode(appointment.id, appointment.appointmentDate)}</span>
           </div>
           <div className={`status-badge ${statusColor}`}>
             {getStatusText(appointment.status)}
@@ -346,16 +388,20 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
             />
           </div>
           <div className="progress-steps">
-            <div className={`step ${progress >= 25 ? 'completed' : ''}`}>
+            {/* Step 1: Đặt lịch - active khi PENDING (0-32%), completed khi >= CONFIRMED (33%) */}
+            <div className={`step ${appointment.status?.toString().toUpperCase() === 'PENDING' ? 'active' : ''} ${progress >= 33 ? 'completed' : ''}`}>
               <span>Đặt lịch</span>
             </div>
-            <div className={`step ${progress >= 50 ? 'completed' : ''}`}>
+            {/* Step 2: Xác nhận - active khi CONFIRMED (33-65%), completed khi >= IN_PROGRESS (66%) */}
+            <div className={`step ${appointment.status?.toString().toUpperCase() === 'CONFIRMED' ? 'active' : ''} ${progress >= 66 ? 'completed' : ''}`}>
               <span>Xác nhận</span>
             </div>
-            <div className={`step ${progress >= 75 ? 'completed' : ''}`}>
+            {/* Step 3: Thực hiện - active khi IN_PROGRESS (66-99%), completed khi COMPLETED (100%) */}
+            <div className={`step ${appointment.status?.toString().toUpperCase() === 'IN_PROGRESS' ? 'active' : ''} ${progress >= 100 ? 'completed' : ''}`}>
               <span>Thực hiện</span>
             </div>
-            <div className={`step ${progress >= 100 ? 'completed' : ''}`}>
+            {/* Step 4: Hoàn thành - completed khi COMPLETED */}
+            <div className={`step ${appointment.status?.toString().toUpperCase() === 'COMPLETED' ? 'completed active' : ''}`}>
               <span>Hoàn thành</span>
             </div>
           </div>

@@ -17,8 +17,6 @@ export interface Appointment {
   appointmentDate: Date;
   status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
-  technicianId?: string;
-  technicianName?: string;
   estimatedCompletion?: Date;
   actualCompletion?: Date;
   createdAt?: Date;
