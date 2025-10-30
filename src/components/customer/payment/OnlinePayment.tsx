@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MDButton } from '../../ui';
 import './OnlinePayment.css';
 import invoiceService, { InvoiceResponse } from '../../../services/invoiceService';
@@ -9,6 +9,15 @@ const VNPayImage = '/assets/images/VNPay.png';
 
 const OnlinePayment: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const paymentData = location.state as {
+    recordId?: string;
+    amount?: number;
+    serviceName?: string;
+    vehicleName?: string;
+    date?: Date;
+  } | null;
+  
   const [invoices, setInvoices] = useState<InvoiceResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +80,10 @@ const OnlinePayment: React.FC = () => {
   if (loading) {
     return (
       <div className="online-payment loading">
-        <div className="loading-spinner">Đang tải...</div>
+        <div className="loading-spinner">
+          <div style={{ fontSize: '3rem', marginBottom: '20px' }}>⏳</div>
+          <div>Đang tải thông tin thanh toán...</div>
+        </div>
       </div>
     );
   }
@@ -97,17 +109,53 @@ const OnlinePayment: React.FC = () => {
       )}
 
       <div className="payment-content">
-        {invoices.length === 0 ? (
+        {invoices.length === 0 && !paymentData ? (
           <div className="empty-state">
+            <div style={{ fontSize: '4rem', marginBottom: '20px' }}>✅</div>
             <h3>Không có hóa đơn cần thanh toán</h3>
-            <p>Bạn đã thanh toán tất cả các hóa đơn</p>
+            <p>Bạn đã thanh toán tất cả các hóa đơn hoặc chưa có dịch vụ nào cần thanh toán</p>
             <MDButton variant="outlined" onClick={() => navigate('/customer/history')}>
-              Xem lịch sử
+              📜 Xem lịch sử bảo dưỡng
             </MDButton>
+          </div>
+        ) : paymentData && invoices.length === 0 ? (
+          <div className="payment-info-card">
+            <h3>📋 Thông tin thanh toán</h3>
+            <div className="payment-details">
+              <div className="detail-row">
+                <strong>🔧 Dịch vụ:</strong>
+                <span>{paymentData.serviceName}</span>
+              </div>
+              <div className="detail-row">
+                <strong>🚗 Xe:</strong>
+                <span>{paymentData.vehicleName}</span>
+              </div>
+              {paymentData.date && (
+                <div className="detail-row">
+                  <strong>📅 Ngày:</strong>
+                  <span>{formatDate(paymentData.date.toString())}</span>
+                </div>
+              )}
+              <div className="detail-row total">
+                <strong>💰 Số tiền:</strong>
+                <span>{formatCurrency(paymentData.amount || 0)}</span>
+              </div>
+            </div>
+            
+            <div className="payment-notice">
+              <p>⚠️ Hiện tại chưa có hóa đơn được tạo cho dịch vụ này.</p>
+              <p>Vui lòng liên hệ trung tâm để được hỗ trợ tạo hóa đơn và thanh toán.</p>
+            </div>
+
+            <div className="payment-actions">
+              <MDButton variant="outlined" onClick={() => navigate('/customer/costs')}>
+                ← Quay lại
+              </MDButton>
+            </div>
           </div>
         ) : (
           <div className="invoices-list">
-            <h3>Danh sách hóa đơn chưa thanh toán</h3>
+            <h3>📄 Danh sách hóa đơn chưa thanh toán</h3>
             {invoices.map((invoice) => (
               <div key={invoice.id} className="invoice-card">
                 <div className="invoice-header">
@@ -174,8 +222,9 @@ const OnlinePayment: React.FC = () => {
                     variant="filled"
                     onClick={() => handlePayment(invoice)}
                     disabled={processing}
+                    className={processing ? 'processing-button' : 'payment-button-primary'}
                   >
-                    {processing ? 'Đang xử lý...' : 'Thanh toán ngay'}
+                    {processing ? '⏳ Đang xử lý...' : '💳 Thanh toán ngay'}
                   </MDButton>
                 </div>
               </div>

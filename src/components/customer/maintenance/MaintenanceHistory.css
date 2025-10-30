@@ -265,6 +265,11 @@
   font-weight: 600;
 }
 
+.quality-check.pending {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
 .next-service {
   color: #667eea;
   font-weight: 500;
@@ -457,6 +462,11 @@
 
 .quality-status.failed {
   color: #e53e3e;
+  font-weight: 600;
+}
+
+.quality-status.pending {
+  color: #f59e0b;
   font-weight: 600;
 }
 

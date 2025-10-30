@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { Vehicle } from '../../../types';
 import vehicleService from '../../../services/vehicleService';
+import AddVehicleModal from './AddVehicleModal';
 import { Car, Calendar, Battery, Gauge, Plus, Edit, Trash2 } from 'lucide-react';
 import './VehicleManagement.css';
 
@@ -12,23 +13,24 @@ const VehicleManagement: React.FC = () => {
   const { user } = state;
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const loadVehicles = async () => {
+    setLoading(true);
+    try {
+      const vehiclesList = await vehicleService.getMyVehicles();
+      console.log('🚗 Vehicles loaded:', vehiclesList); // Debug log
+      console.log('🖼️ First vehicle imageUrl:', vehiclesList[0]?.imageUrl); // Debug imageUrl
+      setVehicles(vehiclesList);
+    } catch (error) {
+      console.error('Error loading vehicles:', error);
+      setVehicles([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadVehicles = async () => {
-      setLoading(true);
-      try {
-        const vehiclesList = await vehicleService.getMyVehicles();
-        console.log('🚗 Vehicles loaded:', vehiclesList); // Debug log
-        console.log('🖼️ First vehicle imageUrl:', vehiclesList[0]?.imageUrl); // Debug imageUrl
-        setVehicles(vehiclesList);
-      } catch (error) {
-        console.error('Error loading vehicles:', error);
-        setVehicles([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadVehicles();
   }, [user]);
 
@@ -108,6 +110,21 @@ const VehicleManagement: React.FC = () => {
     navigate('/customer/history', { state: { selectedVehicleId: vehicleId } });
   };
 
+  const handleAddVehicle = () => {
+    setShowAddModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+  };
+
+  const handleVehicleAdded = () => {
+    // Reload vehicles list
+    loadVehicles();
+    // Show success message (optional)
+    alert('✅ Thêm xe thành công!');
+  };
+
   if (loading) {
     return (
       <div className="vehicle-management">
@@ -125,7 +142,7 @@ const VehicleManagement: React.FC = () => {
         <div className="vehicle-title">
           <h1>Quản lý xe</h1>
         </div>
-        <button className="add-vehicle-btn">
+        <button className="add-vehicle-btn" onClick={handleAddVehicle}>
           <Plus size={20} />
           THÊM XE MỚI
         </button>
@@ -136,7 +153,7 @@ const VehicleManagement: React.FC = () => {
           <Car className="empty-icon" />
           <h2>Chưa có xe nào</h2>
           <p>Thêm xe đầu tiên để bắt đầu quản lý dịch vụ bảo trì</p>
-          <button className="add-first-vehicle-btn">
+          <button className="add-first-vehicle-btn" onClick={handleAddVehicle}>
             <Plus size={20} />
             Thêm xe đầu tiên
           </button>
@@ -273,6 +290,13 @@ const VehicleManagement: React.FC = () => {
           <div className="stat-label">Km trung bình</div>
         </div>
       </div>
+
+      {/* Add Vehicle Modal */}
+      <AddVehicleModal 
+        isOpen={showAddModal}
+        onClose={handleCloseModal}
+        onSuccess={handleVehicleAdded}
+      />
     </div>
   );
 };

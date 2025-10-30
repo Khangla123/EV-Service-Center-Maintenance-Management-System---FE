@@ -33,6 +33,10 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
 
   useEffect(() => {
+    console.log('=== MaintenanceHistory useEffect ===');
+    console.log('User:', user);
+    console.log('User ID:', user?.id);
+    console.log('User Role:', user?.role);
     loadData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, selectedVehicle]);
@@ -55,6 +59,10 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
 
   const loadMaintenanceRecords = async () => {
     try {
+      console.log('=== LOADING MAINTENANCE RECORDS ===');
+      console.log('Current user:', user);
+      console.log('Selected vehicle:', selectedVehicle);
+      
       const params: any = {};
       if (selectedVehicle && selectedVehicle !== 'all') {
         params.vehicleId = selectedVehicle;
@@ -69,9 +77,12 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
         params.size = limit;
       }
 
-      console.log('Loading maintenance records with params:', params);
+      console.log('API request params:', params);
+      console.log('Token from localStorage:', localStorage.getItem('accessToken')?.substring(0, 20) + '...');
+      
       const response = await maintenanceHistoryService.getMaintenanceHistory(params);
       console.log('Maintenance records response:', response);
+      console.log('Number of records:', response.maintenanceRecords?.length || 0);
       
       // Backend returns MaintenanceRecord[], need to map to ServiceRecord[]
       const fetchedRecords = response.maintenanceRecords || [];
@@ -329,8 +340,12 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
         </div>
 
         <div className="card-footer">
-          <span className={`quality-check ${record.qualityCheckPassed ? 'passed' : 'failed'}`}>
-            {record.qualityCheckPassed ? '✓ Đạt kiểm tra' : '✗ Không đạt'}
+          <span className={`quality-check ${
+            record.qualityCheckPassed === null ? 'pending' : 
+            record.qualityCheckPassed ? 'passed' : 'pending'
+          }`}>
+            {record.qualityCheckPassed === null ? '🔄 Đang kiểm tra' :
+             record.qualityCheckPassed ? '✓ Đạt kiểm tra' : '🔄 Đang kiểm tra'}
           </span>
           {record.nextServiceDue && (
             <span className="next-service">
@@ -455,8 +470,12 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
                   <p><strong>Bảo dưỡng tiếp theo:</strong> {formatDate(record.nextServiceDue)}</p>
                 )}
                 <p><strong>Kiểm tra chất lượng:</strong> 
-                  <span className={`quality-status ${record.qualityCheckPassed ? 'passed' : 'failed'}`}>
-                    {record.qualityCheckPassed ? ' ✓ Đạt' : ' ✗ Không đạt'}
+                  <span className={`quality-status ${
+                    record.qualityCheckPassed === null ? 'pending' :
+                    record.qualityCheckPassed ? 'passed' : 'pending'
+                  }`}>
+                    {record.qualityCheckPassed === null ? ' 🔄 Đang kiểm tra' :
+                     record.qualityCheckPassed ? ' ✓ Đạt' : ' 🔄 Đang kiểm tra'}
                   </span>
                 </p>
               </div>

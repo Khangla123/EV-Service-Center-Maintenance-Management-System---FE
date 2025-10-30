@@ -46,10 +46,16 @@ class MaintenanceHistoryService {
     averageCost: number;
   }> {
     try {
+      console.log('Fetching maintenance history with params:', params);
       const response = await api.get<ApiResponse<MaintenanceHistoryStatisticsResponse>>('/maintenance-history', { params });
+      
+      console.log('Full API response:', response);
+      console.log('Response data:', response.data);
       
       // Backend trả về format: { code, message, result }
       const result = response.data.result;
+      
+      console.log('Result from backend:', result);
       
       return {
         maintenanceRecords: result?.maintenanceHistory || [],
@@ -59,10 +65,24 @@ class MaintenanceHistoryService {
       };
     } catch (error: any) {
       console.error('Error fetching maintenance history:', error);
+      console.error('Error response:', error?.response);
+      console.error('Error status:', error?.response?.status);
+      console.error('Error data:', error?.response?.data);
       
       // Nếu lỗi 401/403, có thể do chưa đăng nhập
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
-        throw new Error('Vui lòng đăng nhập để xem lịch sử bảo dưỡng');
+      if (error?.response?.status === 401) {
+        console.error('Unauthorized - Token may be invalid or expired');
+        throw new Error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+      }
+      
+      if (error?.response?.status === 403) {
+        console.error('Forbidden - User may not have CUSTOMER role');
+        throw new Error('Bạn không có quyền truy cập lịch sử bảo dưỡng.');
+      }
+      
+      if (error?.response?.status === 404) {
+        console.error('Not Found - API endpoint may not exist');
+        throw new Error('Không tìm thấy API lịch sử bảo dưỡng. Vui lòng kiểm tra backend.');
       }
       
       // Trả về dữ liệu rỗng thay vì throw error

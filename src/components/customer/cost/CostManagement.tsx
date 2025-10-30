@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MDButton } from '../../ui';
 import './CostManagement.css';
 import maintenanceHistoryService, { MaintenanceRecord } from '../../../services/maintenanceHistoryService';
@@ -19,6 +20,7 @@ export interface CostRecord {
   totalCost: number;
   paymentMethod: string;
   paymentStatus: 'paid' | 'pending' | 'overdue';
+  serviceStatus?: string; // Add this to track service completion status
   category: 'maintenance' | 'repair' | 'inspection' | 'emergency';
   warrantyExpiry?: Date;
   parts: Array<{
@@ -44,6 +46,7 @@ interface CostManagementProps {
 }
 
 const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
+  const navigate = useNavigate();
   const [costRecords, setCostRecords] = useState<CostRecord[]>([]);
   const [filteredRecords, setFilteredRecords] = useState<CostRecord[]>([]);
   const [summary, setSummary] = useState<CostSummary | null>(null);
@@ -82,7 +85,10 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
           tax: 0,
           totalCost: record.totalAmount,
           paymentMethod: 'N/A',
-          paymentStatus: (record.status === 'COMPLETED' ? 'paid' : 'pending') as 'paid' | 'pending' | 'overdue',
+          // paymentStatus should be based on actual payment data, not service status
+          // Since we don't have payment info from API, default to 'pending'
+          paymentStatus: 'pending' as 'paid' | 'pending' | 'overdue',
+          serviceStatus: record.status, // Preserve the service completion status
           category: 'maintenance' as const,
           parts: [],
           notes: record.nextMaintenanceDate ? `Next maintenance: ${record.nextMaintenanceDate}` : undefined
@@ -183,6 +189,19 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
       overdue: 'Quá hạn'
     };
     return labels[status as keyof typeof labels] || status;
+  };
+
+  const handlePayment = (record: CostRecord) => {
+    // Navigate to payment page with the record data using React Router
+    navigate('/customer/payment', { 
+      state: { 
+        recordId: record.id, 
+        amount: record.totalCost,
+        serviceName: record.serviceName,
+        vehicleName: record.vehicleName,
+        date: record.date
+      } 
+    });
   };
 
   const exportToCSV = () => {
@@ -400,12 +419,22 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
                         </span>
                       </td>
                       <td>
-                        <MDButton 
-                          variant="text" 
-                          onClick={() => openRecordDetail(record)}
-                        >
-                          Chi tiết
-                        </MDButton>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                          <MDButton 
+                            variant="text" 
+                            onClick={() => openRecordDetail(record)}
+                          >
+                            Chi tiết
+                          </MDButton>
+                          {record.paymentStatus === 'pending' && record.serviceStatus === 'COMPLETED' && (
+                            <MDButton 
+                              variant="filled"
+                              onClick={() => handlePayment(record)}
+                            >
+                              Thanh toán
+                            </MDButton>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -3,26 +3,20 @@ import { Vehicle } from '../types';
 
 export interface CreateVehicleRequest {
   customerId?: string;
-  model: string;
-  make: string;
-  year: number;
-  licensePlate: string;
+  vehicleModelId: string; // UUID của VehicleModel
   vin: string;
+  licensePlate: string;
   color: string;
-  batteryCapacity: number;
-  mileage: number;
   purchaseDate: Date;
-  warrantyExpiration: Date;
+  mileage: number;
+  warrantyExpiration?: Date;
 }
 
 export interface UpdateVehicleRequest {
-  model?: string;
-  make?: string;
-  year?: number;
-  licensePlate?: string;
+  vehicleModelId?: string;
   vin?: string;
+  licensePlate?: string;
   color?: string;
-  batteryCapacity?: number;
   mileage?: number;
   purchaseDate?: Date;
   warrantyExpiration?: Date;
