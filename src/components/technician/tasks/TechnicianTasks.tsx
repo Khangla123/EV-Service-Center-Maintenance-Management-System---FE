@@ -42,6 +42,8 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflictTask, setConflictTask] = useState<Task | null>(null);
 
   useEffect(() => {
     console.log('🔄 TechnicianTasks component mounted, loading tasks...');
@@ -52,6 +54,22 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
       console.log('🔄 TechnicianTasks component unmounted');
     };
   }, []); // Empty dependency array - only run on mount
+
+  // Lock/unlock body scroll khi modal mở/đóng
+  useEffect(() => {
+    if (showDetail || showConflictModal) {
+      // Lock scroll
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Unlock scroll
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup - đảm bảo unlock khi component unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showDetail, showConflictModal]);
 
   const loadTasks = async () => {
     try {
@@ -164,19 +182,20 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
   };
 
   const handleStartTask = async (task: Task) => {
-    if (!window.confirm(`Bắt đầu công việc: ${task.vehicle} - ${task.licensePlate}?`)) {
-      return;
-    }
-
     try {
       console.log('🔄 Starting task:', task.id);
       
       // ⚠️ KIỂM TRA: Đảm bảo không có công việc IN_PROGRESS nào khác
       const inProgressTasks = tasks.filter(t => t.status === 'IN_PROGRESS');
       if (inProgressTasks.length > 0) {
-        alert('❌ Bạn đang có công việc đang xử lý!\n\n' +
-              `Công việc: ${inProgressTasks[0].vehicle} - ${inProgressTasks[0].licensePlate}\n` +
-              'Vui lòng hoàn thành công việc hiện tại trước khi bắt đầu công việc mới.');
+        // Hiển thị modal cảnh báo với thông tin công việc hiện tại
+        setConflictTask(inProgressTasks[0]);
+        setShowConflictModal(true);
+        return;
+      }
+      
+      // Confirm trước khi bắt đầu
+      if (!window.confirm(`Bắt đầu công việc: ${task.vehicle} - ${task.licensePlate}?`)) {
         return;
       }
       
@@ -483,6 +502,69 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
       </div>
 
       {showDetail && renderDetailModal()}
+      
+      {/* Modal cảnh báo công việc đang xử lý */}
+      {showConflictModal && conflictTask && (
+        <div className="modal-overlay" onClick={() => setShowConflictModal(false)}>
+          <div className="modal-content conflict-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowConflictModal(false)}>
+              <X size={24} />
+            </button>
+            
+            <div className="conflict-icon">
+              <Wrench size={48} />
+            </div>
+            
+            <h2 className="conflict-title">Bạn đang có công việc đang xử lý!</h2>
+            
+            <div className="conflict-current-work">
+              <h3>Công việc hiện tại:</h3>
+              <div className="conflict-work-info">
+                <div className="info-row">
+                  <span className="label">Xe:</span>
+                  <span className="value">{conflictTask.vehicle} - {conflictTask.licensePlate}</span>
+                </div>
+                <div className="info-row">
+                  <span className="label">Khách hàng:</span>
+                  <span className="value">{conflictTask.customer}</span>
+                </div>
+                <div className="info-row">
+                  <span className="label">Dịch vụ:</span>
+                  <span className="value">{conflictTask.service}</span>
+                </div>
+                {conflictTask.startedAt && (
+                  <div className="info-row">
+                    <span className="label">Bắt đầu:</span>
+                    <span className="value">{conflictTask.startedAt}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <p className="conflict-message">
+              Vui lòng hoàn thành công việc hiện tại trước khi bắt đầu công việc mới.
+            </p>
+            
+            <div className="conflict-actions">
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShowConflictModal(false)}
+              >
+                Đóng
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={() => {
+                  setShowConflictModal(false);
+                  navigate('/technician/work');
+                }}
+              >
+                Tiếp tục công việc hiện tại
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

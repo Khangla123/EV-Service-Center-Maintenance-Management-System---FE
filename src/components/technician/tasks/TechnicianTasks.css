@@ -526,3 +526,118 @@
     max-height: 95vh;
   }
 }
+
+/* ===== CONFLICT MODAL (Công việc đang xử lý) ===== */
+.conflict-modal {
+  max-width: 560px;
+  text-align: center;
+}
+
+.conflict-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 8px 16px rgba(245, 158, 11, 0.3);
+}
+
+.conflict-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 24px 0;
+}
+
+.conflict-current-work {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #fbbf24;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.conflict-current-work h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
+.conflict-work-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conflict-work-info .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+}
+
+.conflict-work-info .label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.conflict-work-info .value {
+  font-size: 14px;
+  color: #78350f;
+  font-weight: 500;
+  text-align: right;
+}
+
+.conflict-message {
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+}
+
+.conflict-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.conflict-actions button {
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.conflict-actions .btn-secondary {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.conflict-actions .btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.conflict-actions .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.conflict-actions .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+

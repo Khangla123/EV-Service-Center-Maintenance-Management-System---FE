@@ -59,6 +59,19 @@ const WorkProcessing: React.FC = () => {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [completionNotes, setCompletionNotes] = useState('');
 
+  // Lock/unlock body scroll khi modal mở/đóng
+  useEffect(() => {
+    if (showCompleteModal || showIssueForm || showPartForm || showSuggestionForm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showCompleteModal, showIssueForm, showPartForm, showSuggestionForm]);
+
   // Load appointments for current technician
   useEffect(() => {
     const loadAppointments = async () => {
@@ -268,9 +281,9 @@ const WorkProcessing: React.FC = () => {
     return (
       <div className="work-processing">
         <div className="empty-work">
-          <Clock size={48} />
+          <Clock size={64} strokeWidth={1.5} />
           <h3>Không có công việc nào đang thực hiện</h3>
-          <p>Vui lòng bắt đầu công việc từ danh sách trước</p>
+          <p>Bạn chưa có công việc nào trong trạng thái đang xử lý.<br />Vui lòng bắt đầu công việc từ danh sách công việc.</p>
           <button className="btn-primary" onClick={() => navigate('/technician/tasks')}>
             Quay lại danh sách công việc
           </button>
@@ -283,10 +296,11 @@ const WorkProcessing: React.FC = () => {
     return (
       <div className="work-processing">
         <div className="empty-work">
-          <Clock size={48} />
+          <Clock size={64} strokeWidth={1.5} />
           <h3>Vui lòng chọn công việc để xử lý</h3>
+          <p>Không tìm thấy thông tin công việc.</p>
           <button className="btn-primary" onClick={() => navigate('/technician/tasks')}>
-            Quay lại
+            Quay lại danh sách công việc
           </button>
         </div>
       </div>
@@ -297,10 +311,10 @@ const WorkProcessing: React.FC = () => {
     return (
       <div className="work-processing">
         <div className="empty-work">
-          <AlertCircle size={48} />
+          <AlertCircle size={64} strokeWidth={1.5} />
           <h3>Công việc chưa được bắt đầu hoặc đã hoàn thành</h3>
-          <p>Status hiện tại: {appointment.status}</p>
-          <p>Vui lòng bắt đầu công việc từ danh sách trước</p>
+          <p>Status hiện tại: <strong>{appointment.status}</strong></p>
+          <p>Vui lòng bắt đầu công việc từ danh sách công việc hoặc chọn công việc đang thực hiện.</p>
           <button className="btn-primary" onClick={() => navigate('/technician/tasks')}>
             Quay lại danh sách công việc
           </button>
