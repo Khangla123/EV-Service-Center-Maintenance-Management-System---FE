@@ -171,6 +171,15 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
     try {
       console.log('🔄 Starting task:', task.id);
       
+      // ⚠️ KIỂM TRA: Đảm bảo không có công việc IN_PROGRESS nào khác
+      const inProgressTasks = tasks.filter(t => t.status === 'IN_PROGRESS');
+      if (inProgressTasks.length > 0) {
+        alert('❌ Bạn đang có công việc đang xử lý!\n\n' +
+              `Công việc: ${inProgressTasks[0].vehicle} - ${inProgressTasks[0].licensePlate}\n` +
+              'Vui lòng hoàn thành công việc hiện tại trước khi bắt đầu công việc mới.');
+        return;
+      }
+      
       // Call API to update appointment status to IN_PROGRESS
       await appointmentService.updateAppointment(task.id, {
         status: 'IN_PROGRESS'
@@ -449,7 +458,14 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
                   Xem chi tiết
                 </button>
                 {task.status === 'CONFIRMED' && (
-                  <button className="btn-start" onClick={() => handleStartTask(task)}>
+                  <button 
+                    className="btn-start" 
+                    onClick={() => handleStartTask(task)}
+                    disabled={tasks.some(t => t.status === 'IN_PROGRESS')}
+                    title={tasks.some(t => t.status === 'IN_PROGRESS') ? 
+                      'Bạn đang có công việc đang xử lý. Vui lòng hoàn thành trước khi bắt đầu công việc mới.' : 
+                      'Bắt đầu công việc này'}
+                  >
                     <Play size={16} />
                     Bắt đầu
                   </button>
