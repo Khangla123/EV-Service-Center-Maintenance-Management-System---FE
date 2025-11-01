@@ -5,7 +5,6 @@ import {
   Calendar, 
   Package,
   DollarSign,
-  Settings,
   ChevronRight
 } from 'lucide-react';
 import DashboardOverview from './dashboard/DashboardOverview';
@@ -15,7 +14,7 @@ import InventoryManagement from './inventory/InventoryManagement';
 import FinanceManagement from './finance/FinanceManagement';
 import './AdminDashboard.css';
 
-type AdminView = 'dashboard' | 'staff' | 'appointments' | 'inventory' | 'finance' | 'settings';
+type AdminView = 'dashboard' | 'staff' | 'appointments' | 'inventory' | 'finance';
 
 const AdminDashboard: React.FC = () => {
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
@@ -25,8 +24,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'staff' as AdminView, label: 'Quản lý Nhân sự', icon: <Users size={20} /> },
     { id: 'appointments' as AdminView, label: 'Quản lý Lịch hẹn', icon: <Calendar size={20} /> },
     { id: 'inventory' as AdminView, label: 'Quản lý Kho', icon: <Package size={20} /> },
-    { id: 'finance' as AdminView, label: 'Tài chính & Báo cáo', icon: <DollarSign size={20} /> },
-    { id: 'settings' as AdminView, label: 'Cài đặt Hệ thống', icon: <Settings size={20} /> }
+    { id: 'finance' as AdminView, label: 'Tài chính & Báo cáo', icon: <DollarSign size={20} /> }
   ];
 
   const renderContent = () => {
@@ -41,14 +39,6 @@ const AdminDashboard: React.FC = () => {
         return <InventoryManagement />;
       case 'finance':
         return <FinanceManagement />;
-      case 'settings':
-        return (
-          <div className="coming-soon">
-            <Settings size={64} />
-            <h2>Cài đặt Hệ thống</h2>
-            <p>Chức năng đang được phát triển...</p>
-          </div>
-        );
       default:
         return <DashboardOverview />;
     }
