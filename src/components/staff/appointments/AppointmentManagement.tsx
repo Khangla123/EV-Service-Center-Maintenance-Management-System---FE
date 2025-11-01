@@ -32,7 +32,9 @@ const generateDisplayCode = (id: string, date?: Date): string => {
 const AppointmentManagement: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'PENDING' | 'CONFIRMED' | 'today'>('all');
+  const [dateFilter, setDateFilter] = useState<'today' | 'all' | 'week' | 'month'>('today');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED'>('all');
+  const [timeFilter, setTimeFilter] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
   const [error, setError] = useState<string | null>(null);
   const [technicians, setTechnicians] = useState<Staff[]>([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -63,6 +65,8 @@ const AppointmentManagement: React.FC = () => {
   });
 
   useEffect(() => {
+    console.log('🚀 AppointmentManagement Component Mounted - NEW CODE LOADED!');
+    console.log('📅 Initial dateFilter:', dateFilter);
     loadAppointments();
     loadTechnicians();
   }, []);
@@ -119,13 +123,73 @@ const AppointmentManagement: React.FC = () => {
   };
 
   const filteredAppointments = appointments.filter(apt => {
-    if (filter === 'all') return true;
-    if (filter === 'today') {
-      const today = new Date();
-      const aptDate = new Date(apt.appointmentDate);
-      return aptDate.toDateString() === today.toDateString();
+    if (!apt.appointmentDate) return false;
+    
+    // Parse appointment date - backend trả về ISO string format: "2025-10-30T15:00:00"
+    const aptDate = new Date(apt.appointmentDate);
+    const now = new Date();
+    
+    // Validate date
+    if (isNaN(aptDate.getTime())) return false;
+    
+    // DEBUG: Log để kiểm tra
+    if (dateFilter === 'today') {
+      console.log('🔍 Filter TODAY - Checking apt:', {
+        aptDateString: apt.appointmentDate,
+        aptDate: aptDate.toISOString(),
+        aptDay: aptDate.getDate(),
+        aptMonth: aptDate.getMonth() + 1,
+        aptYear: aptDate.getFullYear(),
+        nowDate: now.toISOString(),
+        nowDay: now.getDate(),
+        nowMonth: now.getMonth() + 1,
+        nowYear: now.getFullYear()
+      });
     }
-    return apt.status === filter;
+    
+    // Date filter - So sánh ngày, tháng, năm
+    if (dateFilter === 'today') {
+      const isToday = 
+        aptDate.getDate() === now.getDate() &&
+        aptDate.getMonth() === now.getMonth() &&
+        aptDate.getFullYear() === now.getFullYear();
+      
+      console.log(`✅ Is today? ${isToday} for ${apt.id.substring(0, 8)}`);
+      if (!isToday) return false;
+    } else if (dateFilter === 'week') {
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - now.getDay()); // Chủ nhật đầu tuần
+      weekStart.setHours(0, 0, 0, 0);
+      
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
+      
+      if (aptDate < weekStart || aptDate > weekEnd) return false;
+    } else if (dateFilter === 'month') {
+      if (
+        aptDate.getMonth() !== now.getMonth() || 
+        aptDate.getFullYear() !== now.getFullYear()
+      ) return false;
+    }
+    
+    // Status filter
+    if (statusFilter !== 'all' && apt.status !== statusFilter) return false;
+    
+    // Time filter - Dựa trên giờ thực của appointment
+    if (timeFilter !== 'all') {
+      const hour = aptDate.getHours();
+      if (timeFilter === 'morning' && (hour < 6 || hour >= 12)) return false;
+      if (timeFilter === 'afternoon' && (hour < 12 || hour >= 18)) return false;
+      if (timeFilter === 'evening' && (hour < 18 || hour >= 24)) return false;
+    }
+    
+    return true;
+  }).sort((a, b) => {
+    // Sắp xếp theo giờ (sớm nhất lên đầu)
+    const dateA = new Date(a.appointmentDate).getTime();
+    const dateB = new Date(b.appointmentDate).getTime();
+    return dateA - dateB;
   });
 
   const getStatusColor = (status: Appointment['status']) => {
@@ -406,39 +470,71 @@ const AppointmentManagement: React.FC = () => {
     <div className="appointment-management">
       {/* Header Controls */}
       <div className="controls-bar">
-        <div className="filter-tabs">
-          <button
-            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            Tất cả ({appointments.length})
-          </button>
-          <button
-            className={`filter-tab ${filter === 'today' ? 'active' : ''}`}
-            onClick={() => setFilter('today')}
-          >
-            Hôm nay ({appointments.filter(a => {
-              const aptDate = new Date(a.appointmentDate);
-              return aptDate.toDateString() === new Date().toDateString();
-            }).length})
-          </button>
-          <button
-            className={`filter-tab ${filter === 'PENDING' ? 'active' : ''}`}
-            onClick={() => setFilter('PENDING')}
-          >
-            Chờ xác nhận ({appointments.filter(a => a.status === 'PENDING').length})
-          </button>
-          <button
-            className={`filter-tab ${filter === 'CONFIRMED' ? 'active' : ''}`}
-            onClick={() => setFilter('CONFIRMED')}
-          >
-            Đã xác nhận ({appointments.filter(a => a.status === 'CONFIRMED').length})
-          </button>
+        <div className="filters-container">
+          {/* Date Filter */}
+          <div className="filter-group">
+            <label>Thời gian:</label>
+            <div className="filter-tabs">
+              <button
+                className={`filter-tab ${dateFilter === 'today' ? 'active' : ''}`}
+                onClick={() => setDateFilter('today')}
+              >
+                Hôm nay
+              </button>
+              <button
+                className={`filter-tab ${dateFilter === 'week' ? 'active' : ''}`}
+                onClick={() => setDateFilter('week')}
+              >
+                Tuần này
+              </button>
+              <button
+                className={`filter-tab ${dateFilter === 'month' ? 'active' : ''}`}
+                onClick={() => setDateFilter('month')}
+              >
+                Tháng này
+              </button>
+              <button
+                className={`filter-tab ${dateFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setDateFilter('all')}
+              >
+                Toàn bộ
+              </button>
+            </div>
+          </div>
+
+          {/* Time Filter */}
+          <div className="filter-group">
+            <label>Giờ:</label>
+            <select 
+              className="filter-select"
+              value={timeFilter} 
+              onChange={(e) => setTimeFilter(e.target.value as any)}
+            >
+              <option value="all">Cả ngày</option>
+              <option value="morning">Sáng (6h-12h)</option>
+              <option value="afternoon">Chiều (12h-18h)</option>
+              <option value="evening">Tối (18h-24h)</option>
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div className="filter-group">
+            <label>Trạng thái:</label>
+            <select 
+              className="filter-select"
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+            >
+              <option value="all">Tất cả</option>
+              <option value="PENDING">Chờ xác nhận</option>
+              <option value="CONFIRMED">Đã xác nhận</option>
+              <option value="IN_PROGRESS">Đang thực hiện</option>
+              <option value="COMPLETED">Hoàn thành</option>
+            </select>
+          </div>
         </div>
+
         <div className="action-buttons">
-          <MDButton variant="outlined" startIcon={<Filter />}>
-            Lọc nâng cao
-          </MDButton>
           <MDButton variant="filled" startIcon={<Plus />} onClick={openCreateModal}>
             Tạo lịch hẹn mới
           </MDButton>
@@ -557,9 +653,35 @@ const AppointmentManagement: React.FC = () => {
         ))}
       </div>
 
-      {filteredAppointments.length === 0 && (
+      {filteredAppointments.length === 0 && !loading && (
         <div className="no-appointments">
-          <p>Không có lịch hẹn nào</p>
+          <CalendarIcon size={64} color="#cbd5e0" />
+          <h3>Không có lịch hẹn</h3>
+          <p>
+            {dateFilter === 'today' && 'Không có lịch hẹn nào cho hôm nay'}
+            {dateFilter === 'week' && 'Không có lịch hẹn nào trong tuần này'}
+            {dateFilter === 'month' && 'Không có lịch hẹn nào trong tháng này'}
+            {dateFilter === 'all' && 'Không có lịch hẹn nào trong hệ thống'}
+          </p>
+          {statusFilter !== 'all' && (
+            <p className="filter-hint">
+              Bộ lọc trạng thái: <strong>{
+                statusFilter === 'PENDING' ? 'Chờ xác nhận' :
+                statusFilter === 'CONFIRMED' ? 'Đã xác nhận' :
+                statusFilter === 'IN_PROGRESS' ? 'Đang thực hiện' :
+                statusFilter === 'COMPLETED' ? 'Hoàn thành' : ''
+              }</strong>
+            </p>
+          )}
+          {timeFilter !== 'all' && (
+            <p className="filter-hint">
+              Bộ lọc giờ: <strong>{
+                timeFilter === 'morning' ? 'Sáng (6h-12h)' :
+                timeFilter === 'afternoon' ? 'Chiều (12h-18h)' :
+                timeFilter === 'evening' ? 'Tối (18h-24h)' : ''
+              }</strong>
+            </p>
+          )}
         </div>
       )}
 

@@ -78,6 +78,87 @@
   z-index: 2;
 }
 
+/* Filter Section */
+.filter-section {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 180px;
+  flex: 0 0 auto;
+}
+
+.filter-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-select {
+  padding: 10px 15px;
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #2d3748;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.filter-select:hover {
+  border-color: rgba(102, 126, 234, 0.4);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.filter-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.filter-results {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-radius: 12px;
+  margin-left: auto;
+}
+
+.filter-results span {
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Appointments List Container */
 .appointments-list {
   background: rgba(255, 255, 255, 0.15);
@@ -91,6 +172,8 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   position: relative;
   z-index: 1;
+  overflow-x: visible;
+  overflow-y: visible;
 }
 
 /* No Appointments State */
@@ -115,10 +198,32 @@
 
 /* Appointments Grid */
 .appointments-grid {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: row !important;
   gap: 25px;
-  width: 929px;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  padding-bottom: 20px;
+  scroll-behavior: smooth;
+  flex-wrap: nowrap !important;
+}
+
+.appointments-grid::-webkit-scrollbar {
+  height: 8px;
+}
+
+.appointments-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.appointments-grid::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 10px;
+}
+
+.appointments-grid::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, #5568d3, #653a8b);
 }
 
 /* Appointment Card */
@@ -136,7 +241,9 @@
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  width: 100%;
+  min-width: 400px !important;
+  max-width: 400px !important;
+  flex-shrink: 0 !important;
 }
 
 .appointment-card::before {
@@ -185,14 +292,33 @@
 
 .appointment-id {
   font-size: 0.95rem;
-  color: #666;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.3);
-  padding: 6px 14px;
+  color: #667eea;
+  font-weight: 700;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  padding: 8px 16px;
   border-radius: 12px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(102, 126, 234, 0.3);
+  box-shadow: 
+    0 2px 8px rgba(102, 126, 234, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.appointment-id:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 12px rgba(102, 126, 234, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border-color: rgba(102, 126, 234, 0.5);
+}
+
+.appointment-id span {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Status Badge */
@@ -527,6 +653,11 @@
     gap: 20px;
   }
 
+  .appointment-card {
+    min-width: 350px;
+    max-width: 350px;
+  }
+
   .appointment-tracker {
     padding: 25px;
   }
@@ -553,8 +684,28 @@
     text-align: center;
   }
 
+  .filter-controls {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .filter-group {
+    min-width: 100%;
+  }
+
+  .filter-results {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
   .appointments-grid {
     gap: 20px;
+  }
+
+  .appointment-card {
+    min-width: 300px;
+    max-width: 300px;
   }
 
   .appointments-list {

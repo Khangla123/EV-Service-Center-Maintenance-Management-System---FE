@@ -47,6 +47,11 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
   const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState<ServiceAppointment | null>(null);
   const [customerId, setCustomerId] = useState<string>('');
+  
+  // Filter states
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'date' | 'progress'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     loadCustomerProfile();
@@ -266,6 +271,32 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
     console.log('Reschedule appointment:', appointmentId);
   };
 
+  // Filter and sort appointments
+  const getFilteredAndSortedAppointments = () => {
+    let filtered = [...appointments];
+
+    // Filter by status
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(app => app.status?.toString().toUpperCase() === filterStatus.toUpperCase());
+    }
+
+    // Sort appointments
+    filtered.sort((a, b) => {
+      if (sortBy === 'date') {
+        const dateA = new Date(a.appointmentDate || 0).getTime();
+        const dateB = new Date(b.appointmentDate || 0).getTime();
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      } else {
+        // Sort by progress
+        const progressA = getProgressPercentage(a);
+        const progressB = getProgressPercentage(b);
+        return sortOrder === 'asc' ? progressA - progressB : progressB - progressA;
+      }
+    });
+
+    return filtered;
+  };
+
   if (loading) {
     return (
       <div className="appointment-tracker loading">
@@ -273,6 +304,8 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
       </div>
     );
   }
+
+  const filteredAppointments = getFilteredAndSortedAppointments();
 
   return (
     <div className="appointment-tracker">
@@ -284,6 +317,57 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
           </MDButton>
         )}
       </div>
+
+      {/* Filter Section */}
+      {!appointmentId && appointments.length > 0 && (
+        <div className="filter-section">
+          <div className="filter-controls">
+            <div className="filter-group">
+              <label>Trạng thái:</label>
+              <select 
+                value={filterStatus} 
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">Tất cả</option>
+                <option value="PENDING">Đặt lịch</option>
+                <option value="CONFIRMED">Xác nhận</option>
+                <option value="IN_PROGRESS">Thực hiện</option>
+                <option value="COMPLETED">Hoàn thành</option>
+                <option value="CANCELLED">Đã hủy</option>
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <label>Sắp xếp theo:</label>
+              <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value as 'date' | 'progress')}
+                className="filter-select"
+              >
+                <option value="date">Ngày tháng</option>
+                <option value="progress">Tiến trình</option>
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <label>Thứ tự:</label>
+              <select 
+                value={sortOrder} 
+                onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                className="filter-select"
+              >
+                <option value="desc">{sortBy === 'date' ? 'Mới nhất' : 'Cao nhất'}</option>
+                <option value="asc">{sortBy === 'date' ? 'Cũ nhất' : 'Thấp nhất'}</option>
+              </select>
+            </div>
+
+            <div className="filter-results">
+              <span>Hiển thị {filteredAppointments.length} / {appointments.length} lịch hẹn</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedAppointment ? (
         // Single appointment view
@@ -308,9 +392,16 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
                 Đặt lịch ngay
               </MDButton>
             </div>
+          ) : filteredAppointments.length === 0 ? (
+            <div className="no-appointments">
+              <p>Không tìm thấy lịch hẹn phù hợp với bộ lọc.</p>
+              <MDButton variant="outlined" onClick={() => setFilterStatus('all')}>
+                Xóa bộ lọc
+              </MDButton>
+            </div>
           ) : (
             <div className="appointments-grid">
-              {appointments.map(appointment => (
+              {filteredAppointments.map(appointment => (
                 <AppointmentCard
                   key={appointment.id}
                   appointment={appointment}
@@ -369,9 +460,6 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
           <div className="appointment-id" title={`UUID đầy đủ: ${appointment.id}`}>
             <span>Mã lịch dịch vụ: {generateDisplayCode(appointment.id, appointment.appointmentDate)}</span>
           </div>
-          <div className={`status-badge ${statusColor}`}>
-            {getStatusText(appointment.status)}
-          </div>
         </div>
 
         <div className="progress-section">
@@ -415,6 +503,9 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
             <strong>Dịch vụ:</strong> {service?.name}
           </div>
           <div className="info-row">
+            <strong>Địa điểm:</strong> {center?.name || 'Chưa xác định'}
+          </div>
+          <div className="info-row">
             <strong>Thời gian:</strong> {formatDateTime(appointment.appointmentDate)}
           </div>
           {appointment.status === AppointmentStatus.IN_PROGRESS && appointment.estimatedCompletion && (
@@ -424,9 +515,6 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
           )}
           {detailed && (
             <>
-              <div className="info-row">
-                <strong>Trung tâm:</strong> {center?.name}
-              </div>
               <div className="info-row">
                 <strong>Địa chỉ:</strong> {center?.address}
               </div>

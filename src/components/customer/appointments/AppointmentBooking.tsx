@@ -134,9 +134,13 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
     }
   };
 
+  const [bookedTimeSlots, setBookedTimeSlots] = useState<Set<string>>(new Set());
+
   const generateTimeSlots = (date: string, center: ServiceCenter) => {
     const selectedDate = new Date(date);
     const dayOfWeek = selectedDate.getDay();
+    
+    console.log('⏰ Generating time slots for day:', dayOfWeek, 'date:', date);
     
     // Check if operatingHours exists and is an array
     if (!center.operatingHours || !Array.isArray(center.operatingHours)) {
@@ -146,32 +150,106 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         slots.push(`${hour.toString().padStart(2, '0')}:00`);
         slots.push(`${hour.toString().padStart(2, '0')}:30`);
       }
+      console.log('⏰ Using default slots:', slots);
       return slots;
     }
     
     const operatingHours = center.operatingHours.find(h => h.dayOfWeek === dayOfWeek);
     
     if (!operatingHours || !operatingHours.isOpen) {
+      console.log('⏰ Center closed on this day');
       return [];
     }
 
+    console.log('⏰ Operating hours:', operatingHours.openTime, '-', operatingHours.closeTime);
+
     const slots: string[] = [];
-    const [openHour] = operatingHours.openTime.split(':').map(Number);
+    const [openHour, openMin] = operatingHours.openTime.split(':').map(Number);
     const [closeHour] = operatingHours.closeTime.split(':').map(Number);
 
-    for (let hour = openHour; hour < closeHour; hour++) {
-      slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      if (hour < closeHour - 1) {
-        slots.push(`${hour.toString().padStart(2, '0')}:30`);
+    console.log('⏰ Open hour:', openHour, 'Open min:', openMin, 'Close hour:', closeHour);
+
+    // If opening time has minutes (e.g., 08:30), start from that time
+    if (openMin === 30) {
+      slots.push(`${openHour.toString().padStart(2, '0')}:30`);
+      for (let hour = openHour + 1; hour < closeHour; hour++) {
+        slots.push(`${hour.toString().padStart(2, '0')}:00`);
+        if (hour < closeHour - 1) {
+          slots.push(`${hour.toString().padStart(2, '0')}:30`);
+        }
+      }
+    } else {
+      // Standard slots starting from whole hour
+      for (let hour = openHour; hour < closeHour; hour++) {
+        slots.push(`${hour.toString().padStart(2, '0')}:00`);
+        if (hour < closeHour - 1) {
+          slots.push(`${hour.toString().padStart(2, '0')}:30`);
+        }
       }
     }
 
+    console.log('⏰ Generated slots:', slots);
     return slots;
+  };
+
+  // Format date to DD/MM/YYYY
+  const formatDateToDDMMYYYY = (dateString: string) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  // Check booked appointments for selected date
+  const checkBookedSlots = async (date: string, centerId: string) => {
+    try {
+      console.log('🔍 Checking booked slots for date:', date, 'center:', centerId);
+      
+      const appointmentService = (await import('../../../services/appointmentService')).default;
+      // Get all appointments
+      const response = await appointmentService.getAllAppointments();
+      console.log('📦 Total appointments in system:', response.appointments.length);
+      
+      const booked = new Set<string>();
+      const selectedDateObj = new Date(date);
+      console.log('📅 Selected date object:', selectedDateObj, 'Date:', selectedDateObj.getDate(), 'Month:', selectedDateObj.getMonth() + 1, 'Year:', selectedDateObj.getFullYear());
+      
+      response.appointments.forEach(apt => {
+        console.log('🔎 Checking appointment:', apt.id.substring(0, 8), 'Center:', apt.serviceCenterId, 'Date:', apt.appointmentDate);
+        
+        // Only check appointments for the selected service center
+        if (apt.serviceCenterId !== centerId) {
+          console.log('❌ Skipped - different center');
+          return;
+        }
+        
+        const aptDate = new Date(apt.appointmentDate);
+        console.log('📆 Appointment date object:', aptDate, 'Date:', aptDate.getDate(), 'Month:', aptDate.getMonth() + 1, 'Year:', aptDate.getFullYear());
+        
+        // Check if appointment is on the same day
+        const isSameDay = 
+          aptDate.getDate() === selectedDateObj.getDate() &&
+          aptDate.getMonth() === selectedDateObj.getMonth() &&
+          aptDate.getFullYear() === selectedDateObj.getFullYear();
+        
+        console.log('🎯 Is same day?', isSameDay);
+        
+        if (isSameDay) {
+          const timeStr = `${aptDate.getHours().toString().padStart(2, '0')}:${aptDate.getMinutes().toString().padStart(2, '0')}`;
+          booked.add(timeStr);
+          console.log('✅ Found booked slot:', timeStr, 'for appointment:', apt.id.substring(0, 8));
+        }
+      });
+      
+      console.log('📋 Total booked slots:', booked.size, Array.from(booked));
+      setBookedTimeSlots(booked);
+    } catch (error) {
+      console.error('❌ Error checking booked slots:', error);
+    }
   };
 
   const handleCenterSelect = (center: ServiceCenter) => {
     setSelectedCenter(center);
-    setStep(2);
+    // Don't auto-advance, let user click Continue button
   };
 
   const handleServiceSelect = (service: ServiceType) => {
@@ -194,6 +272,8 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
     if (selectedCenter) {
       const slots = generateTimeSlots(date, selectedCenter);
       setAvailableTimeSlots(slots);
+      // Check booked appointments for this date
+      checkBookedSlots(date, selectedCenter.id);
     }
   };
 
@@ -315,8 +395,8 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
             <div key={num} className={`step ${step >= num ? 'active' : ''}`}>
               <span className="step-number">{num}</span>
               <span className="step-label">
-                {num === 1 && 'Chọn trung tâm'}
-                {num === 2 && 'Chọn dịch vụ'}
+                {num === 1 && 'Chọn dịch vụ'}
+                {num === 2 && 'Chọn trung tâm'}
                 {num === 3 && 'Chọn xe'}
                 {num === 4 && 'Thời gian & Xác nhận'}
               </span>
@@ -326,10 +406,76 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
       </div>
 
       <div className="booking-content">
-        {/* Step 1: Select Service Center */}
+        {/* Step 1: Select Services */}
         {step === 1 && (
           <div className="step-content">
+            <h2>Chọn dịch vụ</h2>
+            <div className="services-grid">
+              {serviceTypes.map(service => (
+                <div
+                  key={service.id}
+                  className={`service-card ${selectedServices.some(s => s.id === service.id) ? 'selected' : ''}`}
+                  onClick={() => handleServiceSelect(service)}
+                >
+                  <div className="service-header">
+                    <h3>{service.name}</h3>
+                    <input
+                      type="checkbox"
+                      checked={selectedServices.some(s => s.id === service.id)}
+                      onChange={() => handleServiceSelect(service)}
+                    />
+                  </div>
+                  <p className="service-description">{service.description}</p>
+                  <div className="service-details">
+                    <div className="price-info">
+                      <span className="price">{formatCurrency((service as any).price || service.basePrice || 0)}</span>
+                    </div>
+                    <div className="duration-info">
+                      <span className="duration">Thời gian dự kiến hoàn thành: {formatDuration((service as any).durationMinutes || service.estimatedDuration || 0)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {selectedServices.length > 0 && (
+              <div className="selection-summary">
+                <h3>Tóm tắt dịch vụ đã chọn:</h3>
+                <ul>
+                  {selectedServices.map(service => (
+                    <li key={service.id}>
+                      {service.name} - {formatCurrency((service as any).price || service.basePrice || 0)}
+                    </li>
+                  ))}
+                </ul>
+                <div className="total">
+                  <strong>
+                    Tổng: {formatCurrency(getTotalPrice())} - {formatDuration(getTotalDuration())}
+                  </strong>
+                </div>
+              </div>
+            )}
+            <div className="step-actions">
+              <MDButton variant="outlined" onClick={() => navigate(-1)}>
+                Quay lại
+              </MDButton>
+              <MDButton
+                variant="filled"
+                onClick={() => setStep(2)}
+                disabled={selectedServices.length === 0}
+              >
+                Tiếp tục
+              </MDButton>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Select Service Center */}
+        {step === 2 && (
+          <div className="step-content">
             <h2>Chọn trung tâm dịch vụ</h2>
+            <div className="selected-services-info">
+              <h3>Dịch vụ đã chọn: {selectedServices.map(s => s.name).join(', ')}</h3>
+            </div>
             <div className="centers-grid">
               {serviceCenters.map(center => (
                 <div
@@ -357,56 +503,6 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Step 2: Select Services */}
-        {step === 2 && (
-          <div className="step-content">
-            <h2>Chọn dịch vụ</h2>
-            <div className="selected-center-info">
-              <h3>Trung tâm đã chọn: {selectedCenter?.name}</h3>
-            </div>
-            <div className="services-grid">
-              {serviceTypes.map(service => (
-                <div
-                  key={service.id}
-                  className={`service-card ${selectedServices.some(s => s.id === service.id) ? 'selected' : ''}`}
-                  onClick={() => handleServiceSelect(service)}
-                >
-                  <div className="service-header">
-                    <h3>{service.name}</h3>
-                    <input
-                      type="checkbox"
-                      checked={selectedServices.some(s => s.id === service.id)}
-                      onChange={() => handleServiceSelect(service)}
-                    />
-                  </div>
-                  <p className="service-description">{service.description}</p>
-                  <div className="service-details">
-                    <span className="price">{formatCurrency((service as any).price || service.basePrice || 0)}</span>
-                    <span className="duration">{formatDuration((service as any).durationMinutes || service.estimatedDuration || 0)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {selectedServices.length > 0 && (
-              <div className="selection-summary">
-                <h3>Tóm tắt dịch vụ đã chọn:</h3>
-                <ul>
-                  {selectedServices.map(service => (
-                    <li key={service.id}>
-                      {service.name} - {formatCurrency((service as any).price || service.basePrice || 0)}
-                    </li>
-                  ))}
-                </ul>
-                <div className="total">
-                  <strong>
-                    Tổng: {formatCurrency(getTotalPrice())} - {formatDuration(getTotalDuration())}
-                  </strong>
-                </div>
-              </div>
-            )}
             <div className="step-actions">
               <MDButton variant="outlined" onClick={() => setStep(1)}>
                 Quay lại
@@ -414,7 +510,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
               <MDButton
                 variant="filled"
                 onClick={() => setStep(3)}
-                disabled={!canProceedToStep3}
+                disabled={!selectedCenter}
               >
                 Tiếp tục
               </MDButton>
@@ -493,6 +589,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                   value={formData.scheduledDate}
                   onChange={(e) => handleDateChange(e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
+                  placeholder="dd/MM/yyyy"
                 />
               </div>
 
@@ -500,15 +597,20 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                 <div className="time-slots">
                   <label>Chọn giờ:</label>
                   <div className="time-grid">
-                    {availableTimeSlots.map(time => (
-                      <button
-                        key={time}
-                        className={`time-slot ${formData.scheduledTime === time ? 'selected' : ''}`}
-                        onClick={() => setFormData(prev => ({ ...prev, scheduledTime: time }))}
-                      >
-                        {time}
-                      </button>
-                    ))}
+                    {availableTimeSlots.map(time => {
+                      const isBooked = bookedTimeSlots.has(time);
+                      return (
+                        <button
+                          key={time}
+                          className={`time-slot ${formData.scheduledTime === time ? 'selected' : ''} ${isBooked ? 'booked' : ''}`}
+                          onClick={() => !isBooked && setFormData(prev => ({ ...prev, scheduledTime: time }))}
+                          disabled={isBooked}
+                          title={isBooked ? 'Giờ này đã có xe đăng ký' : 'Chọn giờ này'}
+                        >
+                          {time}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -541,7 +643,7 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                 </ul>
               </div>
               <div className="summary-item">
-                <strong>Thời gian:</strong> {formData.scheduledDate} lúc {formData.scheduledTime}
+                <strong>Thời gian:</strong> {formatDateToDDMMYYYY(formData.scheduledDate)} lúc {formData.scheduledTime}
               </div>
               <div className="summary-item">
                 <strong>Tổng chi phí dự kiến:</strong> {formatCurrency(getTotalPrice())}

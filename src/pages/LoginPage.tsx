@@ -1,36 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle, Shield, UserCheck, Users, Wrench } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import { MDButton, MDTextField, MDCard } from '../components/ui';
 import './LoginPage.css';
-
-// Demo accounts info (for display only)
-const getDemoAccounts = () => {
-  return {
-    customer: {
-      email: 'customer@evservice.vn',
-      password: '123456',
-      name: 'Nguyễn Văn Khách'
-    },
-    staff: {
-      email: 'staff@evservice.vn',
-      password: '123456',
-      name: 'Lê Văn Nhân'
-    },
-    technician: {
-      email: 'technician@evservice.vn',
-      password: '123456',
-      name: 'Hoàng Văn Kỹ'
-    },
-    admin: {
-      email: 'admin@evservice.vn',
-      password: '123456',
-      name: 'Vũ Thị Quản'
-    }
-  };
-};
 
 const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -42,7 +16,6 @@ const LoginPage: React.FC = () => {
   const { state, login, clearError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const demoAccounts = getDemoAccounts();
   
   // Get return URL from location state, default to customer dashboard for customers
   const getReturnUrl = () => {
@@ -129,12 +102,6 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const fillDemoAccount = (email: string, password: string) => {
-    setFormData({ email, password });
-    setErrors({});
-    clearError();
-  };
-
   return (
     <div className="md-login-page">
       {/* Background Pattern */}
@@ -155,8 +122,8 @@ const LoginPage: React.FC = () => {
                 />
               </div>
             </Link>
-            <h1 className="md-login-page__title">Chào mừng trở lại</h1>
-            <p className="md-login-page__subtitle">Đăng nhập để tiếp tục sử dụng dịch vụ</p>
+            <h1 className="md-login-page__title">Chào mừng bạn</h1>
+            <p className="md-login-page__subtitle">Vui lòng đăng nhập để tiếp tục</p>
           </div>
 
           {/* Main Login Card */}
@@ -240,49 +207,6 @@ const LoginPage: React.FC = () => {
                 </Link>
               </div>
             </form>
-          </MDCard>
-
-          {/* Demo Accounts */}
-          <MDCard variant="outlined" className="md-login-page__demo-card">
-            <h3 className="md-login-page__demo-title">Tài khoản demo</h3>
-            <div className="md-login-page__demo-buttons">
-              <MDButton
-                variant="outlined"
-                size="medium"
-                startIcon={<UserCheck size={18} />}
-                onClick={() => fillDemoAccount(demoAccounts.customer.email, demoAccounts.customer.password)}
-                className="md-login-page__demo-button"
-              >
-                Khách hàng
-              </MDButton>
-              <MDButton
-                variant="outlined"
-                size="medium"
-                startIcon={<Users size={18} />}
-                onClick={() => fillDemoAccount(demoAccounts.staff.email, demoAccounts.staff.password)}
-                className="md-login-page__demo-button"
-              >
-                Nhân viên
-              </MDButton>
-              <MDButton
-                variant="outlined"
-                size="medium"
-                startIcon={<Wrench size={18} />}
-                onClick={() => fillDemoAccount(demoAccounts.technician.email, demoAccounts.technician.password)}
-                className="md-login-page__demo-button"
-              >
-                Kỹ thuật viên
-              </MDButton>
-              <MDButton
-                variant="outlined"
-                size="medium"
-                startIcon={<Shield size={18} />}
-                onClick={() => fillDemoAccount(demoAccounts.admin.email, demoAccounts.admin.password)}
-                className="md-login-page__demo-button"
-              >
-                Quản trị viên
-              </MDButton>
-            </div>
           </MDCard>
         </div>
       </div>
