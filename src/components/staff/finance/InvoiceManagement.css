@@ -1,0 +1,316 @@
+.invoice-management {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.invoice-management.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.loading-spinner {
+  text-align: center;
+  color: #666;
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #1976d2;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.header-content p {
+  margin: 4px 0 0 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.tab:hover {
+  color: #1976d2;
+  background: rgba(25, 118, 210, 0.05);
+}
+
+.tab.active {
+  color: #1976d2;
+  border-bottom-color: #1976d2;
+  background: rgba(25, 118, 210, 0.05);
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #ffebee;
+  border: 1px solid #ef5350;
+  border-radius: 8px;
+  color: #c62828;
+  margin-bottom: 24px;
+}
+
+.content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Completed Appointments */
+.completed-appointments {
+  min-height: 400px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  color: #999;
+  text-align: center;
+}
+
+.empty-state svg {
+  color: #ddd;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: #666;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.appointments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.appointment-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.appointment-card:hover {
+  border-color: #1976d2;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.appointment-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.appointment-date {
+  font-size: 13px;
+  color: #666;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-completed {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-pending {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.status-paid {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-overdue {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.status-cancelled {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row .label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.info-row .value {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  text-align: right;
+}
+
+.card-footer {
+  padding: 16px 20px;
+  background: #fafafa;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Invoices List */
+.invoices-table {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.invoices-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.invoices-table thead {
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+}
+
+.invoices-table th {
+  padding: 16px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.invoices-table tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  transition: background 0.2s;
+}
+
+.invoices-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.invoices-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+.invoices-table td {
+  padding: 16px;
+  font-size: 14px;
+  color: #333;
+}
+
+.invoice-code {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.invoices-table td.amount {
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #666;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: #f5f5f5;
+  color: #1976d2;
+}
