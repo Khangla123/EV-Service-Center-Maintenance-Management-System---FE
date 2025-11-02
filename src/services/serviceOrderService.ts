@@ -3,14 +3,26 @@ import api from './api';
 export interface ServiceOrder {
   id: string;
   appointmentId?: string;
-  customerId: string;
-  vehicleId: string;
-  serviceCenterId: string;
+  orderCode?: string;
   technicianId?: string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  serviceType: string;
-  description?: string;
+  technicianName?: string;
+  // NOTE: Status is managed in appointment.status, not in service_order
+  // status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'; - REMOVED
+  startTime?: Date;
+  endTime?: Date;
+  checklist?: string; // JSON string
   diagnosis?: string;
+  workPerformed?: string;
+  totalAmount?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+  
+  // Legacy fields for backward compatibility (may be removed later)
+  customerId?: string;
+  vehicleId?: string;
+  serviceCenterId?: string;
+  serviceType?: string;
+  description?: string;
   partsUsed?: string[];
   laborCost?: number;
   partsCost?: number;
@@ -18,8 +30,6 @@ export interface ServiceOrder {
   startDate?: Date;
   completionDate?: Date;
   notes?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
   
   // Thông tin liên quan
   customer?: {
