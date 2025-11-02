@@ -172,6 +172,15 @@ class AppointmentService {
     });
     return response.data.result || response.data;
   }
+
+  // Lấy appointments theo status (cho Staff)
+  async getAppointmentsByStatus(status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'): Promise<Appointment[]> {
+    const response = await api.get('/appointments/by-status', {
+      params: { status }
+    });
+    return response.data.result || response.data;
+  }
 }
 
+export type AppointmentResponse = Appointment;
 export default new AppointmentService();

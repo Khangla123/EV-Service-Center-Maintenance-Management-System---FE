@@ -84,9 +84,9 @@ class ServiceOrderService {
     status?: string;
     fromDate?: string;
     toDate?: string;
-  }): Promise<{ serviceOrders: ServiceOrder[]; total: number; page: number; size: number }> {
+  }): Promise<ServiceOrder[]> {
     const response = await api.get('/service-orders', { params });
-    return response.data;
+    return response.data.result || response.data;
   }
 
   // Tạo đơn dịch vụ mới
