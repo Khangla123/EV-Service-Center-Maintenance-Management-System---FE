@@ -22,6 +22,16 @@ const StaffManagement: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Form states for adding new staff
+  const [newStaff, setNewStaff] = useState<CreateStaffRequest>({
+    email: '',
+    password: '',
+    fullName: '',
+    phone: '',
+    role: 'STAFF'
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadStaff();
@@ -65,7 +75,44 @@ const StaffManagement: React.FC = () => {
   });
 
   const handleAddStaff = () => {
+    // Reset form
+    setNewStaff({
+      email: '',
+      password: '',
+      fullName: '',
+      phone: '',
+      role: 'STAFF'
+    });
     setShowAddModal(true);
+  };
+
+  const handleSubmitNewStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!newStaff.email || !newStaff.password || !newStaff.fullName || !newStaff.phone) {
+      alert('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    if (newStaff.password.length < 6) {
+      alert('Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      // Backend will convert role to lowercase automatically
+      await staffService.createStaff(newStaff as any);
+      alert('Thêm nhân viên thành công!');
+      setShowAddModal(false);
+      loadStaff(); // Reload list
+    } catch (error: any) {
+      console.error('Error creating staff:', error);
+      alert(error?.response?.data?.message || 'Không thể thêm nhân viên. Vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEditStaff = (staffId: string) => {
@@ -342,6 +389,123 @@ const StaffManagement: React.FC = () => {
         <div className="no-results">
           <Users size={48} />
           <p>Không tìm thấy nhân viên nào</p>
+        </div>
+      )}
+
+      {/* Add Staff Modal */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Thêm nhân viên mới</h2>
+              <button 
+                className="btn-close" 
+                onClick={() => setShowAddModal(false)}
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitNewStaff}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label htmlFor="fullName">
+                    Họ và tên <span className="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    className="form-control"
+                    placeholder="Nhập họ và tên"
+                    value={newStaff.fullName}
+                    onChange={(e) => setNewStaff({ ...newStaff, fullName: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="email">
+                    Email <span className="required">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    className="form-control"
+                    placeholder="email@example.com"
+                    value={newStaff.email}
+                    onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="password">
+                    Mật khẩu <span className="required">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    className="form-control"
+                    placeholder="Tối thiểu 6 ký tự"
+                    value={newStaff.password}
+                    onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
+                    required
+                    minLength={6}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="phone">
+                    Số điện thoại <span className="required">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    className="form-control"
+                    placeholder="0123456789"
+                    value={newStaff.phone}
+                    onChange={(e) => setNewStaff({ ...newStaff, phone: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="role">
+                    Vai trò <span className="required">*</span>
+                  </label>
+                  <select
+                    id="role"
+                    className="form-control"
+                    value={newStaff.role}
+                    onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value as 'STAFF' | 'TECHNICIAN' })}
+                    required
+                  >
+                    <option value="STAFF">Nhân viên</option>
+                    <option value="TECHNICIAN">Kỹ thuật viên</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button 
+                  type="button"
+                  className="btn-cancel" 
+                  onClick={() => setShowAddModal(false)}
+                  disabled={submitting}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit"
+                  className="btn-confirm"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Đang xử lý...' : 'Thêm nhân viên'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

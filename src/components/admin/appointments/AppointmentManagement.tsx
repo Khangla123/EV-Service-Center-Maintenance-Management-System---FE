@@ -227,7 +227,35 @@ const AppointmentManagement: React.FC = () => {
       apt.serviceCenterName?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || apt.status.toUpperCase() === filterStatus.toUpperCase();
     
-    return matchesSearch && matchesStatus;
+    // Filter by date
+    let matchesDate = true;
+    if (filterDate !== 'all' && apt.appointmentDate) {
+      const aptDate = new Date(apt.appointmentDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      switch (filterDate) {
+        case 'today':
+          const todayEnd = new Date(today);
+          todayEnd.setHours(23, 59, 59, 999);
+          matchesDate = aptDate >= today && aptDate <= todayEnd;
+          break;
+        case 'week':
+          const weekEnd = new Date(today);
+          weekEnd.setDate(today.getDate() + 7);
+          matchesDate = aptDate >= today && aptDate <= weekEnd;
+          break;
+        case 'month':
+          const monthEnd = new Date(today);
+          monthEnd.setMonth(today.getMonth() + 1);
+          matchesDate = aptDate >= today && aptDate <= monthEnd;
+          break;
+        default:
+          matchesDate = true;
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   const stats = [

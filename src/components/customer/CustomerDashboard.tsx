@@ -19,16 +19,16 @@ const CustomerDashboard: React.FC = () => {
   const [vehicleCount, setVehicleCount] = useState(0);
   const [appointmentCount, setAppointmentCount] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
+  const [monthlyCost, setMonthlyCost] = useState('0');
+  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
   const stats = [
     { label: 'Xe của tôi', value: vehicleCount.toString(), icon: Car, gradient: 'from-blue-500 to-blue-600', link: '/customer/vehicles' },
-    { label: 'Lịch dịch vụ', value: appointmentCount.toString(), icon: Calendar, gradient: 'from-green-500 to-green-600', link: '/customer/appointments' },
+    { label: 'Theo dõi lịch dịch vụ', value: appointmentCount.toString(), icon: Calendar, gradient: 'from-green-500 to-green-600', link: '/customer/appointments' },
     { label: 'Hoàn tất', value: completedCount.toString(), icon: CheckCircle, gradient: 'from-purple-500 to-purple-600', link: '/customer/history' },
-    { label: 'Chi phí tháng', value: 'N/A', icon: CreditCard, gradient: 'from-orange-500 to-orange-600', link: '/customer/costs' }
+    { label: 'Chi phí tháng', value: monthlyCost, icon: CreditCard, gradient: 'from-orange-500 to-orange-600', link: '/customer/costs' }
   ];
-
-  const appointments: any[] = [];
-  const recentActivity: any[] = [];
 
   const menuItems = [
     { path: '/customer/dashboard', label: 'Tổng quan khách hàng', icon: Home },
@@ -50,12 +50,70 @@ const CustomerDashboard: React.FC = () => {
 
         // Load appointments
         const { appointments } = await appointmentService.getMyAppointments();
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        // Filter upcoming appointments (PENDING or CONFIRMED)
+        const upcoming = appointments
+          .filter(a => a.status === 'PENDING' || a.status === 'CONFIRMED')
+          .sort((a, b) => new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime())
+          .slice(0, 5)
+          .map(a => {
+            const date = new Date(a.appointmentDate);
+            return {
+              id: a.id,
+              service: a.servicePackageName || 'Dịch vụ bảo dưỡng',
+              vehicle: `${a.vehicleModel} - ${a.vehicleLicensePlate}`,
+              date: date.toLocaleDateString('vi-VN'),
+              time: date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+              type: 'maintenance',
+              status: a.status
+            };
+          });
+        
+        setUpcomingAppointments(upcoming);
         setAppointmentCount(appointments.filter(a => 
           a.status === 'PENDING' || a.status === 'CONFIRMED'
         ).length);
-        setCompletedCount(appointments.filter(a => 
-          a.status === 'COMPLETED'
-        ).length);
+        
+        const completed = appointments.filter(a => a.status === 'COMPLETED');
+        setCompletedCount(completed.length);
+        
+        // Calculate monthly cost from completed appointments this month
+        const monthlyTotal = appointments
+          .filter(a => {
+            const aptDate = new Date(a.appointmentDate);
+            return a.status === 'COMPLETED' && 
+                   aptDate.getMonth() === currentMonth && 
+                   aptDate.getFullYear() === currentYear;
+          })
+          .reduce((sum, a) => sum + ((a as any).totalCost || 0), 0);
+        
+        setMonthlyCost(new Intl.NumberFormat('vi-VN', { 
+          style: 'currency', 
+          currency: 'VND',
+          maximumFractionDigits: 0
+        }).format(monthlyTotal));
+        
+        // Recent activities (last 5 completed appointments)
+        const recent = appointments
+          .filter(a => a.status === 'COMPLETED' || a.status === 'IN_PROGRESS')
+          .sort((a, b) => new Date(b.updatedAt || b.appointmentDate).getTime() - new Date(a.updatedAt || a.appointmentDate).getTime())
+          .slice(0, 5)
+          .map(a => {
+            const date = new Date(a.updatedAt || a.appointmentDate);
+            return {
+              id: a.id,
+              action: a.status === 'COMPLETED' ? 'Hoàn thành bảo dưỡng' : 'Đang thực hiện',
+              vehicle: `${a.vehicleModel} - ${a.vehicleLicensePlate}`,
+              date: date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+              type: 'maintenance'
+            };
+          });
+        
+        setRecentActivities(recent);
+        
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       }
@@ -163,7 +221,7 @@ const CustomerDashboard: React.FC = () => {
                     </MDButton>
                   </div>
                   <div className="appointments-list">
-                    {appointments.map((appointment) => (
+                    {upcomingAppointments.map((appointment) => (
                       <div key={appointment.id} className="appointment-card">
                         <div className="appointment-content-wrapper">
                           <div className="appointment-icon-wrapper">
@@ -192,7 +250,7 @@ const CustomerDashboard: React.FC = () => {
                         </div>
                       </div>
                     ))}
-                    {appointments.length === 0 && (
+                    {upcomingAppointments.length === 0 && (
                       <div className="empty-state">
                         <Calendar className="h-12 w-12" />
                         <p>Không có lịch dịch vụ nào</p>
@@ -213,7 +271,7 @@ const CustomerDashboard: React.FC = () => {
                     </MDButton>
                   </div>
                   <div className="activity-list">
-                    {recentActivity.map((activity) => (
+                    {recentActivities.map((activity) => (
                       <div key={activity.id} className="activity-card">
                         <div className="activity-content-wrapper">
                           <div className="activity-icon-wrapper">
@@ -242,7 +300,7 @@ const CustomerDashboard: React.FC = () => {
                         </div>
                       </div>
                     ))}
-                    {recentActivity.length === 0 && (
+                    {recentActivities.length === 0 && (
                       <div className="empty-state">
                         <History className="h-12 w-12" />
                         <p>Không có hoạt động gần đây</p>

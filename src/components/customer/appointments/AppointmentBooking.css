@@ -255,8 +255,13 @@
 
 .service-details {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.price-info {
+  width: 100%;
 }
 
 .service-details .price {
@@ -265,13 +270,14 @@
   font-size: 1.1rem;
 }
 
+.duration-info {
+  width: 100%;
+}
+
 .service-details .duration {
   color: #667eea;
   font-weight: 500;
-  background: #e6edff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
 .selection-summary {
@@ -397,6 +403,21 @@
   border-color: #667eea;
 }
 
+.selected-date-display {
+  margin-top: 10px;
+  padding: 10px 15px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-left: 4px solid #667eea;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #4a5568;
+}
+
+.selected-date-display strong {
+  color: #667eea;
+  font-weight: 700;
+}
+
 .time-slots {
   margin-bottom: 25px;
 }
@@ -426,7 +447,7 @@
   font-weight: 500;
 }
 
-.time-slot:hover {
+.time-slot:hover:not(.booked) {
   border-color: #667eea;
   background: #f0f4ff;
 }
@@ -435,6 +456,25 @@
   border-color: #667eea;
   background: #667eea;
   color: white;
+}
+
+.time-slot.booked {
+  opacity: 0.4;
+  background: #f5f5f5;
+  border-color: #d0d0d0;
+  color: #999;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  position: relative;
+}
+
+.time-slot.booked::after {
+  content: '✕';
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.7rem;
+  color: #e53e3e;
 }
 
 .notes-section {

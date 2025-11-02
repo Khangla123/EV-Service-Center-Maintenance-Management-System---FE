@@ -125,6 +125,44 @@ const VehicleManagement: React.FC = () => {
     alert('✅ Thêm xe thành công!');
   };
 
+  const handleEditVehicle = (vehicleId: string) => {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (!vehicle) {
+      console.error('Vehicle not found:', vehicleId);
+      return;
+    }
+    
+    // TODO: Open edit modal with vehicle data
+    console.log('Edit vehicle:', vehicle);
+    const vehicleName = `${vehicle.make || 'N/A'} ${vehicle.model || 'N/A'}`.trim();
+    alert(`⚠️ Chức năng chỉnh sửa xe ${vehicleName} đang được phát triển.\n\nVui lòng liên hệ quản trị viên nếu cần thay đổi thông tin xe.`);
+  };
+
+  const handleDeleteVehicle = async (vehicleId: string) => {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (!vehicle) return;
+
+    const confirmMessage = `Bạn có chắc chắn muốn xóa xe ${vehicle.make} ${vehicle.model} (${vehicle.licensePlate}) không?\n\nHành động này không thể hoàn tác.`;
+    
+    if (window.confirm(confirmMessage)) {
+      try {
+        setLoading(true);
+        await vehicleService.deleteVehicle(vehicleId);
+        
+        // Remove vehicle from list
+        setVehicles(prev => prev.filter(v => v.id !== vehicleId));
+        
+        alert('✅ Đã xóa xe thành công!');
+      } catch (error: any) {
+        console.error('Error deleting vehicle:', error);
+        const errorMessage = error?.response?.data?.message || 'Có lỗi xảy ra khi xóa xe';
+        alert(`❌ ${errorMessage}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="vehicle-management">
@@ -172,11 +210,27 @@ const VehicleManagement: React.FC = () => {
                     <span className="vehicle-year">{vehicle.year}</span>
                   </div>
                   <div className="vehicle-actions">
-                    <button className="action-btn edit-btn" title="Chỉnh sửa">
-                      <Edit size={18} />
+                    <button 
+                      className="action-btn edit-btn" 
+                      title="Chỉnh sửa thông tin xe"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditVehicle(vehicle.id);
+                      }}
+                    >
+                      <Edit size={16} />
+                      <span>Sửa</span>
                     </button>
-                    <button className="action-btn delete-btn" title="Xóa">
-                      <Trash2 size={18} />
+                    <button 
+                      className="action-btn delete-btn" 
+                      title="Xóa xe khỏi danh sách"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteVehicle(vehicle.id);
+                      }}
+                    >
+                      <Trash2 size={16} />
+                      <span>Xóa</span>
                     </button>
                   </div>
                 </div>
