@@ -16,6 +16,7 @@ import {
 import './AppointmentManagement.css';
 import appointmentService, { Appointment } from '../../../services/appointmentService';
 import staffService, { Staff } from '../../../services/staffService';
+import serviceOrderService from '../../../services/serviceOrderService';
 
 const AppointmentManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,9 +32,9 @@ const AppointmentManagement: React.FC = () => {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [editStatus, setEditStatus] = useState<string>('');
   const [editNotes, setEditNotes] = useState<string>('');
+  const [editTechnicianId, setEditTechnicianId] = useState<string>('');
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailAppointment, setDetailAppointment] = useState<Appointment | null>(null);
-  const [technicianAvailability, setTechnicianAvailability] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadAppointments();
@@ -74,12 +75,28 @@ const AppointmentManagement: React.FC = () => {
   const loadTechnicians = async () => {
     try {
       const allStaff = await staffService.getAllStaff();
-      // Lọc chỉ lấy technician
-      const technicians = allStaff.filter(s => s.role.toUpperCase() === 'TECHNICIAN' && s.isActive);
-      console.log('Available technicians:', technicians);
+      console.log('All staff from API:', allStaff);
+      console.log('Total staff count:', allStaff.length);
+      
+      // Lọc lấy technician - check cả role và specialization
+      let technicians = allStaff.filter(s => {
+        const roleCheck = s.role && s.role.toLowerCase().includes('tech');
+        const isActiveCheck = s.isActive !== false; // Mặc định true nếu không có field
+        return roleCheck && isActiveCheck;
+      });
+      
+      // Nếu không có technician nào, lấy tất cả staff active
+      if (technicians.length === 0) {
+        console.warn('No technicians found, using all active staff');
+        technicians = allStaff.filter(s => s.isActive !== false);
+      }
+      
+      console.log('Filtered technicians:', technicians);
+      console.log('Technician count:', technicians.length);
       setAvailableTechnicians(technicians);
     } catch (error) {
       console.error('Error loading technicians:', error);
+      setAvailableTechnicians([]); // Set empty array on error
     }
   };
 
@@ -87,31 +104,7 @@ const AppointmentManagement: React.FC = () => {
     setSelectedAppointment(appointment);
     setSelectedTechnicianId('');
     setShowAssignModal(true);
-    
-    // Check availability for each technician
-    await checkTechniciansAvailability(appointment.appointmentDate);
-  };
-
-  const checkTechniciansAvailability = async (appointmentDate: Date) => {
-    console.log('Checking availability for appointment date:', appointmentDate);
-    const availabilityMap: Record<string, boolean> = {};
-    
-    for (const tech of availableTechnicians) {
-      try {
-        const isAvailable = await staffService.checkAvailability(
-          tech.id,
-          new Date(appointmentDate).toISOString()
-        );
-        console.log(`Technician ${tech.fullName} (${tech.id}): ${isAvailable ? 'AVAILABLE' : 'BUSY'}`);
-        availabilityMap[tech.id] = isAvailable;
-      } catch (error) {
-        console.error(`Error checking availability for ${tech.fullName}:`, error);
-        availabilityMap[tech.id] = false;
-      }
-    }
-    
-    console.log('Final availability map:', availabilityMap);
-    setTechnicianAvailability(availabilityMap);
+    // Bỏ check availability - Admin có thể phân công bất cứ lúc nào
   };
 
   const handleAssignTechnician = async () => {
@@ -123,11 +116,29 @@ const AppointmentManagement: React.FC = () => {
     try {
       const selectedTech = availableTechnicians.find(t => t.id === selectedTechnicianId);
       
-      // Gửi technicianId vào database
-      await appointmentService.updateAppointment(selectedAppointment.id, {
-        status: 'CONFIRMED',
-        technicianId: selectedTechnicianId, // Lưu vào DB
-      });
+      // Get userId from technician (backend needs userId, not staff.id)
+      const technicianUserId = selectedTech?.userId || selectedTech?.id;
+      
+      if (!technicianUserId) {
+        alert('Không tìm thấy User ID của kỹ thuật viên');
+        return;
+      }
+
+      // Nếu appointment chưa CONFIRMED, confirm trước
+      if (selectedAppointment.status.toUpperCase() !== 'CONFIRMED') {
+        await appointmentService.updateAppointment(selectedAppointment.id, {
+          status: 'CONFIRMED',
+        });
+        // Đợi một chút để backend xử lý xong
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Tạo Service Order và phân công kỹ thuật viên
+      // Backend sẽ tự động chuyển status sang ASSIGNED
+      await serviceOrderService.createServiceOrderFromAppointment(
+        selectedAppointment.id,
+        technicianUserId
+      );
       
       alert(`Đã phân công kỹ thuật viên: ${selectedTech?.fullName}`);
       setShowAssignModal(false);
@@ -138,10 +149,29 @@ const AppointmentManagement: React.FC = () => {
     }
   };
 
+  const handleConfirmAppointment = async (appointment: Appointment) => {
+    if (!window.confirm(`Xác nhận lịch hẹn cho khách hàng ${appointment.customerName}?`)) {
+      return;
+    }
+
+    try {
+      await appointmentService.updateAppointment(appointment.id, {
+        status: 'CONFIRMED',
+      });
+      
+      alert('Đã xác nhận lịch hẹn thành công!');
+      loadAppointments(); // Reload danh sách
+    } catch (error) {
+      console.error('Error confirming appointment:', error);
+      alert('Không thể xác nhận lịch hẹn');
+    }
+  };
+
   const handleEditClick = (appointment: Appointment) => {
     setEditingAppointment(appointment);
     setEditStatus(appointment.status);
     setEditNotes(appointment.notes || '');
+    setEditTechnicianId(appointment.technicianId || '');
     setShowEditModal(true);
   };
 
@@ -149,10 +179,17 @@ const AppointmentManagement: React.FC = () => {
     if (!editingAppointment) return;
 
     try {
-      await appointmentService.updateAppointment(editingAppointment.id, {
+      const updateData: any = {
         status: editStatus,
         notes: editNotes,
-      });
+      };
+
+      // Nếu có thay đổi technician (chỉ admin mới làm được)
+      if (editTechnicianId && editTechnicianId !== editingAppointment.technicianId) {
+        updateData.technicianId = editTechnicianId;
+      }
+
+      await appointmentService.updateAppointment(editingAppointment.id, updateData);
       
       alert('Cập nhật lịch hẹn thành công!');
       setShowEditModal(false);
@@ -188,6 +225,7 @@ const AppointmentManagement: React.FC = () => {
     switch (normalizedStatus) {
       case 'PENDING': return 'status-pending';
       case 'CONFIRMED': return 'status-confirmed';
+      case 'ASSIGNED': return 'status-assigned';
       case 'IN-PROGRESS': return 'status-in-progress';
       case 'COMPLETED': return 'status-completed';
       case 'CANCELLED': return 'status-cancelled';
@@ -199,6 +237,7 @@ const AppointmentManagement: React.FC = () => {
     const normalizedStatus = status.toUpperCase();
     switch (normalizedStatus) {
       case 'CONFIRMED': return <CheckCircle size={14} />;
+      case 'ASSIGNED': return <UserPlus size={14} />;
       case 'IN_PROGRESS': 
       case 'IN-PROGRESS': return <Clock size={14} />;
       case 'COMPLETED': return <CheckCircle size={14} />;
@@ -212,6 +251,7 @@ const AppointmentManagement: React.FC = () => {
     switch (normalizedStatus) {
       case 'PENDING': return 'Chờ xác nhận';
       case 'CONFIRMED': return 'Đã xác nhận';
+      case 'ASSIGNED': return 'Đã phân công';
       case 'IN_PROGRESS':
       case 'IN-PROGRESS': return 'Đang thực hiện';
       case 'COMPLETED': return 'Hoàn thành';
@@ -414,7 +454,8 @@ const AppointmentManagement: React.FC = () => {
                   >
                     Xem chi tiết
                   </button>
-                  {appointment.status.toUpperCase() === 'PENDING' && (
+                  {(appointment.status.toUpperCase() === 'PENDING' || 
+                    appointment.status.toUpperCase() === 'CONFIRMED') && (
                     <button 
                       className="btn-action btn-assign"
                       onClick={() => handleAssignClick(appointment)}
@@ -423,7 +464,17 @@ const AppointmentManagement: React.FC = () => {
                       Phân công
                     </button>
                   )}
-                  {appointment.status.toUpperCase() !== 'PENDING' && appointment.status.toUpperCase() !== 'CANCELLED' && (
+                  {(appointment.status.toUpperCase() === 'ASSIGNED' || 
+                    appointment.status.toUpperCase() === 'IN_PROGRESS') && (
+                    <button 
+                      className="btn-action btn-edit"
+                      onClick={() => handleEditClick(appointment)}
+                    >
+                      <UserPlus size={16} />
+                      Đổi KTV
+                    </button>
+                  )}
+                  {(appointment.status.toUpperCase() === 'CONFIRMED') && (
                     <button 
                       className="btn-action btn-edit"
                       onClick={() => handleEditClick(appointment)}
@@ -465,31 +516,31 @@ const AppointmentManagement: React.FC = () => {
                   <p className="no-technicians">Không có kỹ thuật viên sẵn sàng</p>
                 ) : (
                   <div className="technician-list">
-                    {availableTechnicians.map(tech => {
-                      const isAvailable = technicianAvailability[tech.id] !== false;
-                      return (
-                        <div 
-                          key={tech.id}
-                          className={`technician-card ${selectedTechnicianId === tech.id ? 'selected' : ''} ${!isAvailable ? 'unavailable' : ''}`}
-                          onClick={() => isAvailable && setSelectedTechnicianId(tech.id)}
-                          style={{ cursor: isAvailable ? 'pointer' : 'not-allowed', opacity: isAvailable ? 1 : 0.6 }}
-                        >
-                          <div className="tech-avatar">
-                            {tech.fullName.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="tech-info">
-                            <p className="tech-name">{tech.fullName}</p>
-                            <p className="tech-email">{tech.email}</p>
-                            <span className={`tech-status ${isAvailable ? 'available' : 'busy'}`}>
-                              {isAvailable ? '⚡ Sẵn sàng' : '🔧 Đang bận'}
-                            </span>
-                          </div>
-                          {selectedTechnicianId === tech.id && (
-                            <CheckCircle size={20} className="check-icon" />
-                          )}
+                    {availableTechnicians.map(tech => (
+                      <div 
+                        key={tech.id}
+                        className={`technician-card ${selectedTechnicianId === tech.id ? 'selected' : ''}`}
+                        onClick={() => setSelectedTechnicianId(tech.id)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className="tech-avatar">
+                          {tech.fullName.charAt(0).toUpperCase()}
                         </div>
-                      );
-                    })}
+                        <div className="tech-info">
+                          <p className="tech-name">{tech.fullName}</p>
+                          <p className="tech-email">{tech.email}</p>
+                          <p className="tech-role" style={{ fontSize: '12px', color: '#6b7280' }}>
+                            {tech.role || 'Nhân viên'} {tech.specialization ? `- ${tech.specialization}` : ''}
+                          </p>
+                          <span className="tech-status available">
+                            ⚡ Sẵn sàng
+                          </span>
+                        </div>
+                        {selectedTechnicianId === tech.id && (
+                          <CheckCircle size={20} className="check-icon" />
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -562,9 +613,40 @@ const AppointmentManagement: React.FC = () => {
                   />
                 </div>
 
+                {/* Chỉnh sửa kỹ thuật viên - CHỈ ADMIN */}
+                {(editingAppointment.status.toUpperCase() === 'ASSIGNED' || 
+                  editingAppointment.status.toUpperCase() === 'IN_PROGRESS') && (
+                  <div className="form-group">
+                    <label>
+                      <UserPlus size={16} />
+                      Kỹ thuật viên (Admin only)
+                    </label>
+                    <select
+                      value={editTechnicianId}
+                      onChange={(e) => setEditTechnicianId(e.target.value)}
+                      className="form-select"
+                    >
+                      <option value="">-- Chọn kỹ thuật viên khác --</option>
+                      {availableTechnicians.map(tech => (
+                        <option key={tech.id} value={tech.id}>
+                          {tech.fullName} - {tech.role || 'Nhân viên'} ({tech.specialization || 'Kỹ thuật viên'}) 
+                          {tech.id === editingAppointment.technicianId ? ' ★ Hiện tại' : ''}
+                          {!tech.isAvailable ? ' [Bận]' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      ⚠️ Thay đổi kỹ thuật viên sẽ gửi thông báo cho cả 2 bên
+                    </small>
+                  </div>
+                )}
+
                 <div className="status-info">
                   <p><strong>Trạng thái hiện tại:</strong> {getStatusText(editingAppointment.status)}</p>
                   <p><strong>Trạng thái mới:</strong> {getStatusText(editStatus)}</p>
+                  {editingAppointment.technicianName && (
+                    <p><strong>Kỹ thuật viên:</strong> {editingAppointment.technicianName}</p>
+                  )}
                 </div>
               </div>
             </div>

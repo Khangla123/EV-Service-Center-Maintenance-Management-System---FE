@@ -151,6 +151,7 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
     const statusMap = {
       [AppointmentStatus.PENDING]: 'Chờ xác nhận',
       [AppointmentStatus.CONFIRMED]: 'Đã xác nhận',
+      [AppointmentStatus.ASSIGNED]: 'Đã phân công',
       [AppointmentStatus.IN_PROGRESS]: 'Đang thực hiện',
       [AppointmentStatus.COMPLETED]: 'Hoàn thành',
       [AppointmentStatus.CANCELLED]: 'Đã hủy',
@@ -163,6 +164,7 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
     const colorMap = {
       [AppointmentStatus.PENDING]: 'warning',
       [AppointmentStatus.CONFIRMED]: 'info',
+      [AppointmentStatus.ASSIGNED]: 'warning',
       [AppointmentStatus.IN_PROGRESS]: 'primary',
       [AppointmentStatus.COMPLETED]: 'success',
       [AppointmentStatus.CANCELLED]: 'error',
