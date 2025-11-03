@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { 
   Users, Calendar, Wrench, Package,
-  MessageSquare, TrendingUp, Bell
+  MessageSquare, TrendingUp, Bell, FileText
 } from 'lucide-react';
 import { CustomerManagement } from './customers';
 import { AppointmentManagement } from './appointments';
+import { InvoiceManagement } from './invoices';
 import './StaffDashboard.css';
 
 type StaffView = 
   | 'overview'
   | 'customers'
-  | 'appointments';
+  | 'appointments'
+  | 'invoices';
 
 const StaffDashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<StaffView>('overview');
@@ -49,7 +51,8 @@ const StaffDashboard: React.FC = () => {
   const menuItems = [
     { id: 'overview', icon: <TrendingUp />, label: 'Tổng quan', color: '#667eea' },
     { id: 'customers', icon: <Users />, label: 'Quản lý Khách hàng', color: '#10b981' },
-    { id: 'appointments', icon: <Calendar />, label: 'Quản lý Lịch hẹn', color: '#3b82f6' }
+    { id: 'appointments', icon: <Calendar />, label: 'Quản lý Lịch hẹn', color: '#3b82f6' },
+    { id: 'invoices', icon: <FileText />, label: 'Quản lý Hóa đơn', color: '#f59e0b' }
   ] as const;
 
   const renderContent = () => {
@@ -58,6 +61,8 @@ const StaffDashboard: React.FC = () => {
         return <CustomerManagement />;
       case 'appointments':
         return <AppointmentManagement />;
+      case 'invoices':
+        return <InvoiceManagement />;
       case 'overview':
       default:
         return (
