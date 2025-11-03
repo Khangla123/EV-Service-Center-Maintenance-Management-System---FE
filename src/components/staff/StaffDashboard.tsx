@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { CustomerManagement } from './customers';
 import { AppointmentManagement } from './appointments';
-import { InvoiceManagement } from './finance';
+import { InvoiceManagement } from './invoices';
 import './StaffDashboard.css';
 
 type StaffView = 

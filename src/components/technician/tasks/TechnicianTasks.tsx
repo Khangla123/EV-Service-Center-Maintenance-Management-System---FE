@@ -5,7 +5,7 @@ import './TechnicianTasks.css';
 import appointmentService, { Appointment } from '../../../services/appointmentService';
 import staffService from '../../../services/staffService';
 
-type TaskStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+type TaskStatus = 'PENDING' | 'CONFIRMED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 type Priority = 'Low' | 'Normal' | 'High' | 'Critical';
 
 type Task = {
@@ -34,7 +34,7 @@ interface TechnicianTasksProps {
 
 const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TaskStatus>('CONFIRMED'); // Changed from PENDING to CONFIRMED
+  const [activeTab, setActiveTab] = useState<TaskStatus>('ASSIGNED'); // Default to ASSIGNED - tasks assigned but not started
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState<Priority | 'all'>('all');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -185,26 +185,13 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
     try {
       console.log('🔄 Starting task:', task.id);
       
-      // ⚠️ KIỂM TRA: Đảm bảo không có công việc IN_PROGRESS nào khác
-      const inProgressTasks = tasks.filter(t => t.status === 'IN_PROGRESS');
-      if (inProgressTasks.length > 0) {
-        // Hiển thị modal cảnh báo với thông tin công việc hiện tại
-        setConflictTask(inProgressTasks[0]);
-        setShowConflictModal(true);
-        return;
-      }
-      
-      // Confirm trước khi bắt đầu
-      if (!window.confirm(`Bắt đầu công việc: ${task.vehicle} - ${task.licensePlate}?`)) {
-        return;
-      }
-      
-      // Call API to update appointment status to IN_PROGRESS
-      await appointmentService.updateAppointment(task.id, {
-        status: 'IN_PROGRESS'
-      });
+      // Call API endpoint /appointments/{id}/start to change from ASSIGNED to IN_PROGRESS
+      await appointmentService.startAppointment(task.id);
       
       console.log('✓ Task started successfully');
+      
+      // Reload tasks to update UI
+      await loadTasks();
       
       // Redirect to work processing page
       navigate('/technician/work');
@@ -392,11 +379,11 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
 
           <div className="tabs">
             <button
-              className={`tab ${activeTab === 'CONFIRMED' ? 'active' : ''}`}
-              onClick={() => setActiveTab('CONFIRMED')}
+              className={`tab ${activeTab === 'ASSIGNED' ? 'active' : ''}`}
+              onClick={() => setActiveTab('ASSIGNED')}
             >
               <Clock size={16} />
-              Đã phân công ({getStatusStats('CONFIRMED')})
+              Đã phân công ({getStatusStats('ASSIGNED')})
             </button>
             <button
               className={`tab ${activeTab === 'IN_PROGRESS' ? 'active' : ''}`}
@@ -476,15 +463,8 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
                   <Eye size={16} />
                   Xem chi tiết
                 </button>
-                {task.status === 'CONFIRMED' && (
-                  <button 
-                    className="btn-start" 
-                    onClick={() => handleStartTask(task)}
-                    disabled={tasks.some(t => t.status === 'IN_PROGRESS')}
-                    title={tasks.some(t => t.status === 'IN_PROGRESS') ? 
-                      'Bạn đang có công việc đang xử lý. Vui lòng hoàn thành trước khi bắt đầu công việc mới.' : 
-                      'Bắt đầu công việc này'}
-                  >
+                {(task.status === 'CONFIRMED' || task.status === 'ASSIGNED') && (
+                  <button className="btn-start" onClick={() => handleStartTask(task)}>
                     <Play size={16} />
                     Bắt đầu
                   </button>

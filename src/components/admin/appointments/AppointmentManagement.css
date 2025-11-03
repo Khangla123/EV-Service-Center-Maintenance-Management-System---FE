@@ -247,6 +247,11 @@
   color: #1e40af;
 }
 
+.status-assigned {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .status-in-progress {
   background: #ede9fe;
   color: #6d28d9;
@@ -309,6 +314,19 @@
 
 .btn-edit:hover {
   background: #bfdbfe;
+}
+
+.btn-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.btn-confirm:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-assign {

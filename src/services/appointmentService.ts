@@ -15,7 +15,7 @@ export interface Appointment {
   technicianId?: string;
   technicianName?: string;
   appointmentDate: Date;
-  status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
   estimatedCompletion?: Date;
   actualCompletion?: Date;
@@ -93,6 +93,12 @@ class AppointmentService {
   async cancelAppointment(appointmentId: string): Promise<{ message: string }> {
     const response = await api.delete(`/appointments/${appointmentId}`);
     return response.data;
+  }
+
+  // Technician bắt đầu công việc (ASSIGNED -> IN_PROGRESS)
+  async startAppointment(appointmentId: string): Promise<Appointment> {
+    const response = await api.put(`/appointments/${appointmentId}/start`);
+    return response.data.result;
   }
 
   // Lấy lịch hẹn của tôi (customer xem lịch hẹn của mình)

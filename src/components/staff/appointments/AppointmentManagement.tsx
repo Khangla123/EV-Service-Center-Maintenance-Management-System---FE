@@ -85,24 +85,28 @@ const AppointmentManagement: React.FC = () => {
         console.log('All staff loaded:', allStaff);
       }
       
-      // Lọc staff có thể làm kỹ thuật viên (có specialization hoặc role TECHNICIAN)
-      const techs = allStaff.filter(staff => {
-        const canBeTechnician = staff.isAvailable !== false && 
-                               staff.isActive !== false &&
-                               (staff.specialization || 
-                                staff.role === 'TECHNICIAN' || 
-                                staff.role === 'ROLE_TECHNICIAN');
-        return canBeTechnician;
+      // Lọc staff có thể làm kỹ thuật viên
+      console.log('[STAFF PAGE] Total staff from API:', allStaff.length);
+      
+      let techs = allStaff.filter(staff => {
+        const hasRole = staff.role && staff.role.toLowerCase().includes('tech');
+        const hasSpecialization = staff.specialization && staff.specialization.trim() !== '';
+        const isActive = staff.isActive !== false;
+        const isAvailable = staff.isAvailable !== false;
+        
+        return isActive && isAvailable && (hasRole || hasSpecialization);
       });
       
-      console.log('Filtered technicians:', techs);
-      setTechnicians(techs);
+      console.log('[STAFF PAGE] Filtered technicians:', techs);
+      console.log('[STAFF PAGE] Technician count:', techs.length);
       
       // Nếu không có technician nào, hiển thị tất cả staff available
       if (techs.length === 0 && allStaff.length > 0) {
-        console.log('No technicians found, showing all available staff');
-        setTechnicians(allStaff.filter(s => s.isAvailable !== false && s.isActive !== false));
+        console.warn('[STAFF PAGE] No technicians found, showing all available staff');
+        techs = allStaff.filter(s => s.isAvailable !== false && s.isActive !== false);
       }
+      
+      setTechnicians(techs);
     } catch (err) {
       console.error('Error loading technicians:', err);
     }
@@ -112,7 +116,16 @@ const AppointmentManagement: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log('📡 [loadAppointments] Fetching appointments...');
       const response = await appointmentService.getAllAppointments();
+      console.log('📡 [loadAppointments] Response:', response);
+      console.log('📡 [loadAppointments] Appointments count:', response.appointments?.length);
+      console.log('📡 [loadAppointments] Status breakdown:', 
+        response.appointments?.reduce((acc: any, apt: any) => {
+          acc[apt.status] = (acc[apt.status] || 0) + 1;
+          return acc;
+        }, {})
+      );
       setAppointments(response.appointments || []);
     } catch (err) {
       setError('Không thể tải danh sách lịch hẹn');
@@ -196,6 +209,7 @@ const AppointmentManagement: React.FC = () => {
     const colors: Record<Appointment['status'], string> = {
       PENDING: 'warning',
       CONFIRMED: 'info',
+      ASSIGNED: 'warning',
       IN_PROGRESS: 'primary',
       COMPLETED: 'success',
       CANCELLED: 'error'
@@ -207,6 +221,7 @@ const AppointmentManagement: React.FC = () => {
     const labels: Record<Appointment['status'], string> = {
       PENDING: 'Chờ xác nhận',
       CONFIRMED: 'Đã xác nhận',
+      ASSIGNED: 'Đã phân công',
       IN_PROGRESS: 'Đang xử lý',
       COMPLETED: 'Hoàn thành',
       CANCELLED: 'Đã hủy'
@@ -275,16 +290,22 @@ const AppointmentManagement: React.FC = () => {
       
       // Gọi API tạo Service Order từ Appointment và phân công Technician
       // Truyền userId (từ users table), KHÔNG phải staff.id
-      await serviceOrderService.createServiceOrderFromAppointment(
+      const result = await serviceOrderService.createServiceOrderFromAppointment(
         selectedAppointment.id,
         technicianUserId
       );
       
-      // Reload danh sách appointments để cập nhật trạng thái
-      await loadAppointments();
+      console.log('✅ Service order created successfully:', result);
+      
+      // Đóng modal trước khi reload
       setShowAssignModal(false);
       setSelectedAppointment(null);
       setSelectedTechnicianId('');
+      
+      // Reload danh sách appointments để cập nhật trạng thái
+      console.log('🔄 Reloading appointments after assignment...');
+      await loadAppointments();
+      console.log('✅ Appointments reloaded');
       
       alert('Đã phân công kỹ thuật viên và tạo đơn dịch vụ thành công!');
     } catch (err: any) {
