@@ -1,0 +1,82 @@
+/* App Layout Styles with Material Design */
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--md-surface);
+}
+
+.app-main {
+  flex: 1;
+}
+
+/* Dashboard Placeholder Styles */
+.dashboard-placeholder {
+  padding: var(--md-spacing-16);
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.dashboard-placeholder h1 {
+  font-size: var(--md-font-size-3xl);
+  font-weight: var(--md-font-weight-bold);
+  color: var(--md-on-surface);
+  margin-bottom: var(--md-spacing-4);
+}
+
+.dashboard-placeholder p {
+  color: var(--md-on-surface-variant);
+  font-size: var(--md-font-size-lg);
+  line-height: 1.6;
+}
+
+/* Error and Not Found Pages */
+.unauthorized-page,
+.not-found-page {
+  padding: var(--md-spacing-16);
+  text-align: center;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.unauthorized-page h1,
+.not-found-page h1 {
+  font-size: var(--md-font-size-2xl);
+  font-weight: var(--md-font-weight-bold);
+  color: var(--md-on-surface);
+  margin-bottom: var(--md-spacing-4);
+}
+
+.unauthorized-page p,
+.not-found-page p {
+  color: var(--md-on-surface-variant);
+  font-size: var(--md-font-size-base);
+  line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-placeholder {
+    padding: var(--md-spacing-12) var(--md-spacing-4);
+  }
+
+  .dashboard-placeholder h1 {
+    font-size: var(--md-font-size-2xl);
+  }
+
+  .unauthorized-page,
+  .not-found-page {
+    padding: var(--md-spacing-12) var(--md-spacing-4);
+  }
+
+  .unauthorized-page h1,
+  .not-found-page h1 {
+    font-size: var(--md-font-size-xl);
+  }
+}

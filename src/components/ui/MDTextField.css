@@ -1,0 +1,269 @@
+/* Material Design TextField Component */
+.md-textfield {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-family: var(--md-font-family);
+}
+
+.md-textfield--full-width {
+  width: 100%;
+}
+
+.md-textfield__container {
+  display: flex;
+  align-items: center;
+  position: relative;
+  background-color: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--md-border-radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all var(--md-transition-standard);
+}
+
+/* Input container */
+.md-textfield__input-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Input field */
+.md-textfield__input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--md-font-size-base);
+  font-weight: var(--md-font-weight-regular);
+  color: #1f2937;
+  padding: 12px 16px;
+  transition: all var(--md-transition-standard);
+  z-index: 1;
+}
+
+/* Label */
+.md-textfield__label {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--md-font-size-base);
+  font-weight: var(--md-font-weight-regular);
+  color: var(--md-on-surface-variant);
+  pointer-events: none;
+  transition: all var(--md-transition-standard);
+  z-index: 2;
+  background: transparent;
+  padding: 0 4px;
+  margin-left: -4px;
+}
+
+.md-textfield__required {
+  color: var(--md-error);
+  margin-left: 2px;
+}
+
+/* Icons */
+.md-textfield__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-on-surface-variant);
+  transition: color var(--md-transition-standard);
+  flex-shrink: 0;
+}
+
+.md-textfield__icon--start {
+  margin-right: var(--md-spacing-3);
+}
+
+.md-textfield__icon--end {
+  margin-left: var(--md-spacing-3);
+}
+
+/* Helper text */
+.md-textfield__helper-text {
+  font-size: var(--md-font-size-xs);
+  color: var(--md-on-surface-variant);
+  margin-top: var(--md-spacing-1);
+  padding: 0 var(--md-spacing-4);
+  line-height: 1.4;
+}
+
+/* Sizes */
+.md-textfield--small .md-textfield__container {
+  height: 40px;
+}
+
+.md-textfield--small .md-textfield__input {
+  padding: 8px 12px;
+  font-size: var(--md-font-size-sm);
+}
+
+.md-textfield--small .md-textfield__label {
+  font-size: var(--md-font-size-sm);
+}
+
+.md-textfield--medium .md-textfield__container {
+  height: 56px;
+}
+
+.md-textfield--medium .md-textfield__input {
+  padding: 16px 16px;
+}
+
+/* Filled variant */
+.md-textfield--filled .md-textfield__container {
+  background-color: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--md-border-radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.md-textfield--filled:hover .md-textfield__container {
+  background-color: #ffffff;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.md-textfield--filled.md-textfield--focused .md-textfield__container {
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Outlined variant */
+.md-textfield--outlined .md-textfield__container {
+  background-color: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--md-border-radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.md-textfield--outlined:hover .md-textfield__container {
+  background-color: #ffffff;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.md-textfield--outlined.md-textfield--focused .md-textfield__container {
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Outlined label positioning */
+.md-textfield--outlined .md-textfield__label {
+  background-color: #ffffff;
+  padding: 0 4px;
+  margin-left: -4px;
+}
+
+/* Label states */
+.md-textfield--has-value .md-textfield__label,
+.md-textfield--focused .md-textfield__label {
+  transform: translateY(-28px) scale(0.75);
+  font-size: var(--md-font-size-xs);
+  color: var(--md-primary);
+}
+
+.md-textfield--filled.md-textfield--has-value .md-textfield__label,
+.md-textfield--filled.md-textfield--focused .md-textfield__label {
+  transform: translateY(-20px) scale(0.75);
+}
+
+/* Focused state */
+.md-textfield--focused .md-textfield__container {
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.md-textfield--focused .md-textfield__label {
+  color: #3b82f6;
+}
+
+.md-textfield--focused .md-textfield__icon {
+  color: #3b82f6;
+}
+
+/* Error state */
+.md-textfield--error .md-textfield__container {
+  background-color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.md-textfield--error .md-textfield__label {
+  color: #ef4444;
+}
+
+.md-textfield--error .md-textfield__helper-text {
+  color: #ef4444;
+}
+
+.md-textfield--error .md-textfield__icon {
+  color: #ef4444;
+}
+
+/* Disabled state */
+.md-textfield--disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.md-textfield--disabled .md-textfield__container {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+  box-shadow: none;
+}
+
+.md-textfield--disabled .md-textfield__input {
+  color: #6b7280;
+}
+
+.md-textfield--disabled .md-textfield__label {
+  color: #6b7280;
+}
+
+/* Focus ring for accessibility */
+.md-textfield--focused .md-textfield__container {
+  box-shadow: var(--md-focus-ring);
+}
+
+/* Hover state */
+.md-textfield:hover:not(.md-textfield--disabled):not(.md-textfield--focused) .md-textfield__container {
+  background-color: #ffffff;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Placeholder text */
+.md-textfield__input::placeholder {
+  color: #9ca3af;
+  opacity: 1;
+  font-weight: 400;
+  font-size: var(--md-font-size-base);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .md-textfield--medium .md-textfield__container {
+    height: 52px;
+  }
+  
+  .md-textfield--medium .md-textfield__input {
+    padding: 14px 16px;
+  }
+  
+  .md-textfield--small .md-textfield__container {
+    height: 40px;
+  }
+  
+  .md-textfield--small .md-textfield__input {
+    padding: 8px 12px;
+  }
+}

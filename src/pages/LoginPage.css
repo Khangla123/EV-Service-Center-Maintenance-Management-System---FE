@@ -1,0 +1,300 @@
+/* Liquid Glass Login Page */
+.md-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--lg-spacing-lg);
+  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('../../public/assets/images/nhan_vien_VinFast.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+}
+
+.md-login-page__background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
+
+.md-login-page__pattern {
+  width: 100%;
+  height: 100%;
+}
+
+.md-login-page__container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+  animation: lg-fade-in 0.8s ease-out;
+}
+
+.md-login-page__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-spacing-lg);
+}
+
+/* Header */
+.md-login-page__header {
+  text-align: center;
+  margin-bottom: var(--lg-spacing-md);
+}
+
+.md-login-page__logo-link {
+  text-decoration: none;
+  display: inline-block;
+}
+
+.md-login-page__logo {
+  width: 80px;
+  height: 80px;
+  background: var(--lg-glass-white);
+  backdrop-filter: blur(var(--lg-blur-md)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--lg-blur-md)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--lg-spacing-md);
+  box-shadow: var(--lg-shadow-lg);
+  transition: all var(--lg-transition-smooth);
+}
+
+.md-login-page__logo:hover {
+  transform: scale(1.05) rotate(5deg);
+  box-shadow: var(--lg-shadow-xl);
+}
+
+.md-login-page__logo-icon {
+  width: 100px;
+  height: 100px;
+  color: #007aff;
+  object-fit: contain;
+}
+
+.md-login-page__title {
+  font-size: 32px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 var(--lg-spacing-sm) 0;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+}
+
+.md-login-page__subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Form Card */
+.md-login-page__form-card {
+  background: var(--lg-glass-white) !important;
+  backdrop-filter: blur(var(--lg-blur-lg)) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(var(--lg-blur-lg)) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: var(--lg-radius-lg) !important;
+  padding: var(--lg-spacing-xl) !important;
+  box-shadow: var(--lg-shadow-xl) !important;
+  transition: all var(--lg-transition-smooth) !important;
+}
+
+.md-login-page__form-card:hover {
+  box-shadow: 0 32px 72px rgba(0, 0, 0, 0.25) !important;
+}
+
+.md-login-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-spacing-md);
+}
+
+/* Error Message */
+.md-login-page__error {
+  background: rgba(255, 59, 48, 0.15);
+  backdrop-filter: blur(var(--lg-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lg-blur-sm));
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  border-radius: var(--lg-radius-sm);
+  padding: var(--lg-spacing-sm) var(--lg-spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--lg-spacing-sm);
+  animation: lg-slide-up 0.3s ease-out;
+}
+
+.md-login-page__error-icon {
+  width: 20px;
+  height: 20px;
+  color: #ff3b30;
+  flex-shrink: 0;
+}
+
+.md-login-page__error-text {
+  font-size: 14px;
+  color: #ff3b30;
+  font-weight: 500;
+}
+
+/* Password Toggle */
+.md-login-page__password-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #6e6e73;
+  transition: color var(--lg-transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.md-login-page__password-toggle:hover {
+  color: #007aff;
+}
+
+/* Options */
+.md-login-page__options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -8px;
+}
+
+.md-login-page__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.md-login-page__checkbox-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #007aff;
+}
+
+.md-login-page__checkbox-label {
+  font-size: 14px;
+  color: #1d1d1f;
+  font-weight: 500;
+}
+
+.md-login-page__forgot-password {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #007aff;
+  cursor: pointer;
+  transition: all var(--lg-transition-fast);
+  text-decoration: none;
+}
+
+.md-login-page__forgot-password:hover {
+  color: #0051d5;
+  text-decoration: underline;
+}
+
+/* Signup Link */
+.md-login-page__signup-link {
+  text-align: center;
+  font-size: 14px;
+  color: #6e6e73;
+  margin-top: var(--lg-spacing-sm);
+}
+
+.md-login-page__signup-button {
+  color: #007aff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--lg-transition-fast);
+  margin-left: 4px;
+}
+
+.md-login-page__signup-button:hover {
+  color: #0051d5;
+  text-decoration: underline;
+}
+
+/* Demo Card */
+.md-login-page__demo-card {
+  background: var(--lg-glass-light) !important;
+  backdrop-filter: blur(var(--lg-blur-md)) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(var(--lg-blur-md)) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: var(--lg-radius-lg) !important;
+  padding: var(--lg-spacing-lg) !important;
+  box-shadow: var(--lg-shadow-md) !important;
+}
+
+.md-login-page__demo-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 var(--lg-spacing-md) 0;
+  text-align: center;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.15);
+}
+
+.md-login-page__demo-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--lg-spacing-sm);
+}
+
+.md-login-page__demo-button {
+  flex: 1;
+  background: var(--lg-glass-white) !important;
+  backdrop-filter: blur(var(--lg-blur-sm)) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(var(--lg-blur-sm)) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #1d1d1f !important;
+  transition: all var(--lg-transition-smooth) !important;
+}
+
+.md-login-page__demo-button:hover {
+  background: var(--lg-glass-white-hover) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: var(--lg-shadow-lg) !important;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .md-login-page {
+    padding: var(--lg-spacing-md);
+  }
+  
+  .md-login-page__form-card {
+    padding: var(--lg-spacing-lg) !important;
+  }
+  
+  .md-login-page__demo-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .md-login-page__title {
+    font-size: 28px;
+  }
+  
+  .md-login-page__logo {
+    width: 64px;
+    height: 64px;
+  }
+  
+  .md-login-page__logo-icon {
+    width: 76px;
+    height: 76px;
+  }
+}

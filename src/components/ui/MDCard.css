@@ -1,0 +1,146 @@
+/* Material Design Card Component */
+.md-card {
+  display: block;
+  font-family: var(--md-font-family);
+  border-radius: var(--md-border-radius-lg);
+  transition: all var(--md-transition-standard);
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Card variants */
+.md-card--elevated {
+  background-color: var(--md-surface-container-low);
+  box-shadow: var(--md-elevation-1);
+  border: none;
+}
+
+.md-card--filled {
+  background-color: var(--md-surface-container-highest);
+  box-shadow: none;
+  border: none;
+}
+
+.md-card--outlined {
+  background-color: var(--md-surface);
+  box-shadow: none;
+  border: 1px solid var(--md-outline-variant);
+}
+
+/* Padding variants */
+.md-card--padding-none {
+  padding: 0;
+}
+
+.md-card--padding-small {
+  padding: var(--md-spacing-3);
+}
+
+.md-card--padding-medium {
+  padding: var(--md-spacing-4);
+}
+
+.md-card--padding-large {
+  padding: var(--md-spacing-6);
+}
+
+/* Interactive state */
+.md-card--interactive {
+  cursor: pointer;
+  user-select: none;
+  border: none;
+  background: inherit;
+  width: 100%;
+  font: inherit;
+}
+
+.md-card--interactive:hover {
+  transform: translateY(-2px);
+}
+
+.md-card--interactive:active {
+  transform: translateY(0);
+}
+
+.md-card--interactive:focus {
+  outline: none;
+}
+
+.md-card--interactive:focus-visible {
+  box-shadow: var(--md-focus-ring);
+}
+
+/* Elevated card interactions */
+.md-card--elevated.md-card--interactive:hover {
+  box-shadow: var(--md-elevation-2);
+}
+
+.md-card--elevated.md-card--interactive:active {
+  box-shadow: var(--md-elevation-1);
+}
+
+/* Filled card interactions */
+.md-card--filled.md-card--interactive:hover {
+  background-color: var(--md-surface-container-high);
+  box-shadow: var(--md-elevation-1);
+}
+
+.md-card--filled.md-card--interactive:active {
+  background-color: var(--md-surface-container-highest);
+}
+
+/* Outlined card interactions */
+.md-card--outlined.md-card--interactive:hover {
+  background-color: var(--md-surface-container-lowest);
+  border-color: var(--md-outline);
+}
+
+.md-card--outlined.md-card--interactive:active {
+  background-color: var(--md-surface);
+}
+
+/* State layer effect */
+.md-card--interactive::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--md-transition-standard);
+  pointer-events: none;
+}
+
+.md-card--interactive:hover::before {
+  opacity: 0.08;
+}
+
+.md-card--interactive:active::before {
+  opacity: 0.12;
+}
+
+/* Card content positioning */
+.md-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .md-card--padding-medium {
+    padding: var(--md-spacing-3);
+  }
+  
+  .md-card--padding-large {
+    padding: var(--md-spacing-4);
+  }
+  
+  .md-card {
+    border-radius: var(--md-border-radius-md);
+  }
+}

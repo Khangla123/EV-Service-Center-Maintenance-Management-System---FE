@@ -1,0 +1,142 @@
+﻿/* Liquid Glass Homepage Styles */
+.homepage {
+  width: 100%;
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../../public/assets/images/Phường Sài Gòn.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+  position: relative;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--md-spacing-4);
+  position: relative;
+  z-index: 1;
+}
+
+/* Hero Section */
+.hero-section {
+  padding: var(--md-spacing-8) 0;
+}
+
+.hero-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--md-spacing-8);
+  align-items: center;
+  background: var(--lg-glass-white);
+  backdrop-filter: blur(var(--lg-blur-lg)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--lg-blur-lg)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--lg-radius-xl);
+  padding: var(--lg-spacing-xl);
+  box-shadow: var(--lg-shadow-xl);
+  animation: lg-fade-in 0.8s ease-out;
+}
+
+.hero-title {
+  font-size: var(--md-font-size-4xl);
+  font-weight: 700;
+  color: #1d1d1f;
+  margin-bottom: var(--md-spacing-4);
+  line-height: 1.2;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.hero-description {
+  font-size: var(--md-font-size-lg);
+  color: #1d1d1f;
+  margin-bottom: var(--md-spacing-4);
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.hero-subdescription {
+  font-size: var(--md-font-size-base);
+  color: #6e6e73;
+  margin-bottom: var(--md-spacing-6);
+  line-height: 1.6;
+}
+
+.cta-button {
+  background: var(--lg-blue) !important;
+  backdrop-filter: blur(var(--lg-blur-sm)) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(var(--lg-blur-sm)) saturate(180%) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  padding: var(--md-spacing-3) var(--md-spacing-6);
+  font-size: var(--md-font-size-base);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-radius: var(--lg-radius-sm) !important;
+  cursor: pointer;
+  transition: all var(--lg-transition-smooth) !important;
+  box-shadow: 0 4px 20px rgba(0, 122, 255, 0.3) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+  border-radius: 50%;
+}
+
+.cta-button:hover {
+  background: rgba(0, 122, 255, 0.85) !important;
+  box-shadow: 0 8px 32px rgba(0, 122, 255, 0.5) !important;
+  transform: translateY(-2px) !important;
+}
+
+.cta-button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.cta-button:active {
+  transform: translateY(0) !important;
+}
+
+.hero-image {
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.hero-img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--lg-radius-lg);
+  box-shadow: var(--lg-shadow-xl);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all var(--lg-transition-smooth);
+}
+
+.hero-img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero-content {
+    grid-template-columns: 1fr;
+    gap: var(--md-spacing-6);
+    text-align: center;
+  }
+  
+  .hero-title {
+    font-size: var(--md-font-size-3xl);
+  }
+}

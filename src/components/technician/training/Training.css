@@ -1,0 +1,46 @@
+.tech-training {
+  padding: 24px;
+}
+
+.tech-training h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+.tech-training p {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.training-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.training-item {
+  padding: 20px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.training-item:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .training-list {
+    grid-template-columns: 1fr;
+  }
+}

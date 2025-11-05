@@ -1,0 +1,391 @@
+.payment-reminder-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.payment-reminder-popup {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(255, 255, 255, 0.95) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: none;
+  border-radius: 20px;
+  max-width: 700px;
+  max-height: 80vh;
+  width: 90%;
+  overflow: hidden;
+  box-shadow: 
+    0 24px 48px rgba(31, 38, 135, 0.2),
+    0 8px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  animation: slideUp 0.3s ease-out;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.popup-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.popup-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.close-btn {
+  display: none;
+}
+
+.popup-content {
+  padding: 16px 24px 24px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.popup-intro {
+  margin: 0 0 20px;
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.reminders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.reminder-item {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.7) 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  box-shadow: 
+    0 4px 12px rgba(31, 38, 135, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.reminder-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 20px rgba(31, 38, 135, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.reminder-item.overdue {
+  background: linear-gradient(
+    135deg,
+    rgba(254, 215, 215, 0.5) 0%,
+    rgba(255, 245, 245, 0.5) 100%
+  );
+  border-color: rgba(252, 129, 129, 0.4);
+  box-shadow: 
+    0 4px 12px rgba(239, 68, 68, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.reminder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.payment-info {
+  flex: 1;
+}
+
+.payment-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.type-icon {
+  font-size: 1.2rem;
+}
+
+.type-text {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 1rem;
+}
+
+.amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.2));
+}
+
+.reminder-details {
+  margin-bottom: 20px;
+}
+
+.description {
+  color: #4a5568;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.package-info {
+  background: linear-gradient(
+    135deg,
+    rgba(230, 255, 250, 0.6) 0%,
+    rgba(230, 255, 250, 0.4) 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(178, 245, 234, 0.5);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  box-shadow: 
+    0 4px 12px rgba(35, 78, 82, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.package-info h4 {
+  margin: 0 0 8px;
+  color: #234e52;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.package-info p {
+  margin: 0 0 12px;
+  color: #2d3748;
+  font-size: 0.9rem;
+}
+
+.package-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.benefit-tag {
+  background: linear-gradient(
+    135deg,
+    rgba(198, 246, 213, 0.7) 0%,
+    rgba(198, 246, 213, 0.5) 100%
+  );
+  backdrop-filter: blur(10px);
+  color: #22543d;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid rgba(34, 84, 61, 0.15);
+  box-shadow: 0 2px 6px rgba(34, 84, 61, 0.08);
+}
+
+.more-benefits {
+  color: #38a169;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 4px 8px;
+}
+
+.due-info {
+  margin-top: 12px;
+}
+
+.due-date {
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    rgba(226, 232, 240, 0.7) 0%,
+    rgba(226, 232, 240, 0.5) 100%
+  );
+  backdrop-filter: blur(10px);
+  color: #4a5568;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 2px 6px rgba(74, 85, 104, 0.08);
+}
+
+.due-date.overdue {
+  background: linear-gradient(
+    135deg,
+    rgba(254, 215, 215, 0.8) 0%,
+    rgba(254, 215, 215, 0.6) 100%
+  );
+  border: 1px solid rgba(197, 48, 48, 0.3);
+  color: #c53030;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(197, 48, 48, 0.15);
+}
+
+.reminder-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.reminder-actions .md-button {
+  flex: 1;
+  min-width: 120px;
+}
+
+.pay-now-btn {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.snooze-btn {
+  color: #718096 !important;
+}
+
+.popup-footer {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(
+    135deg,
+    rgba(247, 250, 252, 0.8) 0%,
+    rgba(247, 250, 252, 0.6) 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.footer-info {
+  flex: 1;
+}
+
+.total-amount {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.dismiss-btn {
+  color: #666 !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .payment-reminder-popup {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .popup-header {
+    padding: 20px 16px 12px;
+  }
+  
+  .popup-content {
+    padding: 12px 16px 20px;
+  }
+  
+  .popup-footer {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .reminder-actions {
+    flex-direction: column;
+  }
+  
+  .reminder-actions .md-button {
+    flex: none;
+    width: 100%;
+  }
+  
+  .amount {
+    font-size: 1.3rem;
+  }
+  
+  .reminder-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .overdue-badge {
+    align-self: flex-start;
+  }
+}

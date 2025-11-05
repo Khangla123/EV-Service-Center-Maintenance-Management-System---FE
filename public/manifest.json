@@ -1,0 +1,25 @@
+{
+  "short_name": "EV Service",
+  "name": "EV Service Center - Trung tâm bảo dưỡng xe điện",
+  "icons": [
+    {
+      "src": "ev-service-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff"
+}
