@@ -49,8 +49,11 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
       console.log('📋 Appointment data:', appointment);
       
       // Lấy service order từ appointment
-      const orders = await serviceOrderService.getAllServiceOrders();
-      console.log('📦 All service orders:', orders);
+      const response = await serviceOrderService.getAllServiceOrders();
+      console.log('📦 Service orders response:', response);
+      
+      // Extract serviceOrders array from response
+      const orders = response.serviceOrders || [];
       console.log('📊 Total service orders:', orders.length);
       
       const order = orders.find(o => o.appointmentId === appointment.id);
