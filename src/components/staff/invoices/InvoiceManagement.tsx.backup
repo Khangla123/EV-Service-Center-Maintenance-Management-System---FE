@@ -37,7 +37,7 @@ const InvoiceManagement: React.FC = () => {
     if (viewMode === 'invoices') {
       await loadInvoices();
     } else {
-      await loadPendingAppointments();
+      await loadPendingOrders();
     }
   };
 
@@ -76,16 +76,20 @@ const InvoiceManagement: React.FC = () => {
       const allInvoices = await invoiceService.getAllInvoices();
       console.log('All invoices:', allInvoices.length);
       
-      // Tạo Set chứa serviceOrderId đã có invoice
-      const serviceOrderIdsWithInvoice = new Set(
-        allInvoices.map((inv: InvoiceResponse) => inv.serviceOrderId)
+      // Tạo Set chứa appointmentId đã có invoice
+      const appointmentIdsWithInvoice = new Set(
+        allInvoices
+          .filter((inv: InvoiceResponse) => inv.appointmentId)
+          .map((inv: InvoiceResponse) => inv.appointmentId)
       );
       
-      // TODO: Hiện tại chưa có cách map appointmentId -> serviceOrderId
-      // Tạm thời show tất cả completed appointments
-      console.log('Showing all completed appointments');
+      // Lọc ra các appointment chưa có invoice
+      const appointmentsWithoutInvoice = allCompletedAppointments.filter(
+        (apt: Appointment) => !appointmentIdsWithInvoice.has(apt.id)
+      );
+      console.log('Appointments without invoice:', appointmentsWithoutInvoice.length);
       
-      setPendingAppointments(allCompletedAppointments);
+      setPendingAppointments(appointmentsWithoutInvoice);
     } catch (error) {
       console.error('Error loading pending appointments:', error);
       setPendingAppointments([]);
@@ -138,7 +142,7 @@ const InvoiceManagement: React.FC = () => {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string | Date) => {
+  const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     try {
       return new Date(dateString).toLocaleDateString('vi-VN', {
@@ -156,39 +160,37 @@ const InvoiceManagement: React.FC = () => {
     setShowDetailModal(true);
   };
 
-  const handleCreateInvoice = (appointment: Appointment) => {
-    setSelectedAppointment(appointment);
+  const handleCreateInvoice = (order: ServiceOrder) => {
+    setSelectedOrder(order);
     setShowCreateInvoiceModal(true);
   };
 
   const handleConfirmCreateInvoice = async () => {
-    if (!selectedAppointment) return;
+    if (!selectedOrder) return;
 
     try {
       setCreatingInvoice(true);
       
-      // TODO: Cần lấy serviceOrderId từ appointment
-      // Tạm thời sử dụng appointmentId (cần backend hỗ trợ)
-      const serviceOrderId = selectedAppointment.id;
-      const subtotal = 1000000; // TODO: Lấy từ service package/order
-      const taxAmount = subtotal * 0.1; // 10% VAT
+      const totalAmount = selectedOrder.totalCost || 0;
+      const taxAmount = totalAmount * 0.1; // 10% VAT
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 7); // 7 ngày
 
       const request: CreateInvoiceRequest = {
-        serviceOrderId: serviceOrderId,
-        subtotal: subtotal,
-        taxAmount: taxAmount,
-        discountAmount: 0,
+        serviceOrderId: selectedOrder.id,
+        customerId: selectedOrder.customerId,
+        vehicleId: selectedOrder.vehicleId,
+        totalAmount: totalAmount,
+        discount: 0,
         dueDate: dueDate.toISOString(),
-        notes: `Hóa đơn cho lịch hẹn: ${selectedAppointment.servicePackageName}`
+        notes: `Hóa đơn cho dịch vụ: ${selectedOrder.serviceType}`
       };
 
       await invoiceService.createInvoice(request);
       alert('Tạo hóa đơn thành công!');
       
       setShowCreateInvoiceModal(false);
-      setSelectedAppointment(null);
+      setSelectedOrder(null);
       
       // Refresh data
       await loadData();
@@ -200,14 +202,14 @@ const InvoiceManagement: React.FC = () => {
     }
   };
 
-  const renderPendingAppointments = () => (
+  const renderPendingOrders = () => (
     <div className="invoice-table-container">
       {loading ? (
         <div className="loading">
           <div className="spinner"></div>
           <p>Đang tải dữ liệu...</p>
         </div>
-      ) : pendingAppointments.length === 0 ? (
+      ) : pendingOrders.length === 0 ? (
         <div className="no-data">
           <Wrench size={48} />
           <p>Không có công việc hoàn thành nào chờ tạo hóa đơn</p>
@@ -219,42 +221,51 @@ const InvoiceManagement: React.FC = () => {
         <table className="invoice-table">
           <thead>
             <tr>
-              <th>Mã lịch hẹn</th>
+              <th>Mã công việc</th>
               <th>Khách hàng</th>
               <th>Biển số xe</th>
-              <th>Gói dịch vụ</th>
+              <th>Loại dịch vụ</th>
               <th>Ngày hoàn thành</th>
-              <th>Trung tâm</th>
+              <th>Tổng chi phí</th>
               <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            {pendingAppointments.map((appointment) => (
-              <tr key={appointment.id}>
+            {pendingOrders.map((order) => (
+              <tr key={order.id}>
                 <td>
                   <span className="invoice-code">
-                    #{appointment.id.substring(0, 8)}
+                    #{order.id.substring(0, 8)}
                   </span>
                 </td>
-                <td>{appointment.customerName || 'N/A'}</td>
                 <td>
-                  <span className="license-plate">
-                    {appointment.vehicleLicensePlate || 'N/A'}
-                  </span>
-                </td>
-                <td>{appointment.servicePackageName || 'N/A'}</td>
-                <td>
-                  {appointment.actualCompletion 
-                    ? formatDate(appointment.actualCompletion)
-                    : formatDate(appointment.appointmentDate)
+                  {order.customer 
+                    ? `${order.customer.firstName} ${order.customer.lastName}`
+                    : 'N/A'
                   }
                 </td>
-                <td>{appointment.serviceCenterName || 'N/A'}</td>
+                <td>
+                  <span className="license-plate">
+                    {order.vehicle?.licensePlate || 'N/A'}
+                  </span>
+                </td>
+                <td>{order.serviceType || 'N/A'}</td>
+                <td>
+                  {order.completionDate 
+                    ? formatDate(new Date(order.completionDate).toISOString())
+                    : 'N/A'
+                  }
+                </td>
+                <td>
+                  <span className="amount">
+                    {formatCurrency(order.totalCost || 0)}
+                  </span>
+                </td>
                 <td>
                   <div className="action-buttons">
                     <button
                       className="action-btn create"
-                      onClick={() => handleCreateInvoice(appointment)}
+                      onClick={() => handleCreateInvoice(order)}
                       title="Tạo hóa đơn"
                     >
                       <Plus size={16} />
@@ -353,7 +364,7 @@ const InvoiceManagement: React.FC = () => {
     {
       icon: <Wrench />,
       label: 'Chờ tạo hóa đơn',
-      value: pendingAppointments.length,
+      value: pendingOrders.length,
       color: 'orange'
     },
     {
@@ -394,11 +405,11 @@ const InvoiceManagement: React.FC = () => {
       {/* View Mode Tabs */}
       <div className="view-tabs">
         <button
-          className={`tab-btn ${viewMode === 'pending-appointments' ? 'active' : ''}`}
-          onClick={() => setViewMode('pending-appointments')}
+          className={`tab-btn ${viewMode === 'pending-orders' ? 'active' : ''}`}
+          onClick={() => setViewMode('pending-orders')}
         >
           <Wrench size={18} />
-          Công việc hoàn thành ({pendingAppointments.length})
+          Công việc hoàn thành ({pendingOrders.length})
         </button>
         <button
           className={`tab-btn ${viewMode === 'invoices' ? 'active' : ''}`}
@@ -444,10 +455,10 @@ const InvoiceManagement: React.FC = () => {
       )}
 
       {/* Content based on view mode */}
-      {viewMode === 'pending-appointments' ? renderPendingAppointments() : renderInvoices()}
+      {viewMode === 'pending-orders' ? renderPendingOrders() : renderInvoices()}
 
       {/* Create Invoice Modal */}
-      {showCreateInvoiceModal && selectedAppointment && (
+      {showCreateInvoiceModal && selectedOrder && (
         <div className="modal-overlay" onClick={() => setShowCreateInvoiceModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -462,33 +473,48 @@ const InvoiceManagement: React.FC = () => {
             <div className="modal-body">
               <div className="invoice-detail">
                 <div className="detail-row">
-                  <span className="label">Mã lịch hẹn:</span>
-                  <span className="value">#{selectedAppointment.id.substring(0, 8)}</span>
+                  <span className="label">Mã công việc:</span>
+                  <span className="value">#{selectedOrder.id.substring(0, 8)}</span>
                 </div>
                 <div className="detail-row">
                   <span className="label">Khách hàng:</span>
-                  <span className="value">{selectedAppointment.customerName || 'N/A'}</span>
+                  <span className="value">
+                    {selectedOrder.customer
+                      ? `${selectedOrder.customer.firstName} ${selectedOrder.customer.lastName}`
+                      : 'N/A'
+                    }
+                  </span>
                 </div>
                 <div className="detail-row">
                   <span className="label">Biển số xe:</span>
-                  <span className="value">{selectedAppointment.vehicleLicensePlate || 'N/A'}</span>
+                  <span className="value">{selectedOrder.vehicle?.licensePlate || 'N/A'}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="label">Gói dịch vụ:</span>
-                  <span className="value">{selectedAppointment.servicePackageName}</span>
+                  <span className="label">Loại dịch vụ:</span>
+                  <span className="value">{selectedOrder.serviceType}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="label">Trung tâm:</span>
-                  <span className="value">{selectedAppointment.serviceCenterName}</span>
+                  <span className="label">Chi phí dịch vụ:</span>
+                  <span className="value amount">
+                    {formatCurrency(selectedOrder.totalCost || 0)}
+                  </span>
                 </div>
                 <div className="detail-row">
-                  <span className="label">Kỹ thuật viên:</span>
-                  <span className="value">{selectedAppointment.technicianName || 'N/A'}</span>
+                  <span className="label">Thuế VAT (10%):</span>
+                  <span className="value">
+                    {formatCurrency((selectedOrder.totalCost || 0) * 0.1)}
+                  </span>
                 </div>
-                {selectedAppointment.notes && (
+                <div className="detail-row highlight">
+                  <span className="label">Tổng thanh toán:</span>
+                  <span className="value amount">
+                    {formatCurrency((selectedOrder.totalCost || 0) * 1.1)}
+                  </span>
+                </div>
+                {selectedOrder.notes && (
                   <div className="detail-row full-width">
                     <span className="label">Ghi chú:</span>
-                    <span className="value">{selectedAppointment.notes}</span>
+                    <span className="value">{selectedOrder.notes}</span>
                   </div>
                 )}
               </div>

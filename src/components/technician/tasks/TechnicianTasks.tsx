@@ -114,10 +114,35 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
       const appointments = await appointmentService.getMyTasks(staffId);
       console.log('✓ Received appointments:', appointments.length, 'items');
       
-      // Convert appointments to tasks
-      const convertedTasks: Task[] = appointments.map((apt: Appointment) => {
+      // Convert appointments to tasks with checklist preview
+      const convertedTasks: Task[] = await Promise.all(appointments.map(async (apt: Appointment) => {
         // Map status from backend format to display format
         let displayStatus: TaskStatus = apt.status;
+        
+        // Load checklist from service_order if appointment has service order
+        let checklistPreview: { item: string; done: boolean }[] | undefined;
+        if (apt.status === 'ASSIGNED' || apt.status === 'IN_PROGRESS') {
+          try {
+            const serviceOrderModule = await import('../../../services/serviceOrderService');
+            const serviceOrder = await serviceOrderModule.default.getServiceOrderByAppointmentId(apt.id);
+            if (serviceOrder.checklist) {
+              const parsed = serviceOrderModule.default.parseChecklist(serviceOrder.checklist);
+              if (parsed && parsed.items) {
+                checklistPreview = parsed.items.slice(0, 5).map((item: any) => ({
+                  item: item.title,
+                  done: item.isCompleted || false
+                }));
+                console.log(`✓ Loaded checklist for ${apt.id.substring(0, 8)}: ${parsed.items.length} items`);
+              }
+            }
+          } catch (error: any) {
+            // Silently ignore 404 errors (service order not created yet)
+            if (error?.response?.status !== 404) {
+              console.warn('Could not load checklist for appointment:', apt.id, error);
+            }
+            // For 404, service order will be created when staff assigns the task
+          }
+        }
         
         return {
           id: apt.id,
@@ -133,9 +158,10 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
           assignedDate: apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleString('vi-VN') : 'N/A',
           startedAt: apt.status === 'IN_PROGRESS' ? new Date(apt.appointmentDate).toLocaleString('vi-VN') : undefined,
           completedAt: apt.actualCompletion ? new Date(apt.actualCompletion).toLocaleString('vi-VN') : undefined,
-          notes: apt.notes
+          notes: apt.notes,
+          checklist: checklistPreview
         };
-      });
+      }));
       
       console.log('✓ Converted tasks:', convertedTasks.length, 'tasks');
       console.log('Task statuses:', convertedTasks.map(t => t.status));

@@ -122,12 +122,12 @@ const WorkProcessing: React.FC = () => {
         if (appointmentId && currentWork.length > 0 && currentWork[0].id === appointmentId) {
           setSelectedAppointment(currentWork[0]);
           setAppointment(currentWork[0]);
-          initializeChecklist(currentWork[0]);
+          await initializeChecklist(currentWork[0]);
         } else if (currentWork.length > 0) {
           // Auto-select the only allowed appointment
           setSelectedAppointment(currentWork[0]);
           setAppointment(currentWork[0]);
-          initializeChecklist(currentWork[0]);
+          await initializeChecklist(currentWork[0]);
         }
         
       } catch (error) {
@@ -140,7 +140,31 @@ const WorkProcessing: React.FC = () => {
     loadAppointments();
   }, [appointmentId, navigate]);
 
-  const initializeChecklist = (appt: Appointment) => {
+  const initializeChecklist = async (appt: Appointment) => {
+    try {
+      // Load checklist from service_order
+      const serviceOrderModule = await import('../../../services/serviceOrderService');
+      const serviceOrder = await serviceOrderModule.default.getServiceOrderByAppointmentId(appt.id);
+      
+      if (serviceOrder.checklist) {
+        const parsed = serviceOrderModule.default.parseChecklist(serviceOrder.checklist);
+        if (parsed && parsed.items) {
+          // Convert checklist items from database to component format
+          const loadedChecklist: ChecklistItem[] = parsed.items.map((item: any, index: number) => ({
+            id: index + 1,
+            title: `${item.title}${item.description ? ` (${item.description})` : ''}`,
+            done: item.isCompleted || false
+          }));
+          console.log('✓ Loaded checklist from service order:', loadedChecklist.length, 'items');
+          setChecklist(loadedChecklist);
+          return;
+        }
+      }
+    } catch (error) {
+      console.warn('Could not load checklist from service order:', error);
+    }
+    
+    // Fallback to default checklist if service order not found
     if (appt.servicePackageName?.includes('Bảo dưỡng')) {
       setChecklist([
         { id: 1, title: 'Kiểm tra pin (dung lượng, sức khỏe)', done: false },
@@ -152,10 +176,10 @@ const WorkProcessing: React.FC = () => {
     }
   };
 
-  const selectAppointment = (appt: Appointment) => {
+  const selectAppointment = async (appt: Appointment) => {
     setSelectedAppointment(appt);
     setAppointment(appt);
-    initializeChecklist(appt);
+    await initializeChecklist(appt);
     // Reset states
     setIssues([]);
     setPartsUsed([]);

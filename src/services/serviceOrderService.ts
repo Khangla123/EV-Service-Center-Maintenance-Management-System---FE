@@ -166,6 +166,29 @@ class ServiceOrderService {
     console.log('Service order created:', response.data);
     return response.data.result || response.data;
   }
+
+  // ⭐ NEW: Lấy service orders của technician với checklist từ maintenance_plans
+  async getMyServiceOrders(): Promise<ServiceOrder[]> {
+    const response = await api.get('/service-orders/technician/me');
+    return response.data.result || response.data;
+  }
+
+  // ⭐ NEW: Lấy service order theo appointment ID (để lấy checklist)
+  async getServiceOrderByAppointmentId(appointmentId: string): Promise<ServiceOrder> {
+    const response = await api.get(`/service-orders/appointment/${appointmentId}`);
+    return response.data.result || response.data;
+  }
+
+  // ⭐ NEW: Parse checklist JSON string to object
+  parseChecklist(checklistJson: string | undefined): any {
+    if (!checklistJson) return null;
+    try {
+      return JSON.parse(checklistJson);
+    } catch (error) {
+      console.error('Error parsing checklist JSON:', error);
+      return null;
+    }
+  }
 }
 
 export default new ServiceOrderService();
