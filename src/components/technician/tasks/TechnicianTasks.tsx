@@ -34,7 +34,7 @@ interface TechnicianTasksProps {
 
 const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TaskStatus>('ASSIGNED'); // Default to ASSIGNED - tasks assigned but not started
+  const [activeTab, setActiveTab] = useState<TaskStatus>('ASSIGNED'); // Default to ASSIGNED to show assigned tasks
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState<Priority | 'all'>('all');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -96,6 +96,85 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
       const appointments = await appointmentService.getMyTasks(staffId);
       console.log('✓ Received appointments:', appointments.length, 'items');
       
+      // 🧪 TEMPORARY: Add mock data for testing if no real data
+      // DISABLED for now since we have real data
+      if (false && appointments.length === 0) {
+        console.log('⚠️ No appointments found, adding mock data for testing...');
+        const mockAppointments = [
+          {
+            id: 'mock-apt-1',
+            customerId: 'mock-customer-1',
+            customerName: 'Nguyễn Văn Test',
+            customerPhone: '0123456789',
+            vehicleId: 'mock-vehicle-1',
+            vehicleLicensePlate: '30A-12345',
+            vehicleModel: 'VinFast VF8',
+            serviceCenterId: 'mock-center-1',
+            serviceCenterName: 'Trung tâm VinFast Hà Nội',
+            servicePackageId: 'mock-package-1',
+            servicePackageName: 'Bảo dưỡng định kỳ',
+            technicianId: staffId,
+            technicianName: user.fullName,
+            appointmentDate: new Date(),
+            status: 'ASSIGNED' as const,
+            notes: 'Khách hàng yêu cầu kiểm tra kỹ hệ thống phanh',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          {
+            id: 'mock-apt-2',
+            customerId: 'mock-customer-2',
+            customerName: 'Trần Thị Demo',
+            customerPhone: '0987654321',
+            vehicleId: 'mock-vehicle-2',
+            vehicleLicensePlate: '30B-67890',
+            vehicleModel: 'VinFast VF9',
+            serviceCenterId: 'mock-center-1',
+            serviceCenterName: 'Trung tâm VinFast Hà Nội',
+            servicePackageId: 'mock-package-2',
+            servicePackageName: 'Sửa chữa hệ thống điện',
+            technicianId: staffId,
+            technicianName: user.fullName,
+            appointmentDate: new Date(Date.now() - 2 * 60 * 60 * 1000),
+            status: 'IN_PROGRESS' as const,
+            notes: 'Đang thay thế module điều khiển',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+        ];
+        appointments.push(...mockAppointments);
+        console.log('✓ Added mock appointments:', mockAppointments.length, 'items');
+      }
+      
+      // 🧪 TEMPORARY: Force add ASSIGNED appointment if none exist
+      // DISABLED for now since we'll update real data
+      const hasAssignedTasks = appointments.some(apt => apt.status === 'ASSIGNED');
+      if (false && !hasAssignedTasks) {
+        console.log('⚠️ No ASSIGNED tasks found, adding test ASSIGNED task...');
+        const assignedAppointment = {
+          id: 'test-assigned-1',
+          customerId: 'test-customer-1',
+          customerName: 'Khách hàng Test',
+          customerPhone: '0999888777',
+          vehicleId: 'test-vehicle-1',
+          vehicleLicensePlate: '29A-99999',
+          vehicleModel: 'VinFast VF8 Pro',
+          serviceCenterId: 'test-center-1',
+          serviceCenterName: 'Trung tâm Test',
+          servicePackageId: 'test-package-1',
+          servicePackageName: 'Kiểm tra tổng quát',
+          technicianId: staffId,
+          technicianName: user.fullName,
+          appointmentDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+          status: 'ASSIGNED' as const,
+          notes: 'Task test cho tab Đã phân công',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        appointments.push(assignedAppointment);
+        console.log('✓ Added test ASSIGNED appointment');
+      }
+      
       // Convert appointments to tasks
       const convertedTasks: Task[] = appointments.map((apt: Appointment) => {
         // Map status from backend format to display format
@@ -121,6 +200,20 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
       
       console.log('✓ Converted tasks:', convertedTasks.length, 'tasks');
       console.log('Task statuses:', convertedTasks.map(t => t.status));
+      
+      // Auto-select tab based on available data
+      if (convertedTasks.length > 0 && !compact) {
+        const statuses = convertedTasks.map(t => t.status);
+        if (statuses.includes('ASSIGNED')) {
+          setActiveTab('ASSIGNED');
+        } else if (statuses.includes('IN_PROGRESS')) {
+          setActiveTab('IN_PROGRESS');
+        } else if (statuses.includes('COMPLETED')) {
+          setActiveTab('COMPLETED');
+        }
+        console.log('✓ Auto-selected tab based on available data');
+      }
+      
       setTasks(convertedTasks);
       console.log('=== loadTasks completed successfully ===');
     } catch (error) {
@@ -148,6 +241,16 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
       task.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchPriority = filterPriority === 'all' || task.priority === filterPriority;
     
+    console.log(`🔍 Filter debug - Task ${task.id}:`, {
+      status: task.status,
+      activeTab,
+      matchStatus,
+      matchSearch,
+      matchPriority,
+      compact,
+      willShow: matchStatus && matchSearch && matchPriority
+    });
+    
     return matchStatus && matchSearch && matchPriority;
   });
 
@@ -164,6 +267,9 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
   };
 
   const handleStartTask = async (task: Task) => {
+    console.log('🔄 Attempting to start task:', task);
+    console.log('Task status:', task.status);
+    
     if (!window.confirm(`Bắt đầu công việc: ${task.vehicle} - ${task.licensePlate}?`)) {
       return;
     }
@@ -183,7 +289,20 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
       navigate('/technician/work');
     } catch (error) {
       console.error('❌ Error starting task:', error);
-      alert('Không thể bắt đầu công việc: ' + (error as any)?.message);
+      console.error('Error details:', {
+        message: (error as any)?.message,
+        response: (error as any)?.response?.data,
+        status: (error as any)?.response?.status
+      });
+      
+      let errorMessage = 'Không thể bắt đầu công việc';
+      if ((error as any)?.response?.data?.message) {
+        errorMessage += ': ' + (error as any)?.response?.data?.message;
+      } else if ((error as any)?.message) {
+        errorMessage += ': ' + (error as any)?.message;
+      }
+      
+      alert(errorMessage);
     }
   };
 
@@ -314,7 +433,7 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
           </div>
 
           <div className="modal-footer">
-            {selectedTask.status === 'CONFIRMED' && (
+            {selectedTask.status === 'ASSIGNED' && (
               <button className="btn-start" onClick={() => handleStartTask(selectedTask)}>
                 <Play size={16} />
                 Bắt đầu công việc
@@ -405,7 +524,10 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
           <div className="empty-state">
             <p>Không có công việc nào</p>
             <p style={{fontSize: '14px', color: '#666', marginTop: '8px'}}>
-              Tasks: {tasks.length} | Filtered: {filteredTasks.length}
+              Tasks: {tasks.length} | Filtered: {filteredTasks.length} | Active Tab: {activeTab}
+            </p>
+            <p style={{fontSize: '12px', color: '#999', marginTop: '4px'}}>
+              Statuses: {tasks.map(t => t.status).join(', ')}
             </p>
           </div>
         ) : (
@@ -449,7 +571,7 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
                   <Eye size={16} />
                   Xem chi tiết
                 </button>
-                {(task.status === 'CONFIRMED' || task.status === 'ASSIGNED') && (
+                {task.status === 'ASSIGNED' && (
                   <button className="btn-start" onClick={() => handleStartTask(task)}>
                     <Play size={16} />
                     Bắt đầu
