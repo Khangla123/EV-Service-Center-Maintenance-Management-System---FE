@@ -17,6 +17,12 @@ type StaffView =
 const StaffDashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<StaffView>('overview');
 
+  // Debug: Log component mount
+  React.useEffect(() => {
+    console.log('✅ StaffDashboard mounted');
+    console.log('Current view:', currentView);
+  }, [currentView]);
+
   const stats = [
     {
       icon: <Calendar className="stat-icon" />,

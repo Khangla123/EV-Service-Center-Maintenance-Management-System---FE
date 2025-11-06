@@ -94,9 +94,19 @@ class ServiceOrderService {
     status?: string;
     fromDate?: string;
     toDate?: string;
-  }): Promise<ServiceOrder[]> {
+  }): Promise<{ serviceOrders: ServiceOrder[]; total: number; page: number; size: number }> {
     const response = await api.get('/service-orders', { params });
-    return response.data.result || response.data;
+    console.log('🔍 getAllServiceOrders raw response:', response.data);
+    
+    // Backend returns ApiResponse.result as array directly
+    const serviceOrders = response.data.result || [];
+    
+    return {
+      serviceOrders,
+      total: serviceOrders.length,
+      page: params?.page || 0,
+      size: params?.size || serviceOrders.length
+    };
   }
 
   // Tạo đơn dịch vụ mới
@@ -138,14 +148,19 @@ class ServiceOrderService {
     return response.data;
   }
 
-  // Lấy danh sách công việc được giao cho tôi (technician)
-  async getMyAssignments(params?: {
+  // Lấy danh sách công việc được giao cho technician (từ service_orders)
+  async getMyAssignments(technicianId: string, params?: {
     page?: number;
     size?: number;
     status?: string;
-  }): Promise<{ serviceOrders: ServiceOrder[]; total: number; page: number; size: number }> {
-    const response = await api.get('/service-orders/my-assignments', { params });
-    return response.data;
+  }): Promise<ServiceOrder[]> {
+    console.log('🔍 ServiceOrderService.getMyAssignments - technicianId:', technicianId);
+    const response = await api.get('/service-orders/my-assignments', { 
+      params: { ...params, technicianId } 
+    });
+    console.log('✅ ServiceOrderService.getMyAssignments - response:', response.data);
+    // Backend returns simple array, not paginated
+    return response.data.result || response.data;
   }
 
   // Tạo Service Order từ Appointment và phân công Technician (FLOW CHUẨN)

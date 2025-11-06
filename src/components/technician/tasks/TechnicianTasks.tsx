@@ -208,6 +208,13 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
   };
 
   const handleStartTask = async (task: Task) => {
+    console.log('🔄 Attempting to start task:', task);
+    console.log('Task status:', task.status);
+    
+    if (!window.confirm(`Bắt đầu công việc: ${task.vehicle} - ${task.licensePlate}?`)) {
+      return;
+    }
+
     try {
       console.log('🔄 Starting task:', task.id);
       
@@ -223,7 +230,20 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
       navigate('/technician/work');
     } catch (error) {
       console.error('❌ Error starting task:', error);
-      alert('Không thể bắt đầu công việc: ' + (error as any)?.message);
+      console.error('Error details:', {
+        message: (error as any)?.message,
+        response: (error as any)?.response?.data,
+        status: (error as any)?.response?.status
+      });
+      
+      let errorMessage = 'Không thể bắt đầu công việc';
+      if ((error as any)?.response?.data?.message) {
+        errorMessage += ': ' + (error as any)?.response?.data?.message;
+      } else if ((error as any)?.message) {
+        errorMessage += ': ' + (error as any)?.message;
+      }
+      
+      alert(errorMessage);
     }
   };
 

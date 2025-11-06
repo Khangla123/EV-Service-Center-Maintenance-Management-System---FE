@@ -267,35 +267,23 @@ const AppointmentManagement: React.FC = () => {
     try {
       const selectedTech = technicians.find(t => t.id === selectedTechnicianId);
       
-      console.log('Selected technician full object:', selectedTech);
-      console.log('Selected technician userId:', selectedTech?.userId);
-      console.log('All technicians:', technicians);
-      
-      // CRITICAL FIX: Backend ServiceOrder.technician_id là FK đến users table, KHÔNG phải staff table
-      // Phải dùng staff.userId (user_id trong staff table), không dùng staff.id
-      const technicianUserId = selectedTech?.userId || selectedTech?.id;
-      
-      if (!technicianUserId) {
-        alert('Không tìm thấy User ID của kỹ thuật viên. Vui lòng chọn kỹ thuật viên khác.');
-        console.error('Staff record missing userId:', selectedTech);
-        return;
-      }
-      
-      console.log('Assigning technician:', {
+      console.log('📋 Phân công kỹ thuật viên:', {
         appointmentId: selectedAppointment.id,
         staffId: selectedTechnicianId,
-        technicianUserId: technicianUserId,
-        selectedTechnician: selectedTech
+        technicianName: selectedTech?.fullName,
+        currentStatus: selectedAppointment.status
       });
       
-      // Gọi API tạo Service Order từ Appointment và phân công Technician
-      // Truyền userId (từ users table), KHÔNG phải staff.id
-      const result = await serviceOrderService.createServiceOrderFromAppointment(
+      // TẠO SERVICE ORDER VÀ PHÂN CÔNG TECHNICIAN (FLOW CHUẨN)
+      // Backend endpoint: POST /service-orders/from-appointment/{appointmentId}/assign?technicianId=xxx
+      // Flow: Appointment CONFIRMED → Phân công thợ → Tạo Service Order → Update appointment status = ASSIGNED
+      console.log('🔧 Creating service order and assigning technician...');
+      await serviceOrderService.createServiceOrderFromAppointment(
         selectedAppointment.id,
-        technicianUserId
+        selectedTechnicianId
       );
       
-      console.log('✅ Service order created successfully:', result);
+      console.log('✅ Service order created and technician assigned successfully');
       
       // Đóng modal trước khi reload
       setShowAssignModal(false);
@@ -303,13 +291,12 @@ const AppointmentManagement: React.FC = () => {
       setSelectedTechnicianId('');
       
       // Reload danh sách appointments để cập nhật trạng thái
-      console.log('🔄 Reloading appointments after assignment...');
+      console.log('🔄 Reloading appointments...');
       await loadAppointments();
-      console.log('✅ Appointments reloaded');
       
-      alert('Đã phân công kỹ thuật viên và tạo đơn dịch vụ thành công!');
+      alert(`✅ Đã phân công kỹ thuật viên: ${selectedTech?.fullName}\n📋 Đã tạo phiếu dịch vụ thành công!`);
     } catch (err: any) {
-      console.error('Error assigning technician:', err);
+      console.error('❌ Error assigning technician:', err);
       console.error('Error details:', {
         message: err?.message,
         response: err?.response?.data,
@@ -665,9 +652,25 @@ const AppointmentManagement: React.FC = () => {
                 </>
               )}
               {appointment.status === 'COMPLETED' && (
-                <MDButton variant="outlined" size="small">
-                  Xem chi tiết
-                </MDButton>
+                <>
+                  <MDButton 
+                    variant="outlined" 
+                    size="small"
+                    onClick={() => {
+                      // Chuyển đến trang Invoice Management để xem hóa đơn
+                      window.location.href = '/staff/invoices';
+                    }}
+                  >
+                    Xem hóa đơn
+                  </MDButton>
+                  <MDButton 
+                    variant="outlined" 
+                    size="small"
+                    onClick={() => openEditModal(appointment)}
+                  >
+                    Chi tiết
+                  </MDButton>
+                </>
               )}
             </div>
           </div>

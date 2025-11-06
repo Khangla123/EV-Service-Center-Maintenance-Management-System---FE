@@ -24,11 +24,10 @@ export interface InvoiceResponse {
 
 export interface CreateInvoiceRequest {
   serviceOrderId: string;
-  subtotal: number;
+  subtotal?: number;
   taxAmount?: number;
   discountAmount?: number;
   dueDate?: string;
-  notes?: string;
 }
 
 export interface UpdateInvoiceRequest {

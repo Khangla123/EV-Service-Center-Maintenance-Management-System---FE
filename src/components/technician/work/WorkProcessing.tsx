@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Play, Upload, Plus, Trash2, Clock, AlertCircle, CheckCircle2, X, Package, Car, User, Phone } from 'lucide-react';
 import './WorkProcessing.css';
 import appointmentService, { Appointment } from '../../../services/appointmentService';
+import serviceOrderService from '../../../services/serviceOrderService';
+import staffService from '../../../services/staffService';
 
 type ChecklistItem = {
   id: number;
@@ -263,15 +265,54 @@ const WorkProcessing: React.FC = () => {
     if (!appointment) return;
 
     try {
+      console.log('🎯 Completing work for appointment:', appointment.id);
+      
+      // Bước 1: Lấy staffId của technician hiện tại
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const allStaff = await staffService.getAllStaff();
+      const myStaff = allStaff.find(s => s.userId === user.id);
+      const technicianStaffId = myStaff?.id || appointment.technicianId;
+      
+      console.log('Current technician staffId:', technicianStaffId);
+      
+      // Bước 2: Tạo Service Order từ Appointment (nếu chưa có)
+      // Backend sẽ dùng service order này để tạo invoice
+      if (technicianStaffId) {
+        try {
+          console.log('📝 Creating service order from appointment...');
+          await serviceOrderService.createServiceOrderFromAppointment(
+            appointment.id,
+            technicianStaffId
+          );
+          console.log('✅ Service order created successfully');
+        } catch (serviceOrderError: any) {
+          // Nếu service order đã tồn tại, log và tiếp tục
+          const errorMsg = serviceOrderError?.response?.data?.message || serviceOrderError.message;
+          console.log('Service order creation:', errorMsg);
+          
+          // Nếu lỗi KHÔNG phải "already exists", có thể là lỗi nghiêm trọng
+          if (!errorMsg.toLowerCase().includes('exist')) {
+            console.error('⚠️ Unexpected error creating service order:', errorMsg);
+          }
+        }
+      } else {
+        console.warn('⚠️ No technician ID found, skipping service order creation');
+      }
+      
+      // Bước 3: Cập nhật appointment status = COMPLETED
+      // Backend sẽ tự động tạo invoice khi status = COMPLETED
+      console.log('✅ Updating appointment status to COMPLETED...');
       await appointmentService.updateAppointment(appointment.id, {
         status: 'COMPLETED',
         notes: completionNotes
       });
-      alert('Công việc đã được hoàn thành!');
+      
+      console.log('🎉 Work completed successfully!');
+      alert('Công việc đã được hoàn thành! Hóa đơn sẽ được tạo tự động.');
       setShowCompleteModal(false);
       navigate('/technician/tasks');
     } catch (error) {
-      console.error('Error completing work:', error);
+      console.error('❌ Error completing work:', error);
       alert('Lỗi khi hoàn thành công việc. Vui lòng thử lại!');
     }
   };
