@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MDButton } from '../../ui';
 import './CostManagement.css';
 import maintenanceHistoryService, { MaintenanceRecord } from '../../../services/maintenanceHistoryService';
+import invoiceService, { InvoiceResponse } from '../../../services/invoiceService';
 
 export interface CostRecord {
   id: string;
@@ -68,31 +69,76 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
       
       try {
         const data = await maintenanceHistoryService.getMaintenanceHistory();
+        console.log('📋 Maintenance records:', data.maintenanceRecords);
+        
+        // Lấy invoices để xác định payment status
+        const invoices = await invoiceService.getMyInvoices();
+        console.log('💰 My invoices:', invoices);
+        console.log('💰 First invoice full object:', JSON.stringify(invoices[0], null, 2));
+        
+        // Tạo map từ ID invoice -> invoice status
+        // Invoice có thể link với appointment qua nhiều cách khác nhau
+        const invoiceStatusMap = new Map<string, 'PENDING' | 'PAID' | 'CANCELLED' | 'OVERDUE'>();
+        
+        invoices.forEach((invoice: any) => {
+          console.log(`🔍 Invoice:`, invoice);
+          // Map bằng appointmentId (KEY CHÍNH!)
+          if (invoice.appointmentId) {
+            invoiceStatusMap.set(invoice.appointmentId, invoice.status);
+            console.log(`✅ Mapped appointmentId ${invoice.appointmentId} -> ${invoice.status}`);
+          }
+          // Backup: Map bằng serviceOrderId
+          if (invoice.serviceOrderId) {
+            invoiceStatusMap.set(invoice.serviceOrderId, invoice.status);
+          }
+          // Backup: Map bằng invoice ID
+          if (invoice.id) {
+            invoiceStatusMap.set(invoice.id, invoice.status);
+          }
+        });
+        
+        console.log('🗺️ Invoice status map:', Array.from(invoiceStatusMap.entries()));
         
         // Transform API data to CostRecord format
-        const records: CostRecord[] = data.maintenanceRecords.map((record: MaintenanceRecord) => ({
-          id: record.appointmentId,
-          date: new Date(record.serviceDate),
-          vehicleId: record.appointmentId, // Using appointmentId as fallback
-          vehicleName: `${record.vehicleModel} - ${record.licensePlate}`,
-          serviceType: record.serviceTitle,
-          serviceName: record.serviceTitle,
-          serviceCenter: 'VinFast Service Center',
-          laborCost: 0,
-          partsCost: 0,
-          additionalCosts: 0,
-          discount: 0,
-          tax: 0,
-          totalCost: record.totalAmount,
-          paymentMethod: 'N/A',
-          // paymentStatus should be based on actual payment data, not service status
-          // Since we don't have payment info from API, default to 'pending'
-          paymentStatus: 'pending' as 'paid' | 'pending' | 'overdue',
-          serviceStatus: record.status, // Preserve the service completion status
-          category: 'maintenance' as const,
-          parts: [],
-          notes: record.nextMaintenanceDate ? `Next maintenance: ${record.nextMaintenanceDate}` : undefined
-        }));
+        const records: CostRecord[] = data.maintenanceRecords.map((record: MaintenanceRecord) => {
+          // Lấy invoice status từ map
+          const invoiceStatus = invoiceStatusMap.get(record.appointmentId);
+          console.log(`📝 Record ${record.appointmentId}: invoiceStatus=${invoiceStatus}`);
+          
+          // Map invoice status sang payment status
+          let paymentStatus: 'paid' | 'pending' | 'overdue' = 'pending';
+          if (invoiceStatus === 'PAID') {
+            paymentStatus = 'paid';
+          } else if (invoiceStatus === 'OVERDUE') {
+            paymentStatus = 'overdue';
+          } else if (invoiceStatus === 'PENDING') {
+            paymentStatus = 'pending';
+          }
+          
+          console.log(`✅ Final paymentStatus for ${record.appointmentId}: ${paymentStatus}`);
+          
+          return {
+            id: record.appointmentId,
+            date: new Date(record.serviceDate),
+            vehicleId: record.appointmentId, // Using appointmentId as fallback
+            vehicleName: `${record.vehicleModel} - ${record.licensePlate}`,
+            serviceType: record.serviceTitle,
+            serviceName: record.serviceTitle,
+            serviceCenter: 'VinFast Service Center',
+            laborCost: 0,
+            partsCost: 0,
+            additionalCosts: 0,
+            discount: 0,
+            tax: 0,
+            totalCost: record.totalAmount,
+            paymentMethod: 'N/A',
+            paymentStatus: paymentStatus,
+            serviceStatus: record.status, // Preserve the service completion status
+            category: 'maintenance' as const,
+            parts: [],
+            notes: record.nextMaintenanceDate ? `Next maintenance: ${record.nextMaintenanceDate}` : undefined
+          };
+        });
         
         setCostRecords(records);
         setFilteredRecords(records);

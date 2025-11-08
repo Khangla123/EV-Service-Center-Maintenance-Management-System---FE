@@ -171,11 +171,11 @@ class ServiceOrderService {
     console.log('Creating service order:', { appointmentId, technicianId });
     
     // Backend endpoint: POST /service-orders/from-appointment/{appointmentId}/assign?technicianId=xxx
-    // Controller expects technicianId as @RequestParam (query parameter)
+    // Thử cả 2 cách: query param VÀ request body để đảm bảo BE nhận được
     const response = await api.post(
       `/service-orders/from-appointment/${appointmentId}/assign`,
-      {}, // Empty body
-      { params: { technicianId } } // technicianId as query param
+      { technicianId }, // technicianId trong body
+      { params: { technicianId } } // technicianId trong query param (để chắc chắn)
     );
     
     console.log('Service order created:', response.data);
