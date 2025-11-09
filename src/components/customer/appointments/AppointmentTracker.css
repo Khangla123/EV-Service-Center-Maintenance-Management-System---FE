@@ -1,4 +1,5 @@
 /* Appointment Tracker - Modern Glassmorphism Design */
+/* Updated: Grid Layout for Appointments */
 
 .appointment-tracker {
   min-height: 100vh;
@@ -197,17 +198,16 @@
 }
 
 /* Appointments Grid */
+/* ===== APPOINTMENTS GRID LAYOUT ===== */
 .appointments-grid {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 25px;
-  overflow-x: auto !important;
-  overflow-y: hidden;
-  padding-bottom: 20px;
-  scroll-behavior: smooth;
-  flex-wrap: nowrap !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  gap: 20px !important;
+  padding-bottom: 20px !important;
+  width: 100% !important;
 }
 
+/* Scrollbar không cần thiết cho grid layout
 .appointments-grid::-webkit-scrollbar {
   height: 8px;
 }
@@ -225,10 +225,11 @@
 .appointments-grid::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(90deg, #5568d3, #653a8b);
 }
+*/
 
 /* Appointment Card */
 .appointment-card {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -241,9 +242,7 @@
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  min-width: 400px !important;
-  max-width: 400px !important;
-  flex-shrink: 0 !important;
+  width: 100%;
 }
 
 .appointment-card::before {
@@ -648,16 +647,9 @@
 }
 
 /* Responsive Design */
+
+/* Tablets and smaller */
 @media (max-width: 1024px) {
-  .appointments-grid {
-    gap: 20px;
-  }
-
-  .appointment-card {
-    min-width: 350px;
-    max-width: 350px;
-  }
-
   .appointment-tracker {
     padding: 25px;
   }
@@ -697,15 +689,6 @@
     margin-left: 0;
     width: 100%;
     justify-content: center;
-  }
-
-  .appointments-grid {
-    gap: 20px;
-  }
-
-  .appointment-card {
-    min-width: 300px;
-    max-width: 300px;
   }
 
   .appointments-list {

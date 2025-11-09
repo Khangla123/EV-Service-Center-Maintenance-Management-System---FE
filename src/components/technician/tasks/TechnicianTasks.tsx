@@ -211,6 +211,16 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
     console.log('🔄 Attempting to start task:', task);
     console.log('Task status:', task.status);
     
+    // Kiểm tra xem có công việc nào đang IN_PROGRESS không
+    const inProgressTask = tasks.find(t => t.status === 'IN_PROGRESS');
+    
+    if (inProgressTask) {
+      console.log('⚠️ Found task in progress:', inProgressTask);
+      setConflictTask(inProgressTask);
+      setShowConflictModal(true);
+      return;
+    }
+    
     if (!window.confirm(`Bắt đầu công việc: ${task.vehicle} - ${task.licensePlate}?`)) {
       return;
     }
@@ -510,7 +520,12 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
                   Xem chi tiết
                 </button>
                 {(task.status === 'CONFIRMED' || task.status === 'ASSIGNED') && (
-                  <button className="btn-start" onClick={() => handleStartTask(task)}>
+                  <button 
+                    className="btn-start" 
+                    onClick={() => handleStartTask(task)}
+                    disabled={tasks.some(t => t.status === 'IN_PROGRESS')}
+                    title={tasks.some(t => t.status === 'IN_PROGRESS') ? 'Bạn đang có công việc đang xử lý' : ''}
+                  >
                     <Play size={16} />
                     Bắt đầu
                   </button>

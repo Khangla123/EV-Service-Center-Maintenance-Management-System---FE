@@ -386,7 +386,21 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
         </div>
       ) : (
         // All appointments list
-        <div className="appointments-list">
+        <div 
+          style={{
+            background: 'rgba(255, 255, 255, 0.15)',
+            backdropFilter: 'blur(30px)',
+            WebkitBackdropFilter: 'blur(30px)',
+            border: '1px solid rgba(255, 255, 255, 0.25)',
+            borderRadius: '24px',
+            padding: '35px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+            position: 'relative' as const,
+            zIndex: 1,
+            width: '100%',
+            maxWidth: '100%'
+          }}
+        >
           {appointments.length === 0 ? (
             <div className="no-appointments">
               <p>Bạn chưa có lịch dịch vụ nào.</p>
@@ -402,7 +416,15 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
               </MDButton>
             </div>
           ) : (
-            <div className="appointments-grid">
+            <div 
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '24px',
+                paddingBottom: '20px',
+                width: '100%'
+              }}
+            >
               {filteredAppointments.map(appointment => (
                 <AppointmentCard
                   key={appointment.id}

@@ -267,9 +267,18 @@ const AppointmentManagement: React.FC = () => {
     try {
       const selectedTech = technicians.find(t => t.id === selectedTechnicianId);
       
+      // Backend cần userId chứ không phải staff.id
+      const technicianUserId = selectedTech?.userId || selectedTech?.id;
+      
+      if (!technicianUserId) {
+        alert('Không tìm thấy User ID của kỹ thuật viên');
+        return;
+      }
+      
       console.log('📋 Phân công kỹ thuật viên:', {
         appointmentId: selectedAppointment.id,
         staffId: selectedTechnicianId,
+        userId: technicianUserId,
         technicianName: selectedTech?.fullName,
         currentStatus: selectedAppointment.status
       });
@@ -280,7 +289,7 @@ const AppointmentManagement: React.FC = () => {
       console.log('🔧 Creating service order and assigning technician...');
       await serviceOrderService.createServiceOrderFromAppointment(
         selectedAppointment.id,
-        selectedTechnicianId
+        technicianUserId  // Dùng userId thay vì staff.id
       );
       
       console.log('✅ Service order created and technician assigned successfully');
