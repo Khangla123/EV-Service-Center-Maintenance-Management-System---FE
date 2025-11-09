@@ -75,8 +75,20 @@ const AppointmentManagement: React.FC = () => {
   const loadTechnicians = async () => {
     try {
       const allStaff = await staffService.getAllStaff();
+      console.log('=== LOAD TECHNICIANS DEBUG ===');
       console.log('All staff from API:', allStaff);
       console.log('Total staff count:', allStaff.length);
+      
+      // Debug: Log từng staff
+      allStaff.forEach((s, index) => {
+        console.log(`Staff ${index + 1}:`, {
+          id: s.id,
+          userId: s.userId,
+          fullName: s.fullName,
+          role: s.role,
+          isActive: s.isActive
+        });
+      });
       
       // Lọc lấy technician - check cả role và specialization
       let technicians = allStaff.filter(s => {
@@ -93,6 +105,8 @@ const AppointmentManagement: React.FC = () => {
       
       console.log('Filtered technicians:', technicians);
       console.log('Technician count:', technicians.length);
+      console.log('Technician IDs:', technicians.map(t => t.id));
+      console.log('==============================');
       setAvailableTechnicians(technicians);
     } catch (error) {
       console.error('Error loading technicians:', error);
@@ -116,13 +130,23 @@ const AppointmentManagement: React.FC = () => {
     try {
       const selectedTech = availableTechnicians.find(t => t.id === selectedTechnicianId);
       
+      console.log('=== DEBUG ASSIGN TECHNICIAN ===');
+      console.log('Selected technician ID:', selectedTechnicianId);
+      console.log('Found technician:', selectedTech);
+      console.log('Technician userId:', selectedTech?.userId);
+      console.log('Technician id:', selectedTech?.id);
+      console.log('================================');
+      
       // Get userId from technician (backend needs userId, not staff.id)
       const technicianUserId = selectedTech?.userId || selectedTech?.id;
       
       if (!technicianUserId) {
+        console.error('❌ Technician Missing userId:', selectedTech);
         alert('Không tìm thấy User ID của kỹ thuật viên');
         return;
       }
+      
+      console.log('✅ Will use userId:', technicianUserId);
 
       // Nếu appointment chưa CONFIRMED, confirm trước
       if (selectedAppointment.status.toUpperCase() !== 'CONFIRMED') {

@@ -98,6 +98,34 @@ class PaymentService {
     const response = await api.put(`/payments/${paymentId}/verify`, { verified });
     return response.data.result || response.data;
   }
+
+  // ========== MOCK PAYMENT METHODS (Thanh toán giả lập) ==========
+
+  // Tạo URL thanh toán giả lập (mock payment)
+  async createMockPaymentUrl(
+    invoiceId: string,
+    amount: number,
+    orderInfo?: string
+  ): Promise<string> {
+    const params = new URLSearchParams({
+      invoiceId,
+      amount: amount.toString(),
+      ...(orderInfo && { orderInfo })
+    });
+
+    const response = await api.post(`/payments/mock/create?${params.toString()}`);
+    return response.data.result || response.data;
+  }
+
+  // Xử lý callback từ mock payment
+  async handleMockCallback(txnRef: string, success: boolean): Promise<PaymentResponse> {
+    const params = new URLSearchParams({
+      txnRef,
+      success: success.toString()
+    });
+    const response = await api.post(`/payments/mock/callback?${params.toString()}`);
+    return response.data.result || response.data;
+  }
 }
 
 export default new PaymentService();

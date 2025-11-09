@@ -79,37 +79,24 @@ const InvoiceManagement: React.FC = () => {
         return;
       }
 
-      // Get service orders to find the one linked to this appointment
-      const serviceOrdersResponse = await serviceOrderService.getAllServiceOrders({
-        customerId: appointment.customerId
-      });
-      
-      console.log('📦 Service orders response:', serviceOrdersResponse);
-      console.log('📦 Response type:', typeof serviceOrdersResponse);
-      console.log('📦 Response keys:', Object.keys(serviceOrdersResponse || {}));
-      
-      // Response format is { serviceOrders: [...], total, page, size }
-      const serviceOrdersList = serviceOrdersResponse.serviceOrders || [];
-      
-      console.log('📋 Service orders list:', serviceOrdersList);
-      console.log('📋 Service orders count:', serviceOrdersList.length);
-      if (serviceOrdersList.length > 0) {
-        console.log('📋 First service order:', JSON.stringify(serviceOrdersList[0], null, 2));
-        console.log('📋 First service order appointmentId:', serviceOrdersList[0]?.appointmentId);
-      }
-      
-      const serviceOrder = serviceOrdersList.find(
-        (so: any) => so.appointmentId === appointmentId
-      );
-      
-      if (!serviceOrder) {
+      // Get service order by appointment ID (direct lookup instead of filtering all orders)
+      let serviceOrder;
+      try {
+        console.log('� Looking for service order by appointmentId:', appointmentId);
+        serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointmentId);
+        console.log('✅ Found service order:', serviceOrder);
+      } catch (error: any) {
         console.error('❌ No service order found for appointment:', appointmentId);
-        console.error('Available service orders:', serviceOrdersList);
-        alert('Không tìm thấy phiếu dịch vụ cho lịch hẹn này. Vui lòng đảm bảo kỹ thuật viên đã hoàn thành công việc!');
+        console.error('Error details:', error.response?.data);
+        
+        // Nếu lỗi 404 = chưa có service order
+        if (error.response?.status === 404) {
+          alert('⚠️ Chưa có phiếu dịch vụ cho lịch hẹn này!\n\nVui lòng đảm bảo:\n1. Đã phân công kỹ thuật viên cho lịch hẹn\n2. Kỹ thuật viên đã hoàn thành công việc');
+        } else {
+          alert(`Lỗi khi tìm phiếu dịch vụ: ${error.response?.data?.message || error.message}`);
+        }
         return;
       }
-
-      console.log('🔍 Found service order:', serviceOrder);
       
       // Use provided amount (backend will check for duplicates)
       const subtotal = amount;
@@ -143,8 +130,11 @@ const InvoiceManagement: React.FC = () => {
 
       alert('✅ Tạo hóa đơn thành công!');
       
-      // Refresh data and switch to invoices tab
-      await loadData();
+      // Refresh both invoices and pending appointments (to remove from list)
+      await loadInvoices();
+      await loadPendingAppointments();
+      
+      // Switch to invoices tab to show newly created invoice
       setViewMode('invoices');
       setShowPriceModal(false);
       setSelectedAppointmentForInvoice(null);
@@ -175,18 +165,37 @@ const InvoiceManagement: React.FC = () => {
     try {
       setLoading(true);
       console.log('📄 Loading invoices...');
+      
       const data = await invoiceService.getAllInvoices();
+      
       console.log('✅ Invoices loaded:', data);
-      console.log('Number of invoices:', data?.length || 0);
-      setInvoices(data || []);
+      console.log('✅ Invoices type:', typeof data);
+      console.log('✅ Is array?', Array.isArray(data));
+      console.log('✅ Number of invoices:', data?.length || 0);
+      
+      // Backend có thể trả về array trực tiếp hoặc object {result: [...]}
+      const invoicesList = Array.isArray(data) ? data : ((data as any)?.result || []);
+      console.log('✅ Processed invoices list:', invoicesList);
+      
+      setInvoices(invoicesList || []);
     } catch (error: any) {
       console.error('❌ Error loading invoices:', error);
-      console.error('Error response:', error?.response?.data);
-      // Không hiển thị alert nếu chỉ là không có quyền hoặc chưa có invoice
-      if (error?.response?.status !== 400 && error?.response?.status !== 404) {
-        console.warn('Could not load invoices, but continuing...');
-      }
+      console.error('❌ Error response:', error?.response);
+      console.error('❌ Error data:', error?.response?.data);
+      console.error('❌ Error status:', error?.response?.status);
+      console.error('❌ Error message:', error?.message);
+      
+      // Set empty array để không crash UI
       setInvoices([]);
+      
+      // Hiển thị thông báo lỗi cụ thể
+      if (error?.response?.status === 400) {
+        console.warn('⚠️ Bad Request khi load invoices. Có thể backend yêu cầu params hoặc permissions');
+      } else if (error?.response?.status === 404) {
+        console.warn('⚠️ Endpoint /invoices không tồn tại');
+      } else if (error?.response?.status === 403) {
+        console.warn('⚠️ Không có quyền xem invoices');
+      }
     } finally {
       setLoading(false);
     }
@@ -208,14 +217,41 @@ const InvoiceManagement: React.FC = () => {
       
       console.log('All appointments loaded:', allAppointments.length);
       
-      // Lọc ra các appointment đã COMPLETED
-      const completedAppointments = allAppointments.filter((apt: Appointment) => 
-        apt.status === 'COMPLETED'
-      );
-      console.log('✅ Completed appointments:', completedAppointments.length);
-      console.log('Completed appointments data:', completedAppointments);
+      // Lấy tất cả invoices để check xem appointment nào đã có invoice
+      let existingInvoices: any[] = [];
+      try {
+        existingInvoices = await invoiceService.getAllInvoices();
+        console.log('📄 Existing invoices loaded:', existingInvoices.length);
+      } catch (err) {
+        console.warn('Could not load invoices for filtering, continuing...');
+      }
       
-      setPendingAppointments(completedAppointments);
+      // Tạo Set các appointmentId đã có invoice (để check nhanh hơn)
+      const appointmentIdsWithInvoice = new Set(
+        existingInvoices
+          .map((inv: any) => inv.appointmentId) // Lấy appointmentId trực tiếp từ invoice response
+          .filter(Boolean) // Loại bỏ undefined/null
+      );
+      
+      console.log('📋 Appointments already have invoices:', appointmentIdsWithInvoice.size);
+      console.log('📋 AppointmentIds with invoice:', Array.from(appointmentIdsWithInvoice));
+      
+      // Lọc ra các appointment đã COMPLETED và CHƯA có invoice
+      const completedAppointmentsWithoutInvoice = allAppointments.filter((apt: Appointment) => {
+        const isCompleted = apt.status === 'COMPLETED';
+        const hasNoInvoice = !appointmentIdsWithInvoice.has(apt.id);
+        
+        if (isCompleted && !hasNoInvoice) {
+          console.log(`⏭️ Skipping appointment ${apt.id.substring(0, 8)} - already has invoice`);
+        }
+        
+        return isCompleted && hasNoInvoice;
+      });
+      
+      console.log('✅ Completed appointments WITHOUT invoice:', completedAppointmentsWithoutInvoice.length);
+      console.log('Completed appointments data:', completedAppointmentsWithoutInvoice);
+      
+      setPendingAppointments(completedAppointmentsWithoutInvoice);
     } catch (error) {
       console.error('❌ Error loading pending appointments:', error);
       console.error('Error details:', error);

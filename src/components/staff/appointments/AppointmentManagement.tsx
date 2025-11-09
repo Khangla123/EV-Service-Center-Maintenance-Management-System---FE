@@ -100,6 +100,16 @@ const AppointmentManagement: React.FC = () => {
       console.log('[STAFF PAGE] Filtered technicians:', techs);
       console.log('[STAFF PAGE] Technician count:', techs.length);
       
+      // Log để debug: kiểm tra xem có userId không
+      if (techs.length > 0) {
+        console.log('[STAFF PAGE] Sample technician data:', {
+          id: techs[0].id,
+          userId: techs[0].userId,
+          fullName: techs[0].fullName,
+          hasUserId: !!techs[0].userId
+        });
+      }
+      
       // Nếu không có technician nào, hiển thị tất cả staff available
       if (techs.length === 0 && allStaff.length > 0) {
         console.warn('[STAFF PAGE] No technicians found, showing all available staff');
@@ -265,6 +275,13 @@ const AppointmentManagement: React.FC = () => {
     }
     
     try {
+      console.log('🔍 DEBUG FIND TECHNICIAN:');
+      console.log('   selectedTechnicianId:', selectedTechnicianId);
+      console.log('   selectedTechnicianId type:', typeof selectedTechnicianId);
+      console.log('   technicians array length:', technicians.length);
+      console.log('   technicians array:', technicians);
+      console.log('   technicians IDs:', technicians.map(t => ({ id: t.id, type: typeof t.id })));
+      
       const selectedTech = technicians.find(t => t.id === selectedTechnicianId);
       
       // Backend cần userId chứ không phải staff.id
@@ -280,13 +297,22 @@ const AppointmentManagement: React.FC = () => {
         staffId: selectedTechnicianId,
         userId: technicianUserId,
         technicianName: selectedTech?.fullName,
-        currentStatus: selectedAppointment.status
+        currentStatus: selectedAppointment.status,
+        note: 'Backend expects userId (from users table), not staffId'
       });
+      
+      if (!selectedTech?.userId) {
+        alert('⚠️ Kỹ thuật viên này thiếu thông tin userId. Vui lòng kiểm tra lại dữ liệu!');
+        console.error('Technician missing userId:', selectedTech);
+        return;
+      }
       
       // TẠO SERVICE ORDER VÀ PHÂN CÔNG TECHNICIAN (FLOW CHUẨN)
       // Backend endpoint: POST /service-orders/from-appointment/{appointmentId}/assign?technicianId=xxx
+      // IMPORTANT: technicianId MUST be userId (from users table), NOT staffId
       // Flow: Appointment CONFIRMED → Phân công thợ → Tạo Service Order → Update appointment status = ASSIGNED
       console.log('🔧 Creating service order and assigning technician...');
+      console.log('   → Sending userId to backend:', selectedTech.userId);
       await serviceOrderService.createServiceOrderFromAppointment(
         selectedAppointment.id,
         technicianUserId  // Dùng userId thay vì staff.id
@@ -309,9 +335,43 @@ const AppointmentManagement: React.FC = () => {
       console.error('Error details:', {
         message: err?.message,
         response: err?.response?.data,
-        status: err?.response?.status
+        status: err?.response?.status,
+        fullError: err
       });
-      const errorMsg = err?.response?.data?.message || err?.message || 'Không thể phân công kỹ thuật viên. Vui lòng thử lại.';
+      
+      // Phân tích lỗi để hiển thị thông báo phù hợp
+      let errorMsg = 'Không thể phân công kỹ thuật viên. Vui lòng thử lại.';
+      
+      if (err?.response?.data) {
+        const errorData = err.response.data;
+        
+        // Nếu có message từ backend
+        if (errorData.message) {
+          errorMsg = errorData.message;
+        }
+        
+        // Nếu là lỗi SQL constraint
+        if (errorData.message && errorData.message.includes('constraint')) {
+          errorMsg = '❌ Lỗi cơ sở dữ liệu: Backend thiếu dữ liệu bắt buộc khi tạo service order.\n\n' +
+                     'Vui lòng kiểm tra:\n' +
+                     '- Appointment phải có đầy đủ thông tin (customer, vehicle, service package)\n' +
+                     '- Technician phải có userId hợp lệ\n\n' +
+                     'Chi tiết lỗi: ' + (errorData.message || 'Unknown error');
+        }
+        
+        // Nếu là lỗi 400 Bad Request
+        if (err.response.status === 400) {
+          errorMsg = '❌ Dữ liệu không hợp lệ:\n' + (errorData.message || errorData.error || 'Vui lòng kiểm tra lại thông tin');
+        }
+        
+        // Nếu là lỗi 404 Not Found
+        if (err.response.status === 404) {
+          errorMsg = '❌ Không tìm thấy dữ liệu:\n' + 
+                     'Appointment hoặc Technician không tồn tại trong hệ thống.\n' +
+                     (errorData.message || '');
+        }
+      }
+      
       alert(`Lỗi: ${errorMsg}`);
     }
   };

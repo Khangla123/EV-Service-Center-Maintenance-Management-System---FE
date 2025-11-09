@@ -7,6 +7,8 @@ import AppointmentTracker from './appointments/AppointmentTracker';
 import MaintenanceHistory from './maintenance/MaintenanceHistory';
 import CostManagement from './cost/CostManagement';
 import OnlinePayment from './payment/OnlinePayment';
+import MockPayment from './payment/MockPayment';
+import PaymentResult from './payment/PaymentResult';
 import VehicleManagement from './vehicles/VehicleManagement';
 import vehicleService from '../../services/vehicleService';
 import appointmentService from '../../services/appointmentService';
@@ -317,6 +319,8 @@ const CustomerDashboard: React.FC = () => {
           <Route path="/history" element={<MaintenanceHistory />} />
           <Route path="/costs" element={<CostManagement />} />
           <Route path="/payment" element={<OnlinePayment />} />
+          <Route path="/payment/mock" element={<MockPayment />} />
+          <Route path="/payment/result" element={<PaymentResult />} />
           
           <Route path="/vehicles" element={<VehicleManagement />} />
           

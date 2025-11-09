@@ -15,6 +15,8 @@ import { TechnicianDashboard } from './components/technician';
 import AppointmentSuccessPage from './pages/AppointmentSuccessPage';
 import MaintenanceReminderPopup from './components/customer/notifications/MaintenanceReminderPopup';
 import PaymentReminderPopup from './components/customer/notifications/PaymentReminderPopup';
+import MockPayment from './components/customer/payment/MockPayment';
+import PaymentResult from './components/customer/payment/PaymentResult';
 import './App.css';
 
 // Protected Route Component
@@ -164,6 +166,10 @@ const AppRoutes: React.FC = () => {
           <SignupPage />
         </Layout>
       } />
+      
+      {/* PUBLIC Mock Payment Routes - NO AUTHENTICATION REQUIRED */}
+      <Route path="/mock-payment" element={<MockPayment />} />
+      <Route path="/mock-payment/result" element={<PaymentResult />} />
       
       {/* Appointment Success Route */}
       <Route path="/appointments/success" element={
