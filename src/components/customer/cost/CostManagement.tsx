@@ -99,6 +99,14 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
         
         console.log('🗺️ Invoice status map:', Array.from(invoiceStatusMap.entries()));
         
+        // Tạo map từ appointmentId -> invoice để lấy finalAmount
+        const invoiceAmountMap = new Map<string, number>();
+        invoices.forEach((invoice: any) => {
+          if (invoice.appointmentId) {
+            invoiceAmountMap.set(invoice.appointmentId, invoice.finalAmount || invoice.totalAmount);
+          }
+        });
+        
         // Transform API data to CostRecord format
         const records: CostRecord[] = data.maintenanceRecords.map((record: MaintenanceRecord) => {
           // Lấy invoice status từ map
@@ -117,6 +125,10 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
           
           console.log(`✅ Final paymentStatus for ${record.appointmentId}: ${paymentStatus}`);
           
+          // Lấy finalAmount từ invoice (bao gồm thuế), fallback về totalAmount từ record
+          const finalAmount = invoiceAmountMap.get(record.appointmentId) || record.totalAmount;
+          console.log(`💰 Final amount for ${record.appointmentId}: ${finalAmount}`);
+          
           return {
             id: record.appointmentId,
             date: new Date(record.serviceDate),
@@ -130,7 +142,7 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
             additionalCosts: 0,
             discount: 0,
             tax: 0,
-            totalCost: record.totalAmount,
+            totalCost: finalAmount,
             paymentMethod: 'N/A',
             paymentStatus: paymentStatus,
             serviceStatus: record.status, // Preserve the service completion status
@@ -143,9 +155,12 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
         setCostRecords(records);
         setFilteredRecords(records);
         
-        // Calculate summary using API data
-        const totalCosts = data.totalCost;
-        const avgCostPerService = data.averageCost;
+        // Calculate summary from records (đã bao gồm finalAmount với thuế)
+        const totalCosts = records.reduce((sum, record) => sum + record.totalCost, 0);
+        const avgCostPerService = records.length > 0 ? totalCosts / records.length : 0;
+        
+        console.log('💵 Recalculated total costs from records:', totalCosts);
+        console.log('💵 Recalculated average cost:', avgCostPerService);
         
         const monthlyCosts: Record<string, number> = {};
         const categoryBreakdown: Record<string, number> = {};
@@ -154,10 +169,15 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
         records.forEach(record => {
           const monthKey = `${record.date.getFullYear()}-${(record.date.getMonth() + 1).toString().padStart(2, '0')}`;
           monthlyCosts[monthKey] = (monthlyCosts[monthKey] || 0) + record.totalCost;
+          console.log(`📆 Record date: ${record.date}, monthKey: ${monthKey}, totalCost: ${record.totalCost}`);
           
           categoryBreakdown[record.category] = (categoryBreakdown[record.category] || 0) + record.totalCost;
           vehicleBreakdown[record.vehicleName] = (vehicleBreakdown[record.vehicleName] || 0) + record.totalCost;
         });
+        
+        console.log('📊 Monthly costs calculated:', monthlyCosts);
+        console.log('📊 Total costs:', totalCosts);
+        console.log('📊 Average cost per service:', avgCostPerService);
         
         setSummary({
           totalCosts,
@@ -350,7 +370,14 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
               <div className="card-content">
                 <div className="card-title">Chi phí tháng này</div>
                 <div className="card-value">
-                  {formatCurrency(summary.monthlyCosts[`${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`] || 0)}
+                  {(() => {
+                    const currentMonthKey = `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`;
+                    const monthlyCost = summary.monthlyCosts[currentMonthKey] || 0;
+                    console.log('💵 Current month key:', currentMonthKey);
+                    console.log('💵 Monthly costs map:', summary.monthlyCosts);
+                    console.log('💵 Current month cost:', monthlyCost);
+                    return formatCurrency(monthlyCost);
+                  })()}
                 </div>
               </div>
             </div>

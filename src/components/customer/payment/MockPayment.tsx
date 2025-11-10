@@ -54,10 +54,10 @@ const MockPayment: React.FC = () => {
         }}>
           <div style={{ fontSize: '48px', marginBottom: '12px' }}>💳</div>
           <h1 style={{ fontSize: '24px', fontWeight: '600', margin: '0 0 8px', letterSpacing: '-0.5px' }}>
-            CỔNG THANH TOÁN DEMO
+            CỔNG THANH TOÁN
           </h1>
           <p style={{ fontSize: '14px', opacity: '0.9', margin: 0 }}>
-            Giả lập thanh toán VNPay
+            Thanh toán VNPay
           </p>
         </div>
 
@@ -86,23 +86,6 @@ const MockPayment: React.FC = () => {
                 <span style={{ fontWeight: '500', color: '#1f2d3d' }}>{orderInfo.substring(0, 20)}...</span>
               </div>
             </div>
-          </div>
-
-          {/* Warning */}
-          <div style={{
-            backgroundColor: '#fff3cd',
-            border: '1px solid #ffc107',
-            borderRadius: '10px',
-            padding: '12px 16px',
-            marginBottom: '24px',
-            fontSize: '13px',
-            color: '#856404',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <span style={{ fontSize: '18px' }}>⚠️</span>
-            <span><strong>DEMO:</strong> Không có tiền thật được giao dịch</span>
           </div>
 
           {/* Buttons */}

@@ -181,7 +181,8 @@
 }
 
 /* Step 2: Services */
-.selected-center-info {
+.selected-center-info,
+.selected-services-info {
   background: #e6fffa;
   border: 1px solid #b2f5ea;
   border-radius: 8px;
@@ -189,7 +190,8 @@
   margin-bottom: 25px;
 }
 
-.selected-center-info h3 {
+.selected-center-info h3,
+.selected-services-info h3 {
   margin: 0;
   color: #234e52;
   font-size: 1.1rem;

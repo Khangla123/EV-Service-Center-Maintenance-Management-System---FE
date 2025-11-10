@@ -12,6 +12,7 @@ import PaymentResult from './payment/PaymentResult';
 import VehicleManagement from './vehicles/VehicleManagement';
 import vehicleService from '../../services/vehicleService';
 import appointmentService from '../../services/appointmentService';
+import invoiceService from '../../services/invoiceService';
 import './CustomerDashboard.css';
 
 const CustomerDashboard: React.FC = () => {
@@ -48,10 +49,12 @@ const CustomerDashboard: React.FC = () => {
       try {
         // Load vehicles
         const vehicles = await vehicleService.getMyVehicles();
+        console.log('🚗 Vehicles loaded:', vehicles);
         setVehicleCount(vehicles.length);
 
         // Load appointments
         const { appointments } = await appointmentService.getMyAppointments();
+        console.log('📅 Appointments loaded:', appointments);
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
@@ -82,21 +85,33 @@ const CustomerDashboard: React.FC = () => {
         const completed = appointments.filter(a => a.status === 'COMPLETED');
         setCompletedCount(completed.length);
         
-        // Calculate monthly cost from completed appointments this month
-        const monthlyTotal = appointments
-          .filter(a => {
-            const aptDate = new Date(a.appointmentDate);
-            return a.status === 'COMPLETED' && 
-                   aptDate.getMonth() === currentMonth && 
-                   aptDate.getFullYear() === currentYear;
-          })
-          .reduce((sum, a) => sum + ((a as any).totalCost || 0), 0);
-        
-        setMonthlyCost(new Intl.NumberFormat('vi-VN', { 
-          style: 'currency', 
-          currency: 'VND',
-          maximumFractionDigits: 0
-        }).format(monthlyTotal));
+        // Load invoices and calculate monthly cost
+        try {
+          const invoices = await invoiceService.getMyInvoices();
+          console.log('💰 Invoices loaded:', invoices);
+          
+          // Calculate monthly cost from paid/completed invoices this month
+          const monthlyTotal = invoices
+            .filter(inv => {
+              if (!inv.paidDate && !inv.issueDate) return false;
+              const invDate = new Date(inv.paidDate || inv.issueDate);
+              return (inv.status === 'PAID' || inv.status === 'PENDING') && 
+                     invDate.getMonth() === currentMonth && 
+                     invDate.getFullYear() === currentYear;
+            })
+            .reduce((sum, inv) => sum + (inv.finalAmount || inv.totalAmount || 0), 0);
+          
+          console.log('💵 Monthly total:', monthlyTotal);
+          
+          setMonthlyCost(monthlyTotal > 0 ? new Intl.NumberFormat('vi-VN', { 
+            style: 'currency', 
+            currency: 'VND',
+            maximumFractionDigits: 0
+          }).format(monthlyTotal) : '0 ₫');
+        } catch (error) {
+          console.error('Error loading invoices:', error);
+          setMonthlyCost('0 ₫');
+        }
         
         // Recent activities (last 5 completed appointments)
         const recent = appointments

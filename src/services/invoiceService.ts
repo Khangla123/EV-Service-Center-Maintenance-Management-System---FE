@@ -3,6 +3,7 @@ import api from './api';
 export interface InvoiceResponse {
   id: string;
   serviceOrderId: string;
+  appointmentId?: string;
   customerId: string;
   customerName?: string;
   vehicleId?: string;

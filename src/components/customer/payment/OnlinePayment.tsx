@@ -185,7 +185,7 @@ const OnlinePayment: React.FC = () => {
               <div key={invoice.id} className="invoice-card">
                 <div className="invoice-header">
                   <div className="invoice-id">
-                    <strong>Mã hóa đơn:</strong> {invoice.id.substring(0, 8)}...
+                    <strong>Mã hóa đơn:</strong> {invoice.invoiceNumber || invoice.id.substring(0, 8)}
                   </div>
                   <div className={`invoice-status ${invoice.status.toLowerCase()}`}>
                     {invoice.status === 'PENDING' ? 'Chờ thanh toán' :
@@ -258,14 +258,6 @@ const OnlinePayment: React.FC = () => {
         )}
       </div>
 
-      <div className="payment-footer">
-        <div className="security-info">
-          <span> Giao dịch được bảo mật bằng SSL</span>
-        </div>
-        <div className="payment-note">
-          <p>* Bạn sẽ được chuyển đến trang thanh toán VNPay để hoàn tất giao dịch</p>
-        </div>
-      </div>
     </div>
   );
 };

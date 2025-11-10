@@ -253,12 +253,23 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
   };
 
   const handleServiceSelect = (service: ServiceType) => {
+    console.log('🎯 Service clicked:', service.name);
     setSelectedServices(prev => {
-      if (prev.some(s => s.id === service.id)) {
-        return prev.filter(s => s.id !== service.id);
+      const isAlreadySelected = prev.some(s => s.id === service.id);
+      console.log('📦 Currently selected services:', prev.length);
+      console.log('📋 Is already selected?', isAlreadySelected);
+      
+      let newServices;
+      if (isAlreadySelected) {
+        newServices = prev.filter(s => s.id !== service.id);
+        console.log('➖ Removing service. New count:', newServices.length);
       } else {
-        return [...prev, service];
+        newServices = [...prev, service];
+        console.log('➕ Adding service. New count:', newServices.length);
       }
+      
+      console.log('✅ Final selected services:', newServices.map(s => s.name));
+      return newServices;
     });
   };
 
@@ -440,12 +451,16 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
             {selectedServices.length > 0 && (
               <div className="selection-summary">
                 <h3>Tóm tắt dịch vụ đã chọn:</h3>
+                <p style={{color: 'blue', fontSize: '12px'}}>DEBUG: Đang hiển thị {selectedServices.length} dịch vụ</p>
                 <ul>
-                  {selectedServices.map(service => (
-                    <li key={service.id}>
-                      {service.name} - {formatCurrency((service as any).price || service.basePrice || 0)}
-                    </li>
-                  ))}
+                  {selectedServices.map((service, index) => {
+                    console.log(`📋 [Step 1] Rendering service ${index + 1}:`, service.name);
+                    return (
+                      <li key={service.id}>
+                        {service.name} - {formatCurrency((service as any).price || service.basePrice || 0)}
+                      </li>
+                    );
+                  })}
                 </ul>
                 <div className="total">
                   <strong>
@@ -473,8 +488,24 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         {step === 2 && (
           <div className="step-content">
             <h2>Chọn trung tâm dịch vụ</h2>
-            <div className="selected-services-info">
-              <h3>Dịch vụ đã chọn: {selectedServices.map(s => s.name).join(', ')}</h3>
+            <div className="selection-summary">
+              <h3>Dịch vụ đã chọn:</h3>
+              <p style={{color: 'blue', fontSize: '12px'}}>DEBUG: Đang hiển thị {selectedServices.length} dịch vụ</p>
+              <ul>
+                {selectedServices.map((service, index) => {
+                  console.log(`📋 [Step 2] Rendering service ${index + 1}:`, service.name);
+                  return (
+                    <li key={service.id}>
+                      {service.name} - {formatCurrency((service as any).price || service.basePrice || 0)}
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="total">
+                <strong>
+                  Tổng: {formatCurrency(getTotalPrice())} - {formatDuration(getTotalDuration())}
+                </strong>
+              </div>
             </div>
             <div className="centers-grid">
               {serviceCenters.map(center => (
@@ -522,6 +553,26 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         {step === 3 && (
           <div className="step-content">
             <h2>Chọn xe</h2>
+            
+            <div className="selection-summary">
+              <h3>Dịch vụ đã chọn:</h3>
+              <p style={{color: 'blue', fontSize: '12px'}}>DEBUG: Đang hiển thị {selectedServices.length} dịch vụ</p>
+              <ul>
+                {selectedServices.map((service, index) => {
+                  console.log(`📋 [Step 3] Rendering service ${index + 1}:`, service.name);
+                  return (
+                    <li key={service.id}>
+                      {service.name} - {formatCurrency((service as any).price || service.basePrice || 0)}
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="total">
+                <strong>
+                  Tổng: {formatCurrency(getTotalPrice())} - {formatDuration(getTotalDuration())}
+                </strong>
+              </div>
+            </div>
             
             {vehicles.length === 0 ? (
               <div className="no-vehicles-message">

@@ -30,6 +30,7 @@ const InvoiceManagement: React.FC = () => {
   const [packagePrice, setPackagePrice] = useState<number>(0);
   const [additionalFee, setAdditionalFee] = useState<number>(0);
   const [loadingPackagePrice, setLoadingPackagePrice] = useState(false);
+  const [partsUsed, setPartsUsed] = useState<Array<{partCode: string; partName: string; quantity: number; unit: string}>>([]);
 
   useEffect(() => {
     console.log('🎯 InvoiceManagement mounted, viewMode:', viewMode);
@@ -67,10 +68,35 @@ const InvoiceManagement: React.FC = () => {
           setPackagePrice(servicePackage.price);
           setInvoiceAmount(servicePackage.price); // Set initial amount = package price
           console.log('📦 Loaded service package:', servicePackage);
+          
+          // Load parts used from service order
+          try {
+            const serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointmentId);
+            if (serviceOrder && serviceOrder.partsUsed && serviceOrder.partsUsed.length > 0) {
+              // Parse parts from format: "partCode|partName|quantity|unit"
+              const parts = serviceOrder.partsUsed.map(partStr => {
+                const [partCode, partName, quantity, unit] = partStr.split('|');
+                return {
+                  partCode,
+                  partName,
+                  quantity: parseInt(quantity) || 0,
+                  unit
+                };
+              });
+              setPartsUsed(parts);
+              console.log('🔧 Loaded parts used:', parts);
+            } else {
+              setPartsUsed([]);
+            }
+          } catch (error) {
+            console.error('Error loading parts:', error);
+            setPartsUsed([]);
+          }
         } catch (error) {
           console.error('Error loading service package:', error);
           setPackagePrice(0);
           setInvoiceAmount(0);
+          setPartsUsed([]);
         } finally {
           setLoadingPackagePrice(false);
         }
@@ -732,6 +758,7 @@ const InvoiceManagement: React.FC = () => {
           setInvoiceAmount(0);
           setPackagePrice(0);
           setAdditionalFee(0);
+          setPartsUsed([]);
         }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -744,6 +771,7 @@ const InvoiceManagement: React.FC = () => {
                   setInvoiceAmount(0);
                   setPackagePrice(0);
                   setAdditionalFee(0);
+                  setPartsUsed([]);
                 }}
               >
                 ×
@@ -784,6 +812,36 @@ const InvoiceManagement: React.FC = () => {
                   </div>
                   
                   {/* Additional Fee Input */}
+                  {/* Parts Used Section */}
+                  {partsUsed.length > 0 && (
+                    <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                      <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Wrench size={16} />
+                        Phụ tùng đã sử dụng
+                      </h4>
+                      <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <th style={{ padding: '8px', textAlign: 'left', fontWeight: '600', color: '#64748b' }}>Mã PT</th>
+                            <th style={{ padding: '8px', textAlign: 'left', fontWeight: '600', color: '#64748b' }}>Tên phụ tùng</th>
+                            <th style={{ padding: '8px', textAlign: 'right', fontWeight: '600', color: '#64748b' }}>Số lượng</th>
+                            <th style={{ padding: '8px', textAlign: 'left', fontWeight: '600', color: '#64748b' }}>Đơn vị</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {partsUsed.map((part, index) => (
+                            <tr key={index} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '8px', color: '#667eea', fontWeight: '600' }}>{part.partCode}</td>
+                              <td style={{ padding: '8px', color: '#1e293b' }}>{part.partName}</td>
+                              <td style={{ padding: '8px', textAlign: 'right', color: '#1e293b', fontWeight: '600' }}>{part.quantity}</td>
+                              <td style={{ padding: '8px', color: '#64748b' }}>{part.unit}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
                   <div style={{ marginBottom: '12px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: '#475569' }}>
                       Phí phát sinh (nếu có):

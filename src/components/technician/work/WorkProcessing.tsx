@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Play, Upload, Plus, Trash2, Clock, AlertCircle, CheckCircle2, X, Package, Car, User, Phone } from 'lucide-react';
+import { Play, Upload, Plus, Trash2, Clock, AlertCircle, CheckCircle2, X, Package, Car, User, Phone, Search } from 'lucide-react';
 import './WorkProcessing.css';
 import appointmentService, { Appointment } from '../../../services/appointmentService';
 import serviceOrderService from '../../../services/serviceOrderService';
 import staffService from '../../../services/staffService';
+import partService, { PartResponse } from '../../../services/partService';
 
 type ChecklistItem = {
   id: number;
@@ -56,10 +57,44 @@ const WorkProcessing: React.FC = () => {
   const [partsUsed, setPartsUsed] = useState<PartUsed[]>([]);
   const [showPartForm, setShowPartForm] = useState(false);
   const [newPart, setNewPart] = useState({ partCode: '', partName: '', quantity: 1, unit: 'cái' });
+  const [allParts, setAllParts] = useState<PartResponse[]>([]);
+  const [filteredParts, setFilteredParts] = useState<PartResponse[]>([]);
+  const [partSearchQuery, setPartSearchQuery] = useState('');
+  const [selectedPart, setSelectedPart] = useState<PartResponse | null>(null);
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
   const [suggestion, setSuggestion] = useState<ServiceSuggestion>({ service: '', reason: '', estimatedCost: '' });
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [completionNotes, setCompletionNotes] = useState('');
+
+  // Load danh sách phụ tùng khi component mount
+  useEffect(() => {
+    const loadParts = async () => {
+      try {
+        const parts = await partService.getAllParts();
+        console.log('🔧 Loaded parts:', parts);
+        setAllParts(parts);
+      } catch (error) {
+        console.error('Error loading parts:', error);
+      }
+    };
+    
+    loadParts();
+  }, []);
+
+  // Filter parts khi search query thay đổi
+  useEffect(() => {
+    if (partSearchQuery.trim() === '') {
+      setFilteredParts([]);
+    } else {
+      const query = partSearchQuery.toLowerCase();
+      const filtered = allParts.filter(part => 
+        part.name.toLowerCase().includes(query) || 
+        part.partCode.toLowerCase().includes(query) ||
+        part.category.toLowerCase().includes(query)
+      );
+      setFilteredParts(filtered.slice(0, 10)); // Giới hạn 10 kết quả
+    }
+  }, [partSearchQuery, allParts]);
 
   // Lock/unlock body scroll khi modal mở/đóng
   useEffect(() => {
@@ -239,14 +274,41 @@ const WorkProcessing: React.FC = () => {
     setIssues(prev => prev.filter(issue => issue.id !== id));
   };
 
+  const selectPart = (part: PartResponse) => {
+    setSelectedPart(part);
+    setPartSearchQuery(part.name);
+    setFilteredParts([]);
+    setNewPart({
+      partCode: part.partCode,
+      partName: part.name,
+      quantity: 1,
+      unit: 'cái'
+    });
+  };
+
   const addPart = () => {
-    if (newPart.partCode && newPart.partName) {
+    if (selectedPart && newPart.quantity > 0) {
+      // Kiểm tra số lượng tồn kho
+      if (newPart.quantity > selectedPart.stockQuantity) {
+        alert(`Không đủ tồn kho! Chỉ còn ${selectedPart.stockQuantity} ${newPart.unit}`);
+        return;
+      }
+      
       setPartsUsed(prev => [...prev, {
         id: `PART-${Date.now()}`,
-        ...newPart
+        partCode: newPart.partCode,
+        partName: newPart.partName,
+        quantity: newPart.quantity,
+        unit: newPart.unit
       }]);
+      
+      // Reset form
       setNewPart({ partCode: '', partName: '', quantity: 1, unit: 'cái' });
+      setPartSearchQuery('');
+      setSelectedPart(null);
       setShowPartForm(false);
+    } else {
+      alert('Vui lòng chọn phụ tùng và nhập số lượng!');
     }
   };
 
@@ -275,7 +337,7 @@ const WorkProcessing: React.FC = () => {
       
       console.log('Current technician staffId:', technicianStaffId);
       
-      // Bước 2: Tạo Service Order từ Appointment (nếu chưa có)
+      // Bước 2: Tạo/Cập nhật Service Order từ Appointment
       // Backend sẽ dùng service order này để tạo invoice
       if (technicianStaffId) {
         try {
@@ -295,6 +357,34 @@ const WorkProcessing: React.FC = () => {
             console.error('⚠️ Unexpected error creating service order:', errorMsg);
           }
         }
+        
+        // Bước 2.5: Cập nhật thông tin phụ tùng vào service order
+        if (partsUsed.length > 0) {
+          try {
+            console.log('🔧 Updating parts used in service order...');
+            const serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointment.id);
+            
+            if (serviceOrder) {
+              // Lưu danh sách phụ tùng dưới dạng JSON string
+              const partsData = partsUsed.map(part => ({
+                partCode: part.partCode,
+                partName: part.partName,
+                quantity: part.quantity,
+                unit: part.unit
+              }));
+              
+              await serviceOrderService.updateServiceOrder(serviceOrder.id, {
+                partsUsed: partsData.map(p => `${p.partCode}|${p.partName}|${p.quantity}|${p.unit}`),
+                notes: completionNotes
+              });
+              
+              console.log('✅ Parts used updated in service order:', partsData);
+            }
+          } catch (partsError) {
+            console.error('⚠️ Error updating parts in service order:', partsError);
+            // Không block việc hoàn thành, chỉ log warning
+          }
+        }
       } else {
         console.warn('⚠️ No technician ID found, skipping service order creation');
       }
@@ -308,7 +398,7 @@ const WorkProcessing: React.FC = () => {
       });
       
       console.log('🎉 Work completed successfully!');
-      alert('Công việc đã được hoàn thành! Hóa đơn sẽ được tạo tự động.');
+      alert('Công việc hoàn thành');
       setShowCompleteModal(false);
       navigate('/technician/tasks');
     } catch (error) {
@@ -624,36 +714,97 @@ const WorkProcessing: React.FC = () => {
 
           {showPartForm && (
             <div className="part-form">
-              <div className="form-grid">
-                <input
-                  type="text"
-                  placeholder="Mã phụ tùng"
-                  value={newPart.partCode}
-                  onChange={(e) => setNewPart({ ...newPart, partCode: e.target.value })}
-                />
-                <input
-                  type="text"
-                  placeholder="Tên phụ tùng"
-                  value={newPart.partName}
-                  onChange={(e) => setNewPart({ ...newPart, partName: e.target.value })}
-                />
-                <input
-                  type="number"
-                  placeholder="Số lượng"
-                  min="1"
-                  value={newPart.quantity}
-                  onChange={(e) => setNewPart({ ...newPart, quantity: parseInt(e.target.value) || 1 })}
-                />
-                <input
-                  type="text"
-                  placeholder="Đơn vị"
-                  value={newPart.unit}
-                  onChange={(e) => setNewPart({ ...newPart, unit: e.target.value })}
-                />
+              <div className="part-search-container">
+                <div className="search-input-wrapper">
+                  <Search size={18} />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm phụ tùng theo tên, mã hoặc danh mục..."
+                    value={partSearchQuery}
+                    onChange={(e) => setPartSearchQuery(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                
+                {filteredParts.length > 0 && (
+                  <div className="parts-dropdown">
+                    {filteredParts.map(part => (
+                      <div 
+                        key={part.id} 
+                        className="part-option"
+                        onClick={() => selectPart(part)}
+                      >
+                        <div className="part-option-header">
+                          <span className="part-option-code">{part.partCode}</span>
+                          <span className="part-option-name">{part.name}</span>
+                        </div>
+                        <div className="part-option-details">
+                          <span className="part-option-category">{part.category}</span>
+                          <span className="part-option-stock">
+                            Tồn kho: <strong>{part.stockQuantity}</strong>
+                          </span>
+                          <span className="part-option-price">
+                            {new Intl.NumberFormat('vi-VN', { 
+                              style: 'currency', 
+                              currency: 'VND' 
+                            }).format(part.unitPrice)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              {selectedPart && (
+                <div className="selected-part-info">
+                  <div className="selected-part-header">
+                    <Package size={18} />
+                    <strong>{selectedPart.name}</strong>
+                    <span className="selected-part-code">({selectedPart.partCode})</span>
+                  </div>
+                  <div className="selected-part-details">
+                    <span>Danh mục: {selectedPart.category}</span>
+                    <span>Giá: {new Intl.NumberFormat('vi-VN', { 
+                      style: 'currency', 
+                      currency: 'VND' 
+                    }).format(selectedPart.unitPrice)}</span>
+                    <span>Tồn kho: {selectedPart.stockQuantity}</span>
+                  </div>
+                  <div className="quantity-input-group">
+                    <label>Số lượng sử dụng:</label>
+                    <input
+                      type="number"
+                      placeholder="Số lượng"
+                      min="1"
+                      max={selectedPart.stockQuantity}
+                      value={newPart.quantity}
+                      onChange={(e) => setNewPart({ ...newPart, quantity: parseInt(e.target.value) || 1 })}
+                    />
+                    <span className="quantity-max">/ {selectedPart.stockQuantity} có sẵn</span>
+                  </div>
+                </div>
+              )}
+
               <div className="form-actions">
-                <button className="btn-secondary" onClick={() => setShowPartForm(false)}>Hủy</button>
-                <button className="btn-primary" onClick={addPart}>Thêm</button>
+                <button 
+                  className="btn-secondary" 
+                  onClick={() => {
+                    setShowPartForm(false);
+                    setPartSearchQuery('');
+                    setSelectedPart(null);
+                    setFilteredParts([]);
+                  }}
+                >
+                  Hủy
+                </button>
+                <button 
+                  className="btn-primary" 
+                  onClick={addPart}
+                  disabled={!selectedPart}
+                >
+                  Thêm
+                </button>
               </div>
             </div>
           )}
@@ -688,7 +839,13 @@ const WorkProcessing: React.FC = () => {
               </table>
             </div>
           ) : (
-            <p className="empty-message">Chưa sử dụng phụ tùng nào</p>
+            <div className="empty-message">
+              <Package size={32} style={{ opacity: 0.5, marginBottom: '8px' }} />
+              <p style={{ margin: 0 }}>Chưa có phụ tùng nào được sử dụng</p>
+              <p style={{ margin: '4px 0 0', fontSize: '13px', opacity: 0.8 }}>
+                Nhấn "Thêm phụ tùng" để thêm phụ tùng đã sử dụng trong quá trình bảo dưỡng
+              </p>
+            </div>
           )}
         </section>
 
@@ -789,6 +946,26 @@ const WorkProcessing: React.FC = () => {
                   <span className="label">Phụ tùng đã thay:</span>
                   <span className="value">{partsUsed.length}</span>
                 </div>
+                {partsUsed.length > 0 && (
+                  <div className="summary-item full-width" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                    <span className="label">Chi tiết phụ tùng:</span>
+                    <div style={{ width: '100%', backgroundColor: '#f9fafb', borderRadius: '8px', padding: '12px' }}>
+                      {partsUsed.map((part, index) => (
+                        <div key={part.id} style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          padding: '6px 0',
+                          borderBottom: index < partsUsed.length - 1 ? '1px solid #e5e7eb' : 'none',
+                          fontSize: '13px'
+                        }}>
+                          <span style={{ fontWeight: '500', color: '#667eea' }}>{part.partCode}</span>
+                          <span style={{ flex: 1, marginLeft: '12px', color: '#374151' }}>{part.partName}</span>
+                          <span style={{ fontWeight: '600', color: '#1a1a1a' }}>x{part.quantity} {part.unit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="summary-item">
                   <span className="label">Thời gian thực tế:</span>
                   <span className="value">{currentTime}</span>
