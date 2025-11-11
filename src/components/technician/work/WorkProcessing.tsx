@@ -65,6 +65,9 @@ const WorkProcessing: React.FC = () => {
   const [suggestion, setSuggestion] = useState<ServiceSuggestion>({ service: '', reason: '', estimatedCost: '' });
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [completionNotes, setCompletionNotes] = useState('');
+  const [showNextTaskModal, setShowNextTaskModal] = useState(false);
+  const [nextTask, setNextTask] = useState<Appointment | null>(null);
+  const [showContinueWorkModal, setShowContinueWorkModal] = useState(false);
 
   // Load danh sách phụ tùng khi component mount
   useEffect(() => {
@@ -98,7 +101,7 @@ const WorkProcessing: React.FC = () => {
 
   // Lock/unlock body scroll khi modal mở/đóng
   useEffect(() => {
-    if (showCompleteModal || showIssueForm || showPartForm || showSuggestionForm) {
+    if (showCompleteModal || showIssueForm || showPartForm || showSuggestionForm || showContinueWorkModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -107,7 +110,7 @@ const WorkProcessing: React.FC = () => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [showCompleteModal, showIssueForm, showPartForm, showSuggestionForm]);
+  }, [showCompleteModal, showIssueForm, showPartForm, showSuggestionForm, showContinueWorkModal]);
 
   // Load appointments for current technician
   useEffect(() => {
@@ -139,32 +142,41 @@ const WorkProcessing: React.FC = () => {
         const allAppointments = await appointmentService.getMyTasks(myStaff.id);
         console.log('✓ Loaded appointments:', allAppointments);
         
-        // Filter only IN_PROGRESS appointments (đang xử lý thực sự)
-        const inProgressAppts = allAppointments.filter(
-          apt => apt.status === 'IN_PROGRESS'
-        );
-        console.log('✓ In-progress appointments:', inProgressAppts.length);
-        
-        // ⚠️ CHỈ CHO PHÉP 1 CÔNG VIỆC DUY NHẤT
-        // Nếu có nhiều hơn 1 IN_PROGRESS, chỉ lấy công việc đầu tiên
-        const currentWork = inProgressAppts.length > 0 ? [inProgressAppts[0]] : [];
-        
-        if (inProgressAppts.length > 1) {
-          console.warn(`⚠️ Technician có ${inProgressAppts.length} công việc IN_PROGRESS! Chỉ hiển thị công việc đầu tiên.`);
-        }
-        
-        setAppointments(currentWork);
-        
-        // If appointmentId provided, select that one (if it matches)
-        if (appointmentId && currentWork.length > 0 && currentWork[0].id === appointmentId) {
-          setSelectedAppointment(currentWork[0]);
-          setAppointment(currentWork[0]);
-          await initializeChecklist(currentWork[0]);
-        } else if (currentWork.length > 0) {
-          // Auto-select the only allowed appointment
-          setSelectedAppointment(currentWork[0]);
-          setAppointment(currentWork[0]);
-          await initializeChecklist(currentWork[0]);
+        // Nếu có appointmentId từ URL, tìm appointment đó
+        if (appointmentId) {
+          const targetAppointment = allAppointments.find(apt => apt.id === appointmentId);
+          
+          if (targetAppointment) {
+            console.log('✓ Found target appointment:', targetAppointment.id, 'Status:', targetAppointment.status);
+            setAppointments([targetAppointment]);
+            setSelectedAppointment(targetAppointment);
+            setAppointment(targetAppointment);
+            await initializeChecklist(targetAppointment);
+          } else {
+            console.warn('⚠️ Appointment not found:', appointmentId);
+            setAppointments([]);
+          }
+        } else {
+          // Không có appointmentId, lọc chỉ IN_PROGRESS appointments
+          const inProgressAppts = allAppointments.filter(
+            apt => apt.status === 'IN_PROGRESS'
+          );
+          console.log('✓ In-progress appointments:', inProgressAppts.length);
+          
+          // ⚠️ CHỈ CHO PHÉP 1 CÔNG VIỆC DUY NHẤT
+          const currentWork = inProgressAppts.length > 0 ? [inProgressAppts[0]] : [];
+          
+          if (inProgressAppts.length > 1) {
+            console.warn(`⚠️ Technician có ${inProgressAppts.length} công việc IN_PROGRESS! Chỉ hiển thị công việc đầu tiên.`);
+          }
+          
+          setAppointments(currentWork);
+          
+          if (currentWork.length > 0) {
+            setSelectedAppointment(currentWork[0]);
+            setAppointment(currentWork[0]);
+            await initializeChecklist(currentWork[0]);
+          }
         }
         
       } catch (error) {
@@ -179,26 +191,60 @@ const WorkProcessing: React.FC = () => {
 
   const initializeChecklist = async (appt: Appointment) => {
     try {
-      // Load checklist from service_order
+      // Load checklist AND issues from service_order
       const serviceOrderModule = await import('../../../services/serviceOrderService');
       const serviceOrder = await serviceOrderModule.default.getServiceOrderByAppointmentId(appt.id);
       
+      // Load checklist
       if (serviceOrder.checklist) {
         const parsed = serviceOrderModule.default.parseChecklist(serviceOrder.checklist);
-        if (parsed && parsed.items) {
+        if (parsed && Array.isArray(parsed)) {
           // Convert checklist items from database to component format
-          const loadedChecklist: ChecklistItem[] = parsed.items.map((item: any, index: number) => ({
+          const loadedChecklist: ChecklistItem[] = parsed.map((item: any, index: number) => ({
             id: index + 1,
             title: `${item.title}${item.description ? ` (${item.description})` : ''}`,
-            done: item.isCompleted || false
+            done: false // Luôn bắt đầu với trạng thái chưa hoàn thành
           }));
-          console.log('✓ Loaded checklist from service order:', loadedChecklist.length, 'items');
+          console.log('✅ Loaded checklist from service order:', loadedChecklist.length, 'items');
+          console.log('📋 Checklist:', loadedChecklist);
           setChecklist(loadedChecklist);
-          return;
         }
       }
+      
+      // Load issues
+      console.log('===========================');
+      console.log('🔍 LOADING ISSUES FROM DATABASE');
+      console.log('Service Order:', serviceOrder.id);
+      console.log('Raw issues data:', serviceOrder.issues);
+      
+      if (serviceOrder.issues) {
+        const parsedIssues = serviceOrderModule.default.parseIssues(serviceOrder.issues);
+        console.log('Parsed issues:', parsedIssues);
+        
+        if (parsedIssues && Array.isArray(parsedIssues)) {
+          // Convert issues from database format to component format
+          const loadedIssues: Issue[] = parsedIssues.map((item: any) => ({
+            id: item.id || `ISS-${Date.now()}`,
+            description: item.issue || item.description,
+            severity: item.severity || 'medium',
+            images: []
+          }));
+          console.log('✅ Loaded issues from service order:', loadedIssues.length, 'issues');
+          console.log('📋 Issues:', loadedIssues);
+          setIssues(loadedIssues);
+        } else {
+          console.log('⚠️ Parsed issues is not an array');
+        }
+      } else {
+        console.log('⚠️ No issues data in service order');
+      }
+      console.log('===========================');
+      
+      if (!serviceOrder.checklist && !serviceOrder.issues) {
+        console.log('⚠️ No checklist or issues found in service order');
+      }
     } catch (error) {
-      console.warn('Could not load checklist from service order:', error);
+      console.warn('⚠️ Could not load data from service order:', error);
     }
     
     // Fallback to default checklist if service order not found
@@ -257,21 +303,48 @@ const WorkProcessing: React.FC = () => {
     setChecklist(prev => prev.filter(item => item.id !== id));
   };
 
-  const addIssue = () => {
-    if (newIssue.description.trim()) {
-      setIssues(prev => [...prev, {
+  const addIssue = async () => {
+    if (newIssue.description.trim() && appointment) {
+      const newIssueItem = {
         id: `ISS-${Date.now()}`,
-        description: newIssue.description,
+        issue: newIssue.description,
         severity: newIssue.severity,
-        images: []
-      }]);
+        recommendation: '', // Có thể thêm field này vào form nếu cần
+        detectedAt: new Date().toISOString()
+      };
+      
+      const updatedIssues = [...issues, newIssueItem];
+      setIssues(updatedIssues as any);
+      
+      // Save to backend
+      try {
+        const serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointment.id);
+        await serviceOrderService.updateIssues(serviceOrder.id, updatedIssues);
+        console.log('✅ Issues saved to database');
+      } catch (error) {
+        console.error('❌ Error saving issues:', error);
+        alert('Lỗi khi lưu vấn đề. Vui lòng thử lại!');
+      }
+      
       setNewIssue({ description: '', severity: 'medium' });
       setShowIssueForm(false);
     }
   };
 
-  const removeIssue = (id: string) => {
-    setIssues(prev => prev.filter(issue => issue.id !== id));
+  const removeIssue = async (id: string) => {
+    const updatedIssues = issues.filter(issue => issue.id !== id);
+    setIssues(updatedIssues);
+    
+    // Save to backend
+    if (appointment) {
+      try {
+        const serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointment.id);
+        await serviceOrderService.updateIssues(serviceOrder.id, updatedIssues);
+        console.log('✅ Issues updated in database');
+      } catch (error) {
+        console.error('❌ Error updating issues:', error);
+      }
+    }
   };
 
   const selectPart = (part: PartResponse) => {
@@ -321,6 +394,27 @@ const WorkProcessing: React.FC = () => {
     alert('Đã gửi đề xuất đến Staff!');
     setSuggestion({ service: '', reason: '', estimatedCost: '' });
     setShowSuggestionForm(false);
+  };
+
+  const findNextAvailableTask = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const allStaff = await staffService.getAllStaff();
+      const myStaff = allStaff.find(s => s.userId === user.id);
+      
+      if (myStaff) {
+        const tasks = await appointmentService.getMyTasks(myStaff.id);
+        // Tìm task tiếp theo có status ASSIGNED (chưa bắt đầu)
+        const nextAvailableTask = tasks.find((task: Appointment) => 
+          task.status === 'ASSIGNED' && task.id !== appointment?.id
+        );
+        return nextAvailableTask || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error finding next task:', error);
+      return null;
+    }
   };
 
   const completeWork = async () => {
@@ -398,13 +492,56 @@ const WorkProcessing: React.FC = () => {
       });
       
       console.log('🎉 Work completed successfully!');
-      alert('Công việc hoàn thành');
       setShowCompleteModal(false);
-      navigate('/technician/tasks');
+      
+      // Tìm công việc tiếp theo
+      const nextAvailableTask = await findNextAvailableTask();
+      
+      if (nextAvailableTask) {
+        // Có công việc tiếp theo - hiển thị modal hỏi có muốn tiếp tục không
+        setNextTask(nextAvailableTask);
+        setShowContinueWorkModal(true);
+      } else {
+        // Không có công việc tiếp theo - về trang tasks
+        alert('✅ Công việc hoàn thành! Không có công việc tiếp theo.');
+        navigate('/technician/tasks');
+      }
     } catch (error) {
       console.error('❌ Error completing work:', error);
       alert('Lỗi khi hoàn thành công việc. Vui lòng thử lại!');
     }
+  };
+
+  const handleContinueWork = () => {
+    if (nextTask) {
+      setShowContinueWorkModal(false);
+      navigate(`/technician/work-processing/${nextTask.id}`, { replace: true });
+    }
+  };
+
+  const handleFinishWork = () => {
+    setShowContinueWorkModal(false);
+    navigate('/technician/tasks');
+  };
+
+  const handleStartNextTask = () => {
+    if (nextTask) {
+      setShowNextTaskModal(false);
+      navigate(`/technician/work-processing/${nextTask.id}`);
+      // Reload trang để load công việc mới
+      window.location.reload();
+    }
+  };
+
+  const handleBackToTasks = () => {
+    setShowNextTaskModal(false);
+    // Navigate với state để highlight task tiếp theo
+    navigate('/technician/tasks', { 
+      state: { 
+        highlightTaskId: nextTask?.id,
+        message: 'Công việc đã hoàn thành!'
+      } 
+    });
   };
 
   const getSeverityBadge = (severity: string) => {
@@ -994,6 +1131,119 @@ const WorkProcessing: React.FC = () => {
               <button className="btn-secondary" onClick={() => setShowCompleteModal(false)}>Hủy</button>
               <button className="btn-complete" onClick={completeWork}>
                 <CheckCircle2 size={16} />
+                Hoàn thành
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Xác nhận tiếp tục làm việc */}
+      {showContinueWorkModal && nextTask && (
+        <div className="modal-overlay">
+          <div className="modal-content continue-work-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>✅ Công việc hoàn thành!</h3>
+            </div>
+            <div className="modal-body">
+              <div className="success-message">
+                <CheckCircle2 size={56} style={{ color: '#10b981' }} />
+                <p className="success-title">Xuất sắc! Bạn đã hoàn thành công việc.</p>
+              </div>
+
+              <div className="continue-question">
+                <h4>🔔 Có công việc tiếp theo đang chờ</h4>
+                <p>Bạn có muốn tiếp tục làm việc không?</p>
+              </div>
+
+              <div className="next-task-preview">
+                <div className="preview-label">Công việc tiếp theo:</div>
+                <div className="preview-info">
+                  <div className="info-row">
+                    <Car size={18} />
+                    <span>{nextTask.vehicleLicensePlate}</span>
+                    <span className="text-muted">{nextTask.vehicleModel}</span>
+                  </div>
+                  <div className="info-row">
+                    <User size={18} />
+                    <span>{nextTask.customerName}</span>
+                  </div>
+                  <div className="info-row">
+                    <Package size={18} />
+                    <span>{nextTask.servicePackageName}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-finish" onClick={handleFinishWork}>
+                Kết thúc làm việc
+              </button>
+              <button className="btn-continue" onClick={handleContinueWork}>
+                <Play size={18} />
+                Tiếp tục làm việc
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Công việc tiếp theo */}
+      {showNextTaskModal && nextTask && (
+        <div className="modal-overlay" onClick={() => setShowNextTaskModal(false)}>
+          <div className="modal-content next-task-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>🎉 Công việc hoàn thành!</h3>
+              <button className="close-btn" onClick={() => setShowNextTaskModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="success-message">
+                <CheckCircle2 size={48} style={{ color: '#10b981' }} />
+                <p>Bạn đã hoàn thành xuất sắc công việc này!</p>
+              </div>
+
+              <div className="next-task-info">
+                <h4>📋 Công việc tiếp theo đang chờ:</h4>
+                <div className="task-card-preview">
+                  <div className="task-header">
+                    <span className="task-code">#{nextTask.id.slice(0, 8)}</span>
+                    <span className={`status-badge ${nextTask.status.toLowerCase()}`}>
+                      {nextTask.status}
+                    </span>
+                  </div>
+                  <div className="task-details">
+                    <div className="detail-row">
+                      <Car size={16} />
+                      <span>{nextTask.vehicleLicensePlate || 'N/A'}</span>
+                      <span className="text-muted">
+                        {nextTask.vehicleModel}
+                      </span>
+                    </div>
+                    <div className="detail-row">
+                      <User size={16} />
+                      <span>{nextTask.customerName}</span>
+                    </div>
+                    <div className="detail-row">
+                      <Package size={16} />
+                      <span>{nextTask.servicePackageName}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="action-question">
+                <p>Bạn có muốn bắt đầu công việc này ngay không?</p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={handleBackToTasks}>
+                Về danh sách công việc
+              </button>
+              <button className="btn-primary" onClick={handleStartNextTask}>
+                <Play size={16} />
+                Bắt đầu ngay
               </button>
             </div>
           </div>

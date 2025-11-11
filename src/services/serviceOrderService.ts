@@ -11,6 +11,7 @@ export interface ServiceOrder {
   startTime?: Date;
   endTime?: Date;
   checklist?: string; // JSON string
+  issues?: string; // JSON string - list of detected issues/problems
   diagnosis?: string;
   workPerformed?: string;
   totalAmount?: number;
@@ -202,6 +203,41 @@ class ServiceOrderService {
     } catch (error) {
       console.error('Error parsing checklist JSON:', error);
       return null;
+    }
+  }
+
+  // ⭐ NEW: Update issues for service order
+  async updateIssues(serviceOrderId: string, issues: any[]): Promise<ServiceOrder> {
+    console.log('===========================');
+    console.log('🔍 UPDATE ISSUES - Frontend');
+    console.log('Service Order ID:', serviceOrderId);
+    console.log('Issues count:', issues.length);
+    console.log('Issues data:', issues);
+    
+    const issuesJson = JSON.stringify(issues);
+    console.log('📤 Sending to backend:', issuesJson);
+    
+    const response = await api.put(`/service-orders/${serviceOrderId}/issues`, issuesJson, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📥 Response from backend:', response.data);
+    console.log('✅ UPDATE ISSUES - Success');
+    console.log('===========================');
+    
+    return response.data.result || response.data;
+  }
+
+  // ⭐ NEW: Parse issues JSON string to array
+  parseIssues(issuesJson: string | undefined): any[] {
+    if (!issuesJson) return [];
+    try {
+      return JSON.parse(issuesJson);
+    } catch (error) {
+      console.error('Error parsing issues JSON:', error);
+      return [];
     }
   }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Filter, Clock, CheckCircle, Eye, Play, X, Wrench } from 'lucide-react';
 import './TechnicianTasks.css';
 import appointmentService, { Appointment } from '../../../services/appointmentService';
@@ -34,6 +34,7 @@ interface TechnicianTasksProps {
 
 const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<TaskStatus>('ASSIGNED'); // Default to ASSIGNED - tasks assigned but not started
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState<Priority | 'all'>('all');
@@ -44,10 +45,33 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
   const [error, setError] = useState<string | null>(null);
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [conflictTask, setConflictTask] = useState<Task | null>(null);
+  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('🔄 TechnicianTasks component mounted, loading tasks...');
     loadTasks();
+    
+    // Xử lý highlight task từ navigation state
+    const state = location.state as { highlightTaskId?: string; message?: string } | null;
+    if (state?.highlightTaskId) {
+      setHighlightedTaskId(state.highlightTaskId);
+      if (state.message) {
+        alert(state.message);
+      }
+      // Clear state sau khi xử lý
+      navigate(location.pathname, { replace: true, state: {} });
+      
+      // Auto scroll to highlighted task sau 500ms
+      setTimeout(() => {
+        const element = document.getElementById(`task-${state.highlightTaskId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+      
+      // Remove highlight sau 3s
+      setTimeout(() => setHighlightedTaskId(null), 3000);
+    }
     
     // Cleanup function
     return () => {
@@ -480,7 +504,11 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
           </div>
         ) : (
           (compact ? filteredTasks.slice(0, 5) : filteredTasks).map((task) => (
-            <div key={task.id} className={`task-card ${task.status}`}>
+            <div 
+              key={task.id} 
+              id={`task-${task.id}`}
+              className={`task-card ${task.status} ${highlightedTaskId === task.id ? 'highlighted' : ''}`}
+            >
               <div className="task-row">
                 <div className="task-meta">
                   <div className="task-id">{task.id}</div>
@@ -531,7 +559,7 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
                   </button>
                 )}
                 {task.status === 'IN_PROGRESS' && (
-                  <button className="btn-process" onClick={() => navigate('/technician/work')}>
+                  <button className="btn-process" onClick={() => navigate(`/technician/work-processing/${task.id}`)}>
                     <Wrench size={16} />
                     Xử lý công việc
                   </button>
