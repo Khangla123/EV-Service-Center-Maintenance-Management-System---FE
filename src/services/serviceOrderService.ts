@@ -242,6 +242,25 @@ class ServiceOrderService {
     }
   }
 
+  // ⭐ NEW: Set price for issue (Staff/Admin)
+  async setIssuePrice(serviceOrderId: string, issueId: string, price: number): Promise<ServiceOrder> {
+    console.log('===========================');
+    console.log('💰 SET ISSUE PRICE - Frontend');
+    console.log('Service Order ID:', serviceOrderId);
+    console.log('Issue ID:', issueId);
+    console.log('Price:', price);
+    
+    const response = await api.put(`/service-orders/${serviceOrderId}/issues/set-price`, {
+      issueId,
+      price
+    });
+    
+    console.log('✅ SET ISSUE PRICE - Success');
+    console.log('===========================');
+    
+    return response.data.result || response.data;
+  }
+
   // ⭐ NEW: Add parts used to service order
   async addPartsUsed(serviceOrderId: string, parts: any[]): Promise<ServiceOrder> {
     console.log('===========================');

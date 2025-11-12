@@ -6,13 +6,15 @@ import {
 import { CustomerManagement } from './customers';
 import { AppointmentManagement } from './appointments';
 import { InvoiceManagement } from './invoices';
+import IssuePricing from './pricing/IssuePricing';
 import './StaffDashboard.css';
 
 type StaffView = 
   | 'overview'
   | 'customers'
   | 'appointments'
-  | 'invoices';
+  | 'invoices'
+  | 'pricing';
 
 const StaffDashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<StaffView>('overview');
@@ -58,7 +60,8 @@ const StaffDashboard: React.FC = () => {
     { id: 'overview', icon: <TrendingUp />, label: 'Tổng quan', color: '#667eea' },
     { id: 'customers', icon: <Users />, label: 'Quản lý Khách hàng', color: '#10b981' },
     { id: 'appointments', icon: <Calendar />, label: 'Quản lý Lịch hẹn', color: '#3b82f6' },
-    { id: 'invoices', icon: <FileText />, label: 'Quản lý Hóa đơn', color: '#f59e0b' }
+    { id: 'invoices', icon: <FileText />, label: 'Quản lý Hóa đơn', color: '#f59e0b' },
+    { id: 'pricing', icon: <MessageSquare />, label: 'Định giá Vấn đề', color: '#8b5cf6' }
   ] as const;
 
   const renderContent = () => {
@@ -69,6 +72,8 @@ const StaffDashboard: React.FC = () => {
         return <AppointmentManagement />;
       case 'invoices':
         return <InvoiceManagement />;
+      case 'pricing':
+        return <IssuePricing />;
       case 'overview':
       default:
         return (

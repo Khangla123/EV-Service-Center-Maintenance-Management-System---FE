@@ -13,13 +13,6 @@ type ChecklistItem = {
   done: boolean;
 };
 
-type Issue = {
-  id: string;
-  description: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  images: File[];
-};
-
 type PartUsed = {
   id: string;
   partCode: string;
@@ -44,16 +37,8 @@ const WorkProcessing: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [startTime] = useState(new Date());
   const [currentTime, setCurrentTime] = useState('00:00');
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([
-    { id: 1, title: 'Kiểm tra pin (dung lượng, sức khỏe)', done: false },
-    { id: 2, title: 'Kiểm tra động cơ điện', done: false },
-    { id: 3, title: 'Kiểm tra hệ thống điện', done: false },
-    { id: 4, title: 'Kiểm tra phanh, lốp, đèn', done: false }
-  ]);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newChecklistItem, setNewChecklistItem] = useState('');
-  const [issues, setIssues] = useState<Issue[]>([]);
-  const [showIssueForm, setShowIssueForm] = useState(false);
-  const [newIssue, setNewIssue] = useState({ description: '', severity: 'medium' as const });
   const [partsUsed, setPartsUsed] = useState<PartUsed[]>([]);
   const [showPartForm, setShowPartForm] = useState(false);
   const [newPart, setNewPart] = useState({ partCode: '', partName: '', quantity: 1, unit: 'cái' });
@@ -101,7 +86,7 @@ const WorkProcessing: React.FC = () => {
 
   // Lock/unlock body scroll khi modal mở/đóng
   useEffect(() => {
-    if (showCompleteModal || showIssueForm || showPartForm || showSuggestionForm || showContinueWorkModal) {
+    if (showCompleteModal || showPartForm || showSuggestionForm || showContinueWorkModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -110,7 +95,7 @@ const WorkProcessing: React.FC = () => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [showCompleteModal, showIssueForm, showPartForm, showSuggestionForm, showContinueWorkModal]);
+  }, [showCompleteModal, showPartForm, showSuggestionForm, showContinueWorkModal]);
 
   // Load appointments for current technician
   useEffect(() => {
@@ -191,14 +176,16 @@ const WorkProcessing: React.FC = () => {
 
   const initializeChecklist = async (appt: Appointment) => {
     try {
-      // Load checklist AND issues from service_order
+      // Load checklist from service_order
       const serviceOrderModule = await import('../../../services/serviceOrderService');
       const serviceOrder = await serviceOrderModule.default.getServiceOrderByAppointmentId(appt.id);
+      
+      console.log('🔍 Service Order ID:', serviceOrder.id);
+      console.log('🔍 Raw checklist from DB:', serviceOrder.checklist);
       
       // Load checklist
       if (serviceOrder.checklist) {
         const parsed = serviceOrderModule.default.parseChecklist(serviceOrder.checklist);
-        console.log('🔍 Raw checklist from DB:', serviceOrder.checklist);
         console.log('🔍 Parsed checklist:', parsed);
         
         if (parsed) {
@@ -224,56 +211,20 @@ const WorkProcessing: React.FC = () => {
             console.log('📋 Checklist with status:', loadedChecklist);
             setChecklist(loadedChecklist);
           } else {
-            console.log('⚠️ No checklist items found');
+            console.log('⚠️ No checklist items found in parsed data');
+            setChecklist([]);
           }
-        }
-      }
-      
-      // Load issues
-      console.log('===========================');
-      console.log('🔍 LOADING ISSUES FROM DATABASE');
-      console.log('Service Order:', serviceOrder.id);
-      console.log('Raw issues data:', serviceOrder.issues);
-      
-      if (serviceOrder.issues) {
-        const parsedIssues = serviceOrderModule.default.parseIssues(serviceOrder.issues);
-        console.log('Parsed issues:', parsedIssues);
-        
-        if (parsedIssues && Array.isArray(parsedIssues)) {
-          // Convert issues from database format to component format
-          const loadedIssues: Issue[] = parsedIssues.map((item: any) => ({
-            id: item.id || `ISS-${Date.now()}`,
-            description: item.issue || item.description,
-            severity: item.severity || 'medium',
-            images: []
-          }));
-          console.log('✅ Loaded issues from service order:', loadedIssues.length, 'issues');
-          console.log('📋 Issues:', loadedIssues);
-          setIssues(loadedIssues);
         } else {
-          console.log('⚠️ Parsed issues is not an array');
+          console.log('⚠️ Failed to parse checklist');
+          setChecklist([]);
         }
       } else {
-        console.log('⚠️ No issues data in service order');
-      }
-      console.log('===========================');
-      
-      if (!serviceOrder.checklist && !serviceOrder.issues) {
-        console.log('⚠️ No checklist or issues found in service order');
+        console.log('⚠️ No checklist found in service order');
+        setChecklist([]);
       }
     } catch (error) {
-      console.warn('⚠️ Could not load data from service order:', error);
-    }
-    
-    // Fallback to default checklist if service order not found
-    if (appt.servicePackageName?.includes('Bảo dưỡng')) {
-      setChecklist([
-        { id: 1, title: 'Kiểm tra pin (dung lượng, sức khỏe)', done: false },
-        { id: 2, title: 'Kiểm tra động cơ điện', done: false },
-        { id: 3, title: 'Kiểm tra hệ thống điện', done: false },
-        { id: 4, title: 'Kiểm tra phanh, lốp, đèn', done: false },
-        { id: 5, title: 'Kiểm tra hệ thống làm mát', done: false }
-      ]);
+      console.warn('⚠️ Could not load checklist from service order:', error);
+      setChecklist([]);
     }
   };
 
@@ -282,7 +233,6 @@ const WorkProcessing: React.FC = () => {
     setAppointment(appt);
     await initializeChecklist(appt);
     // Reset states
-    setIssues([]);
     setPartsUsed([]);
     setSuggestion({ service: '', reason: '', estimatedCost: '' });
   };
@@ -319,50 +269,6 @@ const WorkProcessing: React.FC = () => {
 
   const removeChecklistItem = (id: number) => {
     setChecklist(prev => prev.filter(item => item.id !== id));
-  };
-
-  const addIssue = async () => {
-    if (newIssue.description.trim() && appointment) {
-      const newIssueItem = {
-        id: `ISS-${Date.now()}`,
-        issue: newIssue.description,
-        severity: newIssue.severity,
-        recommendation: '', // Có thể thêm field này vào form nếu cần
-        detectedAt: new Date().toISOString()
-      };
-      
-      const updatedIssues = [...issues, newIssueItem];
-      setIssues(updatedIssues as any);
-      
-      // Save to backend
-      try {
-        const serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointment.id);
-        await serviceOrderService.updateIssues(serviceOrder.id, updatedIssues);
-        console.log('✅ Issues saved to database');
-      } catch (error) {
-        console.error('❌ Error saving issues:', error);
-        alert('Lỗi khi lưu vấn đề. Vui lòng thử lại!');
-      }
-      
-      setNewIssue({ description: '', severity: 'medium' });
-      setShowIssueForm(false);
-    }
-  };
-
-  const removeIssue = async (id: string) => {
-    const updatedIssues = issues.filter(issue => issue.id !== id);
-    setIssues(updatedIssues);
-    
-    // Save to backend
-    if (appointment) {
-      try {
-        const serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointment.id);
-        await serviceOrderService.updateIssues(serviceOrder.id, updatedIssues);
-        console.log('✅ Issues updated in database');
-      } catch (error) {
-        console.error('❌ Error updating issues:', error);
-      }
-    }
   };
 
   const selectPart = (part: PartResponse) => {
@@ -597,17 +503,6 @@ const WorkProcessing: React.FC = () => {
     });
   };
 
-  const getSeverityBadge = (severity: string) => {
-    const badges = {
-      low: { label: 'Nhẹ', class: 'severity-low' },
-      medium: { label: 'Trung bình', class: 'severity-medium' },
-      high: { label: 'Cao', class: 'severity-high' },
-      critical: { label: 'Nghiêm trọng', class: 'severity-critical' }
-    };
-    const badge = badges[severity as keyof typeof badges];
-    return <span className={`severity-badge ${badge.class}`}>{badge.label}</span>;
-  };
-
   const completedCount = checklist.filter(item => item.done).length;
   const progressPercentage = Math.round((completedCount / checklist.length) * 100);
 
@@ -757,15 +652,6 @@ const WorkProcessing: React.FC = () => {
                 <span className="stat-label">Còn lại</span>
               </div>
             </div>
-            <div className="stat-box issues">
-              <div className="stat-icon">
-                <AlertCircle size={20} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-value">{issues.length}</span>
-                <span className="stat-label">Vấn đề</span>
-              </div>
-            </div>
             <div className="stat-box parts">
               <div className="stat-icon">
                 <Package size={20} />
@@ -824,69 +710,6 @@ const WorkProcessing: React.FC = () => {
               Thêm
             </button>
           </div>
-        </section>
-
-        {/* Issues Section */}
-        <section className="work-section">
-          <div className="section-header">
-            <h3>
-              <AlertCircle size={20} />
-              Vấn đề phát hiện ({issues.length})
-            </h3>
-            <button className="btn-primary-small" onClick={() => setShowIssueForm(true)}>
-              <Plus size={16} />
-              Ghi nhận vấn đề
-            </button>
-          </div>
-
-          {showIssueForm && (
-            <div className="issue-form">
-              <textarea
-                placeholder="Mô tả vấn đề phát hiện..."
-                value={newIssue.description}
-                onChange={(e) => setNewIssue({ ...newIssue, description: e.target.value })}
-                rows={3}
-              />
-              <div className="form-row">
-                <select
-                  value={newIssue.severity}
-                  onChange={(e) => setNewIssue({ ...newIssue, severity: e.target.value as any })}
-                >
-                  <option value="low">Nhẹ</option>
-                  <option value="medium">Trung bình</option>
-                  <option value="high">Cao</option>
-                  <option value="critical">Nghiêm trọng</option>
-                </select>
-                <div className="upload-stub">
-                  <Upload size={16} />
-                  <span>Upload ảnh (tùy chọn)</span>
-                </div>
-              </div>
-              <div className="form-actions">
-                <button className="btn-secondary" onClick={() => setShowIssueForm(false)}>Hủy</button>
-                <button className="btn-primary" onClick={addIssue}>Thêm vấn đề</button>
-              </div>
-            </div>
-          )}
-
-          {issues.length > 0 ? (
-            <div className="issues-list">
-              {issues.map(issue => (
-                <div key={issue.id} className="issue-item">
-                  <div className="issue-header">
-                    <span className="issue-id">{issue.id}</span>
-                    {getSeverityBadge(issue.severity)}
-                    <button className="btn-remove-small" onClick={() => removeIssue(issue.id)}>
-                      <X size={14} />
-                    </button>
-                  </div>
-                  <p className="issue-description">{issue.description}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="empty-message">Chưa có vấn đề nào được ghi nhận</p>
-          )}
         </section>
 
         {/* Parts Used Section */}
@@ -1089,10 +912,6 @@ const WorkProcessing: React.FC = () => {
           </div>
           <div className="summary-item">
             <AlertCircle size={18} />
-            <span>{issues.length} Vấn đề</span>
-          </div>
-          <div className="summary-item">
-            <Package size={18} />
             <span>{partsUsed.length} Phụ tùng</span>
           </div>
           <div className="summary-item">
@@ -1130,29 +949,6 @@ const WorkProcessing: React.FC = () => {
                   <span className="label">Checklist:</span>
                   <span className="value">{completedCount}/{checklist.length} hoàn thành</span>
                 </div>
-
-                {/* Vấn đề phát hiện */}
-                <div className="summary-item">
-                  <span className="label">Vấn đề phát hiện:</span>
-                  <span className="value">{issues.length}</span>
-                </div>
-                {issues.length > 0 && (
-                  <div className="summary-detail-box">
-                    {issues.map((issue, index) => (
-                      <div key={issue.id} className="detail-item">
-                        <span className="item-number">{index + 1}.</span>
-                        <div className="item-content">
-                          <span className="item-badge severity-{issue.severity}">
-                            {issue.severity === 'critical' ? 'Nghiêm trọng' : 
-                             issue.severity === 'high' ? 'Cao' : 
-                             issue.severity === 'medium' ? 'Trung bình' : 'Nhẹ'}
-                          </span>
-                          <p className="item-text">{issue.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
 
                 {/* Phụ tùng đã thay */}
                 <div className="summary-item">
