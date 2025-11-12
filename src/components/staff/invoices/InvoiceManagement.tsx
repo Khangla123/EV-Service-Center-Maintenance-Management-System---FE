@@ -8,6 +8,7 @@ import invoiceService, { InvoiceResponse, CreateInvoiceRequest } from '../../../
 import appointmentService, { Appointment } from '../../../services/appointmentService';
 import serviceOrderService from '../../../services/serviceOrderService';
 import servicePackageService from '../../../services/servicePackageService';
+import api from '../../../services/api';
 import './InvoiceManagement.css';
 
 type InvoiceStatus = 'ALL' | 'PENDING' | 'PAID' | 'CANCELLED' | 'OVERDUE';
@@ -30,7 +31,12 @@ const InvoiceManagement: React.FC = () => {
   const [packagePrice, setPackagePrice] = useState<number>(0);
   const [additionalFee, setAdditionalFee] = useState<number>(0);
   const [loadingPackagePrice, setLoadingPackagePrice] = useState(false);
-  const [partsUsed, setPartsUsed] = useState<Array<{partCode: string; partName: string; quantity: number; unit: string}>>([]);
+  const [partsCount, setPartsCount] = useState<number>(0);
+  const [partsTotal, setPartsTotal] = useState<number>(0);
+  const [suggestionsCount, setSuggestionsCount] = useState<number>(0);
+  const [suggestionsTotal, setSuggestionsTotal] = useState<number>(0);
+  const [partsList, setPartsList] = useState<any[]>([]);
+  const [suggestionsList, setSuggestionsList] = useState<any[]>([]);
 
   useEffect(() => {
     console.log('🎯 InvoiceManagement mounted, viewMode:', viewMode);
@@ -69,34 +75,64 @@ const InvoiceManagement: React.FC = () => {
           setInvoiceAmount(servicePackage.price); // Set initial amount = package price
           console.log('📦 Loaded service package:', servicePackage);
           
-          // Load parts used from service order
+          // Load summary info (counts and totals) from backend
+          let totalPartsAmount = 0;
+          let totalSuggestionsAmount = 0;
+          
           try {
             const serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointmentId);
-            if (serviceOrder && serviceOrder.partsUsed && serviceOrder.partsUsed.length > 0) {
-              // Parse parts from format: "partCode|partName|quantity|unit"
-              const parts = serviceOrder.partsUsed.map(partStr => {
-                const [partCode, partName, quantity, unit] = partStr.split('|');
-                return {
-                  partCode,
-                  partName,
-                  quantity: parseInt(quantity) || 0,
-                  unit
-                };
-              });
-              setPartsUsed(parts);
-              console.log('🔧 Loaded parts used:', parts);
-            } else {
-              setPartsUsed([]);
+            if (serviceOrder && serviceOrder.id) {
+              // Get parts list (detailed) from backend
+              try {
+                const partsResponse = await api.get(`/service-orders/${serviceOrder.id}/parts`);
+                const partsData = partsResponse.data.result || [];
+                setPartsList(partsData);
+                setPartsCount(partsData.length);
+                totalPartsAmount = partsData.reduce((sum: number, part: any) => sum + (part.totalPrice || 0), 0);
+                setPartsTotal(totalPartsAmount);
+                console.log('🔧 Parts detailed list:', partsData);
+              } catch (error) {
+                console.warn('Parts not available:', error);
+                setPartsList([]);
+                setPartsCount(0);
+                setPartsTotal(0);
+              }
+
+              // Get suggestions list (detailed) from backend
+              try {
+                const suggestionsResponse = await serviceOrderService.getServiceSuggestions(serviceOrder.id);
+                const approvedSuggestions = suggestionsResponse.filter((s: any) => s.status === 'APPROVED');
+                setSuggestionsList(approvedSuggestions);
+                setSuggestionsCount(approvedSuggestions.length);
+                
+                // Calculate total of approved suggestions
+                totalSuggestionsAmount = approvedSuggestions.reduce((sum: number, s: any) => sum + (s.estimatedCost || 0), 0);
+                setSuggestionsTotal(totalSuggestionsAmount);
+                console.log('💡 Suggestions detailed list:', approvedSuggestions);
+              } catch (error) {
+                console.warn('Suggestions not available:', error);
+                setSuggestionsList([]);
+                setSuggestionsCount(0);
+                setSuggestionsTotal(0);
+              }
             }
           } catch (error) {
-            console.error('Error loading parts:', error);
-            setPartsUsed([]);
+            console.error('Error loading service order info:', error);
+            setPartsCount(0);
+            setPartsTotal(0);
+            setSuggestionsCount(0);
+            setSuggestionsTotal(0);
           }
+          
+          // Update invoice amount with all costs
+          const finalAmount = servicePackage.price + totalPartsAmount + totalSuggestionsAmount;
+          setInvoiceAmount(finalAmount);
+          console.log('💰 Final invoice amount:', { package: servicePackage.price, parts: totalPartsAmount, suggestions: totalSuggestionsAmount, total: finalAmount });
         } catch (error) {
           console.error('Error loading service package:', error);
           setPackagePrice(0);
           setInvoiceAmount(0);
-          setPartsUsed([]);
+          setPartsCount(0);
         } finally {
           setLoadingPackagePrice(false);
         }
@@ -176,6 +212,10 @@ const InvoiceManagement: React.FC = () => {
       alert(`❌ ${errorMsg}\n\nChi tiết: ${JSON.stringify(error.response?.data, null, 2)}`);
     } finally {
       setCreatingInvoiceFor(null);
+      setPartsCount(0);
+      setPartsTotal(0);
+      setSuggestionsCount(0);
+      setSuggestionsTotal(0);
     }
   };
 
@@ -758,7 +798,7 @@ const InvoiceManagement: React.FC = () => {
           setInvoiceAmount(0);
           setPackagePrice(0);
           setAdditionalFee(0);
-          setPartsUsed([]);
+          setPartsCount(0);
         }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -771,7 +811,8 @@ const InvoiceManagement: React.FC = () => {
                   setInvoiceAmount(0);
                   setPackagePrice(0);
                   setAdditionalFee(0);
-                  setPartsUsed([]);
+                  setPartsCount(0);
+                  setSuggestionsCount(0);
                 }}
               >
                 ×
@@ -793,10 +834,57 @@ const InvoiceManagement: React.FC = () => {
                     <span className="license-plate">{selectedAppointmentForInvoice.vehicleLicensePlate}</span>
                   </span>
                 </div>
-                <div className="detail-row">
-                  <span className="label">Gói dịch vụ:</span>
-                  <span className="value">{selectedAppointmentForInvoice.servicePackageName}</span>
-                </div>
+                {/* Display all selected services */}
+                {(() => {
+                  const notesText = selectedAppointmentForInvoice.notes || '';
+                  const servicesMatch = notesText.match(/📋 Các dịch vụ đã chọn \((\d+)\): (.+?)(?:\n|$)/);
+                  
+                  if (servicesMatch) {
+                    const serviceCount = servicesMatch[1];
+                    const servicesList = servicesMatch[2].split(', ').map((s: string) => s.trim());
+                    
+                    return (
+                      <div style={{
+                        backgroundColor: '#f0f9ff',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #bae6fd',
+                        marginBottom: '12px'
+                      }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px', 
+                          marginBottom: '8px',
+                          color: '#0369a1',
+                          fontWeight: '600',
+                          fontSize: '14px'
+                        }}>
+                          📋 Các dịch vụ đã đặt ({serviceCount})
+                        </div>
+                        <div style={{ paddingLeft: '8px' }}>
+                          {servicesList.map((serviceName: string, index: number) => (
+                            <div key={index} style={{
+                              padding: '4px 0',
+                              borderBottom: index < servicesList.length - 1 ? '1px dashed #bae6fd' : 'none',
+                              color: '#0c4a6e',
+                              fontSize: '13px'
+                            }}>
+                              {index + 1}. {serviceName}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className="detail-row">
+                        <span className="label">Gói dịch vụ:</span>
+                        <span className="value">{selectedAppointmentForInvoice.servicePackageName}</span>
+                      </div>
+                    );
+                  }
+                })()}
                 
                 <div style={{ margin: '24px 0', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
                   <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
@@ -811,34 +899,75 @@ const InvoiceManagement: React.FC = () => {
                     </span>
                   </div>
                   
-                  {/* Additional Fee Input */}
-                  {/* Parts Used Section */}
-                  {partsUsed.length > 0 && (
-                    <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                      <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Wrench size={16} />
-                        Phụ tùng đã sử dụng
-                      </h4>
-                      <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                            <th style={{ padding: '8px', textAlign: 'left', fontWeight: '600', color: '#64748b' }}>Mã PT</th>
-                            <th style={{ padding: '8px', textAlign: 'left', fontWeight: '600', color: '#64748b' }}>Tên phụ tùng</th>
-                            <th style={{ padding: '8px', textAlign: 'right', fontWeight: '600', color: '#64748b' }}>Số lượng</th>
-                            <th style={{ padding: '8px', textAlign: 'left', fontWeight: '600', color: '#64748b' }}>Đơn vị</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {partsUsed.map((part, index) => (
-                            <tr key={index} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px', color: '#667eea', fontWeight: '600' }}>{part.partCode}</td>
-                              <td style={{ padding: '8px', color: '#1e293b' }}>{part.partName}</td>
-                              <td style={{ padding: '8px', textAlign: 'right', color: '#1e293b', fontWeight: '600' }}>{part.quantity}</td>
-                              <td style={{ padding: '8px', color: '#64748b' }}>{part.unit}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  {/* Detailed list of added costs */}
+                  {(partsCount > 0 || suggestionsCount > 0) && (
+                    <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f0fdf4', borderRadius: '8px', border: '1px solid #22c55e' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                        <Wrench size={16} color="#15803d" />
+                        <span style={{ fontWeight: '600', color: '#15803d', fontSize: '14px' }}>
+                          Chi phí đã thêm bởi kỹ thuật viên
+                        </span>
+                      </div>
+                      
+                      {/* Parts detailed list */}
+                      {partsCount > 0 && (
+                        <div style={{ marginBottom: suggestionsCount > 0 ? '12px' : '0' }}>
+                          <div style={{ fontWeight: '600', color: '#166534', fontSize: '13px', marginBottom: '8px', paddingLeft: '8px' }}>
+                            🔧 Phụ tùng đã sử dụng ({partsCount} loại):
+                          </div>
+                          <div style={{ paddingLeft: '24px' }}>
+                            {partsList.map((part: any, index: number) => (
+                              <div key={index} style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                padding: '4px 0',
+                                fontSize: '12px',
+                                color: '#166534',
+                                borderBottom: index < partsList.length - 1 ? '1px dashed #d1fae5' : 'none'
+                              }}>
+                                <span>• {part.partName} (x{part.quantity})</span>
+                                <span style={{ fontWeight: '600' }}>{part.totalPrice?.toLocaleString('vi-VN')} đ</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 24px 0 24px', fontSize: '13px', fontWeight: '600', color: '#15803d' }}>
+                            <span>Tổng phụ tùng:</span>
+                            <span>+{partsTotal.toLocaleString('vi-VN')} đ</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Suggestions detailed list */}
+                      {suggestionsCount > 0 && (
+                        <div>
+                          <div style={{ fontWeight: '600', color: '#166534', fontSize: '13px', marginBottom: '8px', paddingLeft: '8px' }}>
+                            💡 Dịch vụ bổ sung đã duyệt ({suggestionsCount} dịch vụ):
+                          </div>
+                          <div style={{ paddingLeft: '24px' }}>
+                            {suggestionsList.map((suggestion: any, index: number) => (
+                              <div key={index} style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                padding: '4px 0',
+                                fontSize: '12px',
+                                color: '#166534',
+                                borderBottom: index < suggestionsList.length - 1 ? '1px dashed #d1fae5' : 'none'
+                              }}>
+                                <span>• {suggestion.serviceName}</span>
+                                <span style={{ fontWeight: '600' }}>{suggestion.estimatedCost?.toLocaleString('vi-VN')} đ</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 24px 0 24px', fontSize: '13px', fontWeight: '600', color: '#15803d' }}>
+                            <span>Tổng dịch vụ bổ sung:</span>
+                            <span>+{suggestionsTotal.toLocaleString('vi-VN')} đ</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <p style={{ margin: '12px 0 0 8px', fontSize: '12px', color: '#166534', fontStyle: 'italic' }}>
+                        * Đã tính vào tổng tiền hóa đơn bên dưới
+                      </p>
                     </div>
                   )}
 
@@ -895,18 +1024,22 @@ const InvoiceManagement: React.FC = () => {
                     
                     <div className="detail-row" style={{ marginBottom: '8px', paddingTop: '12px', borderTop: '1px solid #bfdbfe' }}>
                       <span className="label">Tạm tính:</span>
-                      <span className="value" style={{ fontWeight: '700' }}>{formatCurrency(invoiceAmount)}</span>
+                      <span className="value" style={{ fontWeight: '700' }}>{formatCurrency(packagePrice + additionalFee)}</span>
                     </div>
                     
                     <div className="detail-row" style={{ marginBottom: '8px' }}>
                       <span className="label">Thuế VAT (10%):</span>
-                      <span className="value">{formatCurrency(invoiceAmount * 0.1)}</span>
+                      <span className="value">{formatCurrency((packagePrice + additionalFee) * 0.1)}</span>
                     </div>
                     
                     <div className="detail-row highlight" style={{ fontSize: '18px', fontWeight: '800', paddingTop: '12px', borderTop: '2px solid #3b82f6' }}>
                       <span className="label" style={{ color: '#1e40af' }}>TỔNG THANH TOÁN:</span>
-                      <span className="value amount" style={{ fontSize: '20px' }}>{formatCurrency(invoiceAmount * 1.1)}</span>
+                      <span className="value amount" style={{ fontSize: '20px' }}>{formatCurrency((packagePrice + additionalFee) * 1.1)}</span>
                     </div>
+                    
+                    <p style={{ margin: '12px 0 0 0', fontSize: '12px', color: '#64748b', fontStyle: 'italic' }}>
+                      * Backend sẽ tự động cộng thêm chi phí phụ tùng và dịch vụ bổ sung vào hóa đơn cuối cùng
+                    </p>
                   </div>
                 )}
               </div>
@@ -920,6 +1053,8 @@ const InvoiceManagement: React.FC = () => {
                   setInvoiceAmount(0);
                   setPackagePrice(0);
                   setAdditionalFee(0);
+                  setPartsCount(0);
+                  setSuggestionsCount(0);
                 }}
               >
                 Hủy

@@ -66,6 +66,7 @@ export interface UpdateServiceOrderRequest {
   status?: string;
   description?: string;
   diagnosis?: string;
+  workPerformed?: string; // JSON string containing work details, parts used, notes, etc.
   partsUsed?: string[];
   laborCost?: number;
   partsCost?: number;
@@ -239,6 +240,63 @@ class ServiceOrderService {
       console.error('Error parsing issues JSON:', error);
       return [];
     }
+  }
+
+  // ⭐ NEW: Add parts used to service order
+  async addPartsUsed(serviceOrderId: string, parts: any[]): Promise<ServiceOrder> {
+    console.log('===========================');
+    console.log('🔧 ADD PARTS USED - Frontend');
+    console.log('Service Order ID:', serviceOrderId);
+    console.log('Parts count:', parts.length);
+    console.log('Parts data:', parts);
+    
+    const partsJson = JSON.stringify(parts);
+    console.log('📤 Sending to backend:', partsJson);
+    
+    const response = await api.post(`/service-orders/${serviceOrderId}/parts`, partsJson, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📥 Response from backend:', response.data);
+    console.log('✅ ADD PARTS USED - Success');
+    console.log('===========================');
+    
+    return response.data.result || response.data;
+  }
+
+  // ⭐ NEW: Add service suggestion
+  async addServiceSuggestion(serviceOrderId: string, suggestion: {
+    serviceName: string;
+    reason: string;
+    estimatedCost: number;
+  }): Promise<ServiceOrder> {
+    console.log('===========================');
+    console.log('💡 ADD SERVICE SUGGESTION - Frontend');
+    console.log('Service Order ID:', serviceOrderId);
+    console.log('Suggestion:', suggestion);
+    
+    const suggestionJson = JSON.stringify(suggestion);
+    console.log('📤 Sending to backend:', suggestionJson);
+    
+    const response = await api.post(`/service-orders/${serviceOrderId}/suggestions`, suggestionJson, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📥 Response from backend:', response.data);
+    console.log('✅ ADD SERVICE SUGGESTION - Success');
+    console.log('===========================');
+    
+    return response.data.result || response.data;
+  }
+
+  // ⭐ Get service suggestions (for invoice calculation)
+  async getServiceSuggestions(serviceOrderId: string): Promise<any[]> {
+    const response = await api.get(`/service-orders/${serviceOrderId}/suggestions`);
+    return response.data.result || response.data;
   }
 }
 

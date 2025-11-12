@@ -316,31 +316,38 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         return;
       }
 
+      // Tạo 1 appointment gộp tất cả dịch vụ
+      const appointmentService = (await import('../../../services/appointmentService')).default;
+      
+      // Build notes with all selected services
+      const servicesList = selectedServices.map(s => s.name).join(', ');
+      const notesWithServices = formData.notes 
+        ? `${formData.notes}\n\n📋 Các dịch vụ đã chọn (${selectedServices.length}): ${servicesList}`
+        : `📋 Các dịch vụ đã chọn (${selectedServices.length}): ${servicesList}`;
+      
       const appointmentData = {
-        customerId: customerId, // Use actual customer ID from profile
+        customerId: customerId,
         vehicleId: selectedVehicle.id,
         serviceCenterId: selectedCenter.id,
-        servicePackageId: selectedServices[0].id, // Nếu nhiều dịch vụ, cần sửa lại backend hoặc FE
+        servicePackageId: selectedServices[0].id, // Use first service as primary
         appointmentDate: `${formData.scheduledDate}T${formData.scheduledTime}:00`,
-        notes: formData.notes || ''
+        notes: notesWithServices
       };
 
-      console.log('Creating appointment with data:', appointmentData);
+      console.log(`📅 Creating 1 appointment with ${selectedServices.length} services:`, selectedServices.map(s => s.name));
+      console.log('Appointment data:', appointmentData);
       
-      // Gọi API tạo lịch hẹn
-      const appointmentService = (await import('../../../services/appointmentService')).default;
       const result = await appointmentService.createAppointment(appointmentData);
-      
-      console.log('Appointment created successfully:', result);
-      const appointmentId = result.id;
+      console.log('✅ Appointment created successfully:', result.id);
       
       if (onBookingComplete) {
-        onBookingComplete(appointmentId, appointmentData.appointmentDate);
+        onBookingComplete(result.id, appointmentData.appointmentDate);
       } else {
         navigate('/appointments/success', { 
           state: { 
-            appointmentId,
-            appointmentDate: appointmentData.appointmentDate 
+            appointmentId: result.id,
+            appointmentDate: appointmentData.appointmentDate,
+            totalServices: selectedServices.length
           } 
         });
       }

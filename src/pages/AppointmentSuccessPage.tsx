@@ -6,6 +6,7 @@ import './AppointmentSuccessPage.css';
 interface LocationState {
   appointmentId: string;
   appointmentDate?: string;
+  totalServices?: number;
 }
 
 // Utility function to generate short display code from UUID
@@ -33,6 +34,7 @@ const AppointmentSuccessPage: React.FC = () => {
   
   const appointmentId = state?.appointmentId || 'UNKNOWN';
   const appointmentDate = state?.appointmentDate;
+  const totalServices = state?.totalServices || 1;
   const displayCode = generateDisplayCode(appointmentId, appointmentDate);
 
   const handleViewAppointments = () => {
@@ -54,11 +56,18 @@ const AppointmentSuccessPage: React.FC = () => {
         
         <p className="success-message">
           Cảm ơn bạn đã đặt lịch dịch vụ với chúng tôi. 
-          Chúng tôi sẽ liên hệ với bạn để xác nhận chi tiết cuộc hẹn.
+          {totalServices > 1 
+            ? ` Bạn đã chọn ${totalServices} dịch vụ cho lịch hẹn này. Chúng tôi sẽ liên hệ với bạn để xác nhận chi tiết.`
+            : ' Chúng tôi sẽ liên hệ với bạn để xác nhận chi tiết cuộc hẹn.'}
         </p>
 
         <div className="appointment-info">
           <h2>Thông tin đặt lịch</h2>
+          {totalServices > 1 && (
+            <div className="info-item" style={{ backgroundColor: '#e0f2fe', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+              <strong>📋 Số dịch vụ đã chọn:</strong> <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#0369a1' }}>{totalServices} dịch vụ</span>
+            </div>
+          )}
           <div className="info-item highlight-code">
             <strong>Mã đặt lịch:</strong> 
             <span className="appointment-code" title={`UUID đầy đủ: ${appointmentId}`}>

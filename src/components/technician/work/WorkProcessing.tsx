@@ -198,16 +198,34 @@ const WorkProcessing: React.FC = () => {
       // Load checklist
       if (serviceOrder.checklist) {
         const parsed = serviceOrderModule.default.parseChecklist(serviceOrder.checklist);
-        if (parsed && Array.isArray(parsed)) {
-          // Convert checklist items from database to component format
-          const loadedChecklist: ChecklistItem[] = parsed.map((item: any, index: number) => ({
-            id: index + 1,
-            title: `${item.title}${item.description ? ` (${item.description})` : ''}`,
-            done: false // Luôn bắt đầu với trạng thái chưa hoàn thành
-          }));
-          console.log('✅ Loaded checklist from service order:', loadedChecklist.length, 'items');
-          console.log('📋 Checklist:', loadedChecklist);
-          setChecklist(loadedChecklist);
+        console.log('🔍 Raw checklist from DB:', serviceOrder.checklist);
+        console.log('🔍 Parsed checklist:', parsed);
+        
+        if (parsed) {
+          let checklistItems: any[] = [];
+          
+          // Check if it's the new format {items: [...]} or old format [...]
+          if (parsed.items && Array.isArray(parsed.items)) {
+            checklistItems = parsed.items;
+            console.log('✅ Using new format with .items property');
+          } else if (Array.isArray(parsed)) {
+            checklistItems = parsed;
+            console.log('✅ Using old array format');
+          }
+          
+          if (checklistItems.length > 0) {
+            // Convert checklist items from database to component format
+            const loadedChecklist: ChecklistItem[] = checklistItems.map((item: any, index: number) => ({
+              id: index + 1,
+              title: `${item.title}${item.description ? ` (${item.description})` : ''}`,
+              done: item.isCompleted || item.done || false // Load trạng thái từ DB
+            }));
+            console.log('✅ Loaded checklist from service order:', loadedChecklist.length, 'items');
+            console.log('📋 Checklist with status:', loadedChecklist);
+            setChecklist(loadedChecklist);
+          } else {
+            console.log('⚠️ No checklist items found');
+          }
         }
       }
       
@@ -389,11 +407,36 @@ const WorkProcessing: React.FC = () => {
     setPartsUsed(prev => prev.filter(part => part.id !== id));
   };
 
-  const submitSuggestion = () => {
-    console.log('Submitting suggestion:', suggestion);
-    alert('Đã gửi đề xuất đến Staff!');
-    setSuggestion({ service: '', reason: '', estimatedCost: '' });
-    setShowSuggestionForm(false);
+  const submitSuggestion = async () => {
+    if (!appointment || !suggestion.service || !suggestion.reason) {
+      alert('Vui lòng điền đầy đủ thông tin đề xuất!');
+      return;
+    }
+
+    try {
+      console.log('Submitting suggestion:', suggestion);
+      const serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointment.id);
+      
+      if (serviceOrder) {
+        // Parse estimated cost from string to number
+        const costStr = suggestion.estimatedCost.replace(/[^0-9]/g, '');
+        const estimatedCost = parseInt(costStr) || 0;
+        
+        await serviceOrderService.addServiceSuggestion(serviceOrder.id, {
+          serviceName: suggestion.service,
+          reason: suggestion.reason,
+          estimatedCost: estimatedCost
+        });
+        
+        console.log('✅ Suggestion submitted successfully');
+        alert('✅ Đã gửi đề xuất đến Staff thành công!');
+        setSuggestion({ service: '', reason: '', estimatedCost: '' });
+        setShowSuggestionForm(false);
+      }
+    } catch (error) {
+      console.error('❌ Error submitting suggestion:', error);
+      alert('❌ Lỗi khi gửi đề xuất. Vui lòng thử lại!');
+    }
   };
 
   const findNextAvailableTask = async () => {
@@ -452,14 +495,13 @@ const WorkProcessing: React.FC = () => {
           }
         }
         
-        // Bước 2.5: Cập nhật thông tin phụ tùng vào service order
+        // Bước 2.5: Lưu phụ tùng đã sử dụng vào bảng service_order_parts
         if (partsUsed.length > 0) {
           try {
-            console.log('🔧 Updating parts used in service order...');
+            console.log('🔧 Saving parts used to service_order_parts table...');
             const serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointment.id);
             
             if (serviceOrder) {
-              // Lưu danh sách phụ tùng dưới dạng JSON string
               const partsData = partsUsed.map(part => ({
                 partCode: part.partCode,
                 partName: part.partName,
@@ -467,16 +509,27 @@ const WorkProcessing: React.FC = () => {
                 unit: part.unit
               }));
               
-              await serviceOrderService.updateServiceOrder(serviceOrder.id, {
-                partsUsed: partsData.map(p => `${p.partCode}|${p.partName}|${p.quantity}|${p.unit}`),
-                notes: completionNotes
-              });
-              
-              console.log('✅ Parts used updated in service order:', partsData);
+              await serviceOrderService.addPartsUsed(serviceOrder.id, partsData);
+              console.log('✅ Parts saved to service_order_parts table:', partsData);
             }
           } catch (partsError) {
-            console.error('⚠️ Error updating parts in service order:', partsError);
+            console.error('⚠️ Error saving parts:', partsError);
             // Không block việc hoàn thành, chỉ log warning
+          }
+        }
+
+        // Bước 2.6: Lưu notes vào service order
+        if (completionNotes) {
+          try {
+            const serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointment.id);
+            if (serviceOrder) {
+              await serviceOrderService.updateServiceOrder(serviceOrder.id, {
+                workPerformed: completionNotes
+              });
+              console.log('✅ Notes saved to service order');
+            }
+          } catch (notesError) {
+            console.error('⚠️ Error saving notes:', notesError);
           }
         }
       } else {
@@ -1071,38 +1124,57 @@ const WorkProcessing: React.FC = () => {
             <div className="modal-body">
               <div className="summary-section">
                 <h4>Tóm tắt công việc</h4>
+                
+                {/* Checklist */}
                 <div className="summary-item">
                   <span className="label">Checklist:</span>
                   <span className="value">{completedCount}/{checklist.length} hoàn thành</span>
                 </div>
+
+                {/* Vấn đề phát hiện */}
                 <div className="summary-item">
                   <span className="label">Vấn đề phát hiện:</span>
                   <span className="value">{issues.length}</span>
                 </div>
+                {issues.length > 0 && (
+                  <div className="summary-detail-box">
+                    {issues.map((issue, index) => (
+                      <div key={issue.id} className="detail-item">
+                        <span className="item-number">{index + 1}.</span>
+                        <div className="item-content">
+                          <span className="item-badge severity-{issue.severity}">
+                            {issue.severity === 'critical' ? 'Nghiêm trọng' : 
+                             issue.severity === 'high' ? 'Cao' : 
+                             issue.severity === 'medium' ? 'Trung bình' : 'Nhẹ'}
+                          </span>
+                          <p className="item-text">{issue.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Phụ tùng đã thay */}
                 <div className="summary-item">
                   <span className="label">Phụ tùng đã thay:</span>
                   <span className="value">{partsUsed.length}</span>
                 </div>
                 {partsUsed.length > 0 && (
-                  <div className="summary-item full-width" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
-                    <span className="label">Chi tiết phụ tùng:</span>
-                    <div style={{ width: '100%', backgroundColor: '#f9fafb', borderRadius: '8px', padding: '12px' }}>
-                      {partsUsed.map((part, index) => (
-                        <div key={part.id} style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          padding: '6px 0',
-                          borderBottom: index < partsUsed.length - 1 ? '1px solid #e5e7eb' : 'none',
-                          fontSize: '13px'
-                        }}>
-                          <span style={{ fontWeight: '500', color: '#667eea' }}>{part.partCode}</span>
-                          <span style={{ flex: 1, marginLeft: '12px', color: '#374151' }}>{part.partName}</span>
-                          <span style={{ fontWeight: '600', color: '#1a1a1a' }}>x{part.quantity} {part.unit}</span>
+                  <div className="summary-detail-box parts-box">
+                    {partsUsed.map((part, index) => (
+                      <div key={part.id} className="detail-item">
+                        <span className="item-number">{index + 1}.</span>
+                        <div className="item-content">
+                          <span className="part-code">{part.partCode}</span>
+                          <span className="part-name">{part.partName}</span>
+                          <span className="part-qty">x{part.quantity} {part.unit}</span>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 )}
+
+                {/* Thời gian */}
                 <div className="summary-item">
                   <span className="label">Thời gian thực tế:</span>
                   <span className="value">{currentTime}</span>

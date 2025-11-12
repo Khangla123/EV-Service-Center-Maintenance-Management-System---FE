@@ -340,12 +340,62 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
 
             <div className="detail-section">
               <h4>Dịch vụ yêu cầu</h4>
-              <p className="service-main">{selectedTask.service}</p>
-              <ul className="service-details">
-                {selectedTask.serviceDetails.map((detail, idx) => (
-                  <li key={idx}>{detail}</li>
-                ))}
-              </ul>
+              {(() => {
+                const notesText = selectedTask.notes || '';
+                const servicesMatch = notesText.match(/📋 Các dịch vụ đã chọn \((\d+)\): (.+?)(?:\n|$)/);
+                
+                if (servicesMatch) {
+                  const serviceCount = servicesMatch[1];
+                  const servicesList = servicesMatch[2].split(', ').map(s => s.trim());
+                  
+                  return (
+                    <div style={{
+                      backgroundColor: '#f0f9ff',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      border: '1px solid #bae6fd'
+                    }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        marginBottom: '12px',
+                        color: '#0369a1',
+                        fontWeight: '600'
+                      }}>
+                        📋 Các dịch vụ đã đặt ({serviceCount})
+                      </div>
+                      <ul style={{ 
+                        listStyle: 'none', 
+                        padding: 0, 
+                        margin: 0 
+                      }}>
+                        {servicesList.map((serviceName, index) => (
+                          <li key={index} style={{
+                            padding: '10px 12px',
+                            borderBottom: index < servicesList.length - 1 ? '1px dashed #bae6fd' : 'none',
+                            color: '#0c4a6e',
+                            fontSize: '14px'
+                          }}>
+                            <strong>{index + 1}.</strong> {serviceName}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <>
+                      <p className="service-main">{selectedTask.service}</p>
+                      <ul className="service-details">
+                        {selectedTask.serviceDetails.map((detail, idx) => (
+                          <li key={idx}>{detail}</li>
+                        ))}
+                      </ul>
+                    </>
+                  );
+                }
+              })()}
             </div>
 
             {selectedTask.checklist && (
@@ -513,8 +563,51 @@ const TechnicianTasks: React.FC<TechnicianTasksProps> = ({ compact = false }) =>
                 <div className="task-meta">
                   <div className="task-id">{task.id}</div>
                   <div className="task-title">
-                    {task.vehicle} - {task.licensePlate} — {task.service}
+                    {task.vehicle} - {task.licensePlate}
                   </div>
+                  
+                  {/* Parse and display all services from notes */}
+                  {(() => {
+                    const notesText = task.notes || '';
+                    const servicesMatch = notesText.match(/📋 Các dịch vụ đã chọn \((\d+)\): (.+?)(?:\n|$)/);
+                    
+                    if (servicesMatch) {
+                      const serviceCount = servicesMatch[1];
+                      const servicesList = servicesMatch[2].split(', ').map(s => s.trim());
+                      
+                      return (
+                        <div style={{
+                          backgroundColor: '#f0f9ff',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid #bae6fd',
+                          marginTop: '8px'
+                        }}>
+                          <div style={{ 
+                            fontSize: '13px',
+                            color: '#0369a1',
+                            fontWeight: '600',
+                            marginBottom: '6px'
+                          }}>
+                            📋 Các dịch vụ ({serviceCount})
+                          </div>
+                          <div style={{ 
+                            fontSize: '13px',
+                            color: '#0c4a6e'
+                          }}>
+                            {servicesList.join(' • ')}
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div style={{ marginTop: '4px', fontSize: '14px', color: '#333' }}>
+                          — {task.service}
+                        </div>
+                      );
+                    }
+                  })()}
+                  
                   <div className="task-customer">Khách: {task.customer} • {task.customerPhone}</div>
                 </div>
                 <div className="task-right">

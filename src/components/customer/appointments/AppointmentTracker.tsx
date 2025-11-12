@@ -523,9 +523,50 @@ const AppointmentTracker: React.FC<AppointmentTrackerProps> = ({
           <div className="info-row">
             <strong>Xe:</strong> {vehicle?.make} {vehicle?.model} - {vehicle?.licensePlate}
           </div>
-          <div className="info-row">
-            <strong>Dịch vụ:</strong> {service?.name}
-          </div>
+          
+          {/* Parse and display all services from notes */}
+          {(() => {
+            const notesText = appointment.notes || '';
+            const servicesMatch = notesText.match(/📋 Các dịch vụ đã chọn \((\d+)\): (.+?)(?:\n|$)/);
+            
+            if (servicesMatch) {
+              const serviceCount = servicesMatch[1];
+              const servicesList = servicesMatch[2].split(', ').map(s => s.trim());
+              
+              return (
+                <div className="info-row" style={{ 
+                  flexDirection: 'column', 
+                  alignItems: 'flex-start',
+                  backgroundColor: '#f0f9ff',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid #bae6fd'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <strong style={{ color: '#0369a1' }}>📋 Các dịch vụ đã đặt ({serviceCount}):</strong>
+                  </div>
+                  <div style={{ paddingLeft: '8px', width: '100%' }}>
+                    {servicesList.map((serviceName, index) => (
+                      <div key={index} style={{ 
+                        padding: '6px 0',
+                        borderBottom: index < servicesList.length - 1 ? '1px dashed #bae6fd' : 'none',
+                        color: '#0c4a6e'
+                      }}>
+                        {index + 1}. {serviceName}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            } else {
+              return (
+                <div className="info-row">
+                  <strong>Dịch vụ:</strong> {service?.name}
+                </div>
+              );
+            }
+          })()}
+          
           <div className="info-row">
             <strong>Địa điểm:</strong> {center?.name || 'Chưa xác định'}
           </div>
