@@ -4,6 +4,7 @@ import { MDButton } from '../../ui';
 import './CostManagement.css';
 import maintenanceHistoryService, { MaintenanceRecord } from '../../../services/maintenanceHistoryService';
 import invoiceService, { InvoiceResponse } from '../../../services/invoiceService';
+import api from '../../../services/api';
 
 export interface CostRecord {
   id: string;
@@ -12,6 +13,7 @@ export interface CostRecord {
   vehicleName: string;
   serviceType: string;
   serviceName: string;
+  selectedPackageNames?: string; // Comma-separated names of all selected packages
   serviceCenter: string;
   laborCost: number;
   partsCost: number;
@@ -54,6 +56,7 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState<CostRecord | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   
   // Filter states
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
@@ -69,23 +72,18 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
       
       try {
         const data = await maintenanceHistoryService.getMaintenanceHistory();
-        console.log('📋 Maintenance records:', data.maintenanceRecords);
         
         // Lấy invoices để xác định payment status
         const invoices = await invoiceService.getMyInvoices();
-        console.log('💰 My invoices:', invoices);
-        console.log('💰 First invoice full object:', JSON.stringify(invoices[0], null, 2));
         
         // Tạo map từ ID invoice -> invoice status
         // Invoice có thể link với appointment qua nhiều cách khác nhau
         const invoiceStatusMap = new Map<string, 'PENDING' | 'PAID' | 'CANCELLED' | 'OVERDUE'>();
         
         invoices.forEach((invoice: any) => {
-          console.log(`🔍 Invoice:`, invoice);
           // Map bằng appointmentId (KEY CHÍNH!)
           if (invoice.appointmentId) {
             invoiceStatusMap.set(invoice.appointmentId, invoice.status);
-            console.log(`✅ Mapped appointmentId ${invoice.appointmentId} -> ${invoice.status}`);
           }
           // Backup: Map bằng serviceOrderId
           if (invoice.serviceOrderId) {
@@ -97,8 +95,6 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
           }
         });
         
-        console.log('🗺️ Invoice status map:', Array.from(invoiceStatusMap.entries()));
-        
         // Tạo map từ appointmentId -> invoice để lấy finalAmount
         const invoiceAmountMap = new Map<string, number>();
         invoices.forEach((invoice: any) => {
@@ -108,10 +104,10 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
         });
         
         // Transform API data to CostRecord format
+        // Backend already groups by appointmentId and provides selectedPackageNames
         const records: CostRecord[] = data.maintenanceRecords.map((record: MaintenanceRecord) => {
           // Lấy invoice status từ map
           const invoiceStatus = invoiceStatusMap.get(record.appointmentId);
-          console.log(`📝 Record ${record.appointmentId}: invoiceStatus=${invoiceStatus}`);
           
           // Map invoice status sang payment status
           let paymentStatus: 'paid' | 'pending' | 'overdue' = 'pending';
@@ -123,11 +119,8 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
             paymentStatus = 'pending';
           }
           
-          console.log(`✅ Final paymentStatus for ${record.appointmentId}: ${paymentStatus}`);
-          
           // Lấy finalAmount từ invoice (bao gồm thuế), fallback về totalAmount từ record
           const finalAmount = invoiceAmountMap.get(record.appointmentId) || record.totalAmount;
-          console.log(`💰 Final amount for ${record.appointmentId}: ${finalAmount}`);
           
           return {
             id: record.appointmentId,
@@ -136,6 +129,7 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
             vehicleName: `${record.vehicleModel} - ${record.licensePlate}`,
             serviceType: record.serviceTitle,
             serviceName: record.serviceTitle,
+            selectedPackageNames: record.selectedPackageNames, // Backend already provides comma-separated package names
             serviceCenter: 'VinFast Service Center',
             laborCost: 0,
             partsCost: 0,
@@ -159,9 +153,6 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
         const totalCosts = records.reduce((sum, record) => sum + record.totalCost, 0);
         const avgCostPerService = records.length > 0 ? totalCosts / records.length : 0;
         
-        console.log('💵 Recalculated total costs from records:', totalCosts);
-        console.log('💵 Recalculated average cost:', avgCostPerService);
-        
         const monthlyCosts: Record<string, number> = {};
         const categoryBreakdown: Record<string, number> = {};
         const vehicleBreakdown: Record<string, number> = {};
@@ -169,15 +160,10 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
         records.forEach(record => {
           const monthKey = `${record.date.getFullYear()}-${(record.date.getMonth() + 1).toString().padStart(2, '0')}`;
           monthlyCosts[monthKey] = (monthlyCosts[monthKey] || 0) + record.totalCost;
-          console.log(`📆 Record date: ${record.date}, monthKey: ${monthKey}, totalCost: ${record.totalCost}`);
           
           categoryBreakdown[record.category] = (categoryBreakdown[record.category] || 0) + record.totalCost;
           vehicleBreakdown[record.vehicleName] = (vehicleBreakdown[record.vehicleName] || 0) + record.totalCost;
         });
-        
-        console.log('📊 Monthly costs calculated:', monthlyCosts);
-        console.log('📊 Total costs:', totalCosts);
-        console.log('📊 Average cost per service:', avgCostPerService);
         
         setSummary({
           totalCosts,
@@ -309,9 +295,112 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
     link.click();
   };
 
-  const openRecordDetail = (record: CostRecord) => {
-    setSelectedRecord(record);
+  const openRecordDetail = async (record: CostRecord) => {
     setShowModal(true);
+    setLoadingDetails(true);
+    setSelectedRecord(record);
+    
+    try {
+      console.log('🔍 Opening detail for appointment:', record.id);
+      
+      // Fetch invoice details for this appointment
+      const invoices = await invoiceService.getMyInvoices();
+      console.log('💰 All invoices:', invoices);
+      
+      const invoice = invoices.find((inv: any) => inv.appointmentId === record.id);
+      console.log('💰 Found invoice for appointment:', invoice);
+      
+      if (invoice) {
+        // Calculate breakdown from invoice totals
+        const discount = invoice.discount || 0;
+        const subtotal = invoice.totalAmount || 0;
+        // Try to get tax from invoice, or calculate it
+        const invoiceAny = invoice as any;
+        const tax = invoiceAny.tax || invoiceAny.taxAmount || (invoice.finalAmount - invoice.totalAmount) || 0;
+        console.log('💰 Invoice breakdown - subtotal:', subtotal, 'discount:', discount, 'tax:', tax, 'final:', invoice.finalAmount);
+        
+        // Try to fetch service order for parts details
+        let parts: any[] = [];
+        let partsCost = 0;
+        
+        try {
+          // Get service orders to find parts
+          console.log('🔧 Fetching service orders...');
+          const serviceOrderResponse = await api.get('/service-orders');
+          const serviceOrders = serviceOrderResponse.data.result || [];
+          console.log('🔧 All service orders:', serviceOrders);
+          
+          const serviceOrder = serviceOrders.find((so: any) => so.appointmentId === record.id);
+          console.log('🔧 Found service order:', serviceOrder);
+          
+          if (serviceOrder && serviceOrder.id) {
+            console.log('🔧 Fetching parts for service order:', serviceOrder.id);
+            const partsResponse = await api.get(`/service-orders/${serviceOrder.id}/parts`);
+            parts = partsResponse.data.result || [];
+            console.log('🔧 Parts loaded:', parts);
+            console.log('🔧 First part full object:', JSON.stringify(parts[0], null, 2));
+            
+            partsCost = parts.reduce((sum: number, part: any) => {
+              // Try multiple possible field names for unit cost
+              const unitCost = part.unitCost || part.price || part.unitPrice || part.cost || 0;
+              const cost = (part.quantity || 0) * unitCost;
+              console.log(`  Part: ${part.partName || part.name}, qty: ${part.quantity}, unit: ${unitCost}, total: ${cost}`);
+              return sum + cost;
+            }, 0);
+            console.log('💰 Total parts cost:', partsCost);
+          }
+        } catch (e) {
+          console.error('Error loading parts:', e);
+        }
+        
+        const mappedParts = parts.map((part: any) => {
+          // Try multiple possible field names for unit cost
+          const unitCost = part.unitCost || part.price || part.unitPrice || part.cost || 0;
+          return {
+            name: part.partName || part.name || 'Unknown',
+            quantity: part.quantity || 0,
+            unitCost: unitCost,
+            totalCost: (part.quantity || 0) * unitCost
+          };
+        });
+        
+        console.log('📦 Mapped parts:', mappedParts);
+        
+        // Calculate costs breakdown
+        // totalAmount = labor + parts (before tax and discount)
+        // finalAmount = totalAmount - discount + tax
+        const laborCost = subtotal - partsCost; // Labor cost = total before tax/discount - parts
+        const calculatedTax = (subtotal - discount) * 0.1; // VAT 10% on (subtotal - discount)
+        
+        console.log('💰 Calculated breakdown:', {
+          laborCost,
+          partsCost,
+          subtotal,
+          discount,
+          calculatedTax,
+          finalAmount: invoice.finalAmount
+        });
+        
+        // Update record with actual invoice data
+        const updatedRecord = {
+          ...record,
+          laborCost: laborCost,
+          partsCost: partsCost,
+          additionalCosts: 0,
+          discount: discount,
+          tax: calculatedTax,
+          totalCost: invoice.finalAmount,
+          parts: mappedParts
+        };
+        
+        console.log('✅ Updated record:', updatedRecord);
+        setSelectedRecord(updatedRecord);
+      }
+    } catch (error) {
+      console.error('Error loading invoice details:', error);
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
   const closeModal = () => {
@@ -373,9 +462,6 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
                   {(() => {
                     const currentMonthKey = `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`;
                     const monthlyCost = summary.monthlyCosts[currentMonthKey] || 0;
-                    console.log('💵 Current month key:', currentMonthKey);
-                    console.log('💵 Monthly costs map:', summary.monthlyCosts);
-                    console.log('💵 Current month cost:', monthlyCost);
                     return formatCurrency(monthlyCost);
                   })()}
                 </div>
@@ -535,6 +621,14 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
               <button className="close-btn" onClick={closeModal}>×</button>
             </div>
             <div className="modal-body">
+              {loadingDetails && (
+                <div style={{ textAlign: 'center', padding: '20px' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '10px' }}>⏳</div>
+                  <div>Đang tải chi tiết...</div>
+                </div>
+              )}
+              {!loadingDetails && (
+                <>
               <div className="detail-section">
                 <h4>Thông tin Dịch vụ</h4>
                 <div className="detail-grid">
@@ -548,7 +642,7 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
                   </div>
                   <div className="detail-item">
                     <strong>Dịch vụ:</strong>
-                    <span>{selectedRecord.serviceName}</span>
+                    <span>{selectedRecord.selectedPackageNames || selectedRecord.serviceName}</span>
                   </div>
                   <div className="detail-item">
                     <strong>Trung tâm:</strong>
@@ -561,6 +655,12 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
                     </span>
                   </div>
                   <div className="detail-item">
+                    <strong>Trạng thái thanh toán:</strong>
+                    <span className={`status-badge ${selectedRecord.paymentStatus}`}>
+                      {getStatusLabel(selectedRecord.paymentStatus)}
+                    </span>
+                  </div>
+                  <div className="detail-item">
                     <strong>Phương thức thanh toán:</strong>
                     <span>{selectedRecord.paymentMethod}</span>
                   </div>
@@ -569,9 +669,9 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
 
               <div className="detail-section">
                 <h4>Chi phí Chi tiết</h4>
-                <div className="cost-breakdown">
+                <div className="cost-breakdown-simple">
                   <div className="cost-item">
-                    <span>Chi phí nhân công:</span>
+                    <span>Chi phí gói dịch vụ:</span>
                     <span>{formatCurrency(selectedRecord.laborCost)}</span>
                   </div>
                   <div className="cost-item">
@@ -579,7 +679,7 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
                     <span>{formatCurrency(selectedRecord.partsCost)}</span>
                   </div>
                   <div className="cost-item">
-                    <span>Chi phí khác:</span>
+                    <span>Chi phí sửa chữa thêm:</span>
                     <span>{formatCurrency(selectedRecord.additionalCosts)}</span>
                   </div>
                   <div className="cost-item">
@@ -587,7 +687,7 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
                     <span>-{formatCurrency(selectedRecord.discount)}</span>
                   </div>
                   <div className="cost-item">
-                    <span>Thuế:</span>
+                    <span>Thuế (VAT 10%):</span>
                     <span>{formatCurrency(selectedRecord.tax)}</span>
                   </div>
                   <div className="cost-item total">
@@ -637,6 +737,8 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
                   <h4>Ghi chú</h4>
                   <p>{selectedRecord.notes}</p>
                 </div>
+              )}
+              </>
               )}
             </div>
           </div>

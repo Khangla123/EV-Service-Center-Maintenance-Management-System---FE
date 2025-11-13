@@ -330,12 +330,14 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         vehicleId: selectedVehicle.id,
         serviceCenterId: selectedCenter.id,
         servicePackageId: selectedServices[0].id, // Use first service as primary
+        selectedPackages: JSON.stringify(selectedServices.map(s => s.id)), // ✅ Send all selected package IDs
         appointmentDate: `${formData.scheduledDate}T${formData.scheduledTime}:00`,
         notes: notesWithServices
       };
 
       console.log(`📅 Creating 1 appointment with ${selectedServices.length} services:`, selectedServices.map(s => s.name));
       console.log('Appointment data:', appointmentData);
+      console.log('Selected packages JSON:', appointmentData.selectedPackages);
       
       const result = await appointmentService.createAppointment(appointmentData);
       console.log('✅ Appointment created successfully:', result.id);

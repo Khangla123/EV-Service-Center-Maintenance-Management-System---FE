@@ -12,6 +12,8 @@ export interface Appointment {
   serviceCenterName: string;
   servicePackageId: string;
   servicePackageName: string;
+  selectedPackages?: string; // JSON array of selected package IDs
+  selectedPackageNames?: string; // Comma-separated package names
   technicianId?: string;
   technicianName?: string;
   appointmentDate: Date;

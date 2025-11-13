@@ -62,16 +62,8 @@ const OnlinePayment: React.FC = () => {
       setProcessing(true);
       setError(null);
 
-      console.log('=== STARTING MOCK PAYMENT PROCESS ===');
-      console.log('Invoice:', invoice);
-      console.log('Invoice ID:', invoice.id);
-      console.log('Amount:', invoice.finalAmount);
-
       // Tạo URL thanh toán GIẢ LẬP (mock payment)
       const orderInfo = `Thanh toan hoa don ${invoice.id.substring(0, 8)}`;
-      
-      console.log('Calling backend API: POST /api/payments/mock/create');
-      console.log('Params:', { invoiceId: invoice.id, amount: invoice.finalAmount, orderInfo });
       
       const paymentUrl = await paymentService.createMockPaymentUrl(
         invoice.id,
@@ -79,19 +71,10 @@ const OnlinePayment: React.FC = () => {
         orderInfo
       );
 
-      console.log('✅ Backend response - Payment URL:', paymentUrl);
-      console.log('🔄 Redirecting to payment page...');
-
       // Redirect đến trang thanh toán giả lập
       window.location.href = paymentUrl;
     } catch (error: any) {
-      console.error('❌ ERROR creating payment:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response,
-        status: error.response?.status,
-        data: error.response?.data
-      });
+      console.error('Error creating payment:', error);
       
       const errorMessage = error.response?.data?.message || error.message || 'Không thể tạo thanh toán. Vui lòng thử lại.';
       setError(errorMessage);

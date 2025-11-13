@@ -37,6 +37,11 @@ const InvoiceManagement: React.FC = () => {
   const [suggestionsTotal, setSuggestionsTotal] = useState<number>(0);
   const [partsList, setPartsList] = useState<any[]>([]);
   const [suggestionsList, setSuggestionsList] = useState<any[]>([]);
+  const [issuesList, setIssuesList] = useState<any[]>([]);
+  const [issuesCount, setIssuesCount] = useState<number>(0);
+  const [selectedPackages, setSelectedPackages] = useState<any[]>([]); // Selected service packages
+  const [issuesTotal, setIssuesTotal] = useState<number>(0);
+  const [checklistItems, setChecklistItems] = useState<any[]>([]);
 
   useEffect(() => {
     console.log('🎯 InvoiceManagement mounted, viewMode:', viewMode);
@@ -52,6 +57,7 @@ const InvoiceManagement: React.FC = () => {
   const createInvoiceForAppointment = async (appointmentId: string, amount?: number) => {
     try {
       console.log('🔨 Creating invoice for appointment:', appointmentId, 'amount:', amount);
+      console.trace('📍 Function called from:');
       setCreatingInvoiceFor(appointmentId);
 
       // Get the appointment details
@@ -67,6 +73,10 @@ const InvoiceManagement: React.FC = () => {
         setAdditionalFee(0);
         setShowPriceModal(true);
         
+        // DEBUG: Check appointment object structure
+        console.log('🔍 Full appointment object:', appointment);
+        console.log('🔍 Appointment keys:', Object.keys(appointment));
+        
         // Load service package price
         setLoadingPackagePrice(true);
         try {
@@ -74,25 +84,107 @@ const InvoiceManagement: React.FC = () => {
           setPackagePrice(servicePackage.price);
           setInvoiceAmount(servicePackage.price); // Set initial amount = package price
           console.log('📦 Loaded service package:', servicePackage);
+          console.log('📦 Service package keys:', Object.keys(servicePackage || {}));
+          console.log('📦 Service package services:', (servicePackage as any)?.services || (servicePackage as any)?.includedServices);
+          
+          // Parse selected packages from appointment.selectedPackageNames
+          try {
+            console.log('📦 Parsing selected packages from appointment...');
+            console.log('📦 selectedPackageNames:', appointment.selectedPackageNames);
+            console.log('📦 selectedPackages JSON:', appointment.selectedPackages);
+            
+            if (appointment.selectedPackages) {
+              // Parse JSON array of package IDs
+              const packageIds = JSON.parse(appointment.selectedPackages);
+              console.log('📦 Parsed package IDs:', packageIds);
+              
+              // Fetch each package details
+              const packagesPromises = packageIds.map((id: string) => 
+                servicePackageService.getServicePackageById(id)
+              );
+              const packages = await Promise.all(packagesPromises);
+              
+              console.log('✅ Selected packages loaded:', packages);
+              setSelectedPackages(packages);
+            } else {
+              console.warn('⚠️ No selected_packages, using single package fallback');
+              setSelectedPackages([servicePackage]);
+            }
+          } catch (error) {
+            console.error('❌ Error parsing selected packages:', error);
+            setSelectedPackages([servicePackage]);
+          }
           
           // Load summary info (counts and totals) from backend
           let totalPartsAmount = 0;
           let totalSuggestionsAmount = 0;
+          let totalIssuesAmount = 0;
           
           try {
+            console.log('🔍 Looking for service order by appointment ID:', appointmentId);
             const serviceOrder = await serviceOrderService.getServiceOrderByAppointmentId(appointmentId);
+            console.log('📦 Found service order:', serviceOrder);
+            console.log('📦 Service order keys:', Object.keys(serviceOrder || {}));
+            console.log('📦 Service order checklist:', (serviceOrder as any)?.checklist);
+            console.log('📦 Service order workPerformed:', (serviceOrder as any)?.workPerformed);
+            
+            // Parse checklist (services included in the package)
+            try {
+              const checklistJson = (serviceOrder as any)?.checklist;
+              if (checklistJson) {
+                let parsedChecklist = [];
+                if (typeof checklistJson === 'string') {
+                  parsedChecklist = JSON.parse(checklistJson);
+                } else if (Array.isArray(checklistJson)) {
+                  parsedChecklist = checklistJson;
+                }
+                setChecklistItems(parsedChecklist);
+                console.log('✅ Parsed checklist items:', parsedChecklist);
+              }
+            } catch (error) {
+              console.warn('Failed to parse checklist:', error);
+              setChecklistItems([]);
+            }
+            
+            if (!serviceOrder || !serviceOrder.id) {
+              console.warn('⚠️ No service order found for this appointment. Skipping parts/suggestions/issues loading.');
+              console.log('❌ RESET: Setting parts to 0 (no service order)');
+              setPartsList([]);
+              setPartsCount(0);
+              setPartsTotal(0);
+              setSuggestionsList([]);
+              setSuggestionsCount(0);
+              setSuggestionsTotal(0);
+              setIssuesList([]);
+              setIssuesCount(0);
+              setIssuesTotal(0);
+              return; // Skip loading if no service order
+            }
+            
             if (serviceOrder && serviceOrder.id) {
               // Get parts list (detailed) from backend
               try {
+                console.log('🔍 Loading parts for service order:', serviceOrder.id);
+                console.log('🔍 Service order ID type:', typeof serviceOrder.id);
+                console.log('🔍 Full URL:', `/service-orders/${serviceOrder.id}/parts`);
                 const partsResponse = await api.get(`/service-orders/${serviceOrder.id}/parts`);
+                console.log('📦 Parts response:', partsResponse.data);
                 const partsData = partsResponse.data.result || [];
+                console.log('🔧 Parts detailed list:', partsData);
+                console.log('🔧 Parts count:', partsData.length);
+                
+                totalPartsAmount = partsData.reduce((sum: number, part: any) => sum + (part.totalPrice || 0), 0);
+                console.log('💰 Total parts amount:', totalPartsAmount);
+                
                 setPartsList(partsData);
                 setPartsCount(partsData.length);
-                totalPartsAmount = partsData.reduce((sum: number, part: any) => sum + (part.totalPrice || 0), 0);
                 setPartsTotal(totalPartsAmount);
-                console.log('🔧 Parts detailed list:', partsData);
-              } catch (error) {
-                console.warn('Parts not available:', error);
+              } catch (error: any) {
+                console.error('❌ Parts load error:', error);
+                console.error('❌ Error response:', error.response?.data);
+                console.error('❌ Error status:', error.response?.status);
+                console.error('❌ Request URL:', error.config?.url);
+                console.log('❌ RESET: Setting parts to 0 (parts load error)');
                 setPartsList([]);
                 setPartsCount(0);
                 setPartsTotal(0);
@@ -115,25 +207,70 @@ const InvoiceManagement: React.FC = () => {
                 setSuggestionsCount(0);
                 setSuggestionsTotal(0);
               }
+
+              // Get issues list with pricing from backend
+              try {
+                const issuesJson = serviceOrder.issues;
+                if (issuesJson && issuesJson.trim() !== '') {
+                  const issuesData = JSON.parse(issuesJson);
+                  // Filter only issues that have price set by staff
+                  const pricedIssues = issuesData.filter((issue: any) => issue.price && issue.price > 0);
+                  setIssuesList(pricedIssues);
+                  setIssuesCount(pricedIssues.length);
+                  
+                  // Calculate total of priced issues
+                  totalIssuesAmount = pricedIssues.reduce((sum: number, issue: any) => sum + (issue.price || 0), 0);
+                  setIssuesTotal(totalIssuesAmount);
+                  console.log('🔍 Issues with pricing:', pricedIssues);
+                } else {
+                  setIssuesList([]);
+                  setIssuesCount(0);
+                  setIssuesTotal(0);
+                }
+              } catch (error) {
+                console.warn('Issues not available:', error);
+                setIssuesList([]);
+                setIssuesCount(0);
+                setIssuesTotal(0);
+              }
             }
           } catch (error) {
             console.error('Error loading service order info:', error);
+            console.log('❌ RESET: Setting parts to 0 (service order load error)');
             setPartsCount(0);
             setPartsTotal(0);
             setSuggestionsCount(0);
             setSuggestionsTotal(0);
+            setIssuesCount(0);
+            setIssuesTotal(0);
           }
           
           // Update invoice amount with all costs
-          const finalAmount = servicePackage.price + totalPartsAmount + totalSuggestionsAmount;
+          // Calculate total package price from ALL selected packages
+          const totalPackagePrice = selectedPackages.length > 0
+            ? selectedPackages.reduce((sum, pkg) => sum + (pkg.price || 0), 0)
+            : servicePackage.price;
+          
+          const finalAmount = totalPackagePrice + totalPartsAmount + totalSuggestionsAmount + totalIssuesAmount;
           setInvoiceAmount(finalAmount);
-          console.log('💰 Final invoice amount:', { package: servicePackage.price, parts: totalPartsAmount, suggestions: totalSuggestionsAmount, total: finalAmount });
+          setPackagePrice(totalPackagePrice); // Update package price to reflect all packages
+          console.log('💰 Final invoice amount:', { 
+            packagesCount: selectedPackages.length,
+            packagePrice: totalPackagePrice, 
+            parts: totalPartsAmount, 
+            suggestions: totalSuggestionsAmount, 
+            issues: totalIssuesAmount, 
+            total: finalAmount 
+          });
+          
+          // Set loading false AFTER all state updates to avoid race condition
+          setLoadingPackagePrice(false);
         } catch (error) {
           console.error('Error loading service package:', error);
+          console.log('❌ RESET: Setting parts to 0 (package load error)');
           setPackagePrice(0);
           setInvoiceAmount(0);
           setPartsCount(0);
-        } finally {
           setLoadingPackagePrice(false);
         }
         
@@ -216,6 +353,8 @@ const InvoiceManagement: React.FC = () => {
       setPartsTotal(0);
       setSuggestionsCount(0);
       setSuggestionsTotal(0);
+      setIssuesCount(0);
+      setIssuesTotal(0);
     }
   };
 
@@ -282,6 +421,7 @@ const InvoiceManagement: React.FC = () => {
         : ((response as any).appointments || []);
       
       console.log('All appointments loaded:', allAppointments.length);
+      console.log('📦 Sample appointment:', allAppointments[0]);
       
       // Lấy tất cả invoices để check xem appointment nào đã có invoice
       let existingInvoices: any[] = [];
@@ -435,7 +575,17 @@ const InvoiceManagement: React.FC = () => {
                     {appointment.vehicleLicensePlate || 'N/A'}
                   </span>
                 </td>
-                <td>{appointment.servicePackageName || 'N/A'}</td>
+                <td>
+                  {appointment.selectedPackageNames ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {appointment.selectedPackageNames.split(', ').map((name, idx) => (
+                        <span key={idx} style={{ fontSize: '0.9em' }}>• {name}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    appointment.servicePackageName || 'N/A'
+                  )}
+                </td>
                 <td>
                   {appointment.actualCompletion 
                     ? formatDate(new Date(appointment.actualCompletion).toISOString())
@@ -799,6 +949,8 @@ const InvoiceManagement: React.FC = () => {
           setPackagePrice(0);
           setAdditionalFee(0);
           setPartsCount(0);
+          setIssuesCount(0);
+          setSuggestionsCount(0);
         }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -812,6 +964,7 @@ const InvoiceManagement: React.FC = () => {
                   setPackagePrice(0);
                   setAdditionalFee(0);
                   setPartsCount(0);
+                  setIssuesCount(0);
                   setSuggestionsCount(0);
                 }}
               >
@@ -880,27 +1033,138 @@ const InvoiceManagement: React.FC = () => {
                     return (
                       <div className="detail-row">
                         <span className="label">Gói dịch vụ:</span>
-                        <span className="value">{selectedAppointmentForInvoice.servicePackageName}</span>
+                        <span className="value">
+                          {selectedAppointmentForInvoice.selectedPackageNames || selectedAppointmentForInvoice.servicePackageName}
+                        </span>
                       </div>
                     );
                   }
                 })()}
                 
-                <div style={{ margin: '24px 0', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
-                  <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
-                    💵 Chi phí dịch vụ
-                  </h3>
-                  
-                  {/* Package Price */}
-                  <div className="detail-row" style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'white', borderRadius: '8px' }}>
-                    <span className="label" style={{ fontSize: '14px' }}>Giá gói dịch vụ:</span>
-                    <span className="value" style={{ fontSize: '16px', fontWeight: '700', color: '#059669' }}>
-                      {loadingPackagePrice ? 'Đang tải...' : formatCurrency(packagePrice)}
-                    </span>
+                {/* Display selected service packages */}
+                {selectedPackages.length > 0 && (
+                  <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 600, color: '#495057' }}>
+                      📦 Các gói dịch vụ đã chọn ({selectedPackages.length} gói):
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {selectedPackages.map((pkg: any, index: number) => (
+                        <div key={index} style={{ 
+                          padding: '12px', 
+                          backgroundColor: '#ffffff', 
+                          borderRadius: '6px', 
+                          border: '1px solid #e9ecef',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}>
+                          <div>
+                            <div style={{ fontWeight: 600, color: '#212529', fontSize: '14px' }}>
+                              {pkg.name || pkg.packageName || 'Gói dịch vụ'}
+                            </div>
+                            {pkg.description && (
+                              <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
+                                {pkg.description}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ fontWeight: 600, color: '#28a745', fontSize: '16px', whiteSpace: 'nowrap', marginLeft: '20px' }}>
+                            {formatCurrency(pkg.price)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '2px solid #dee2e6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 600, color: '#495057' }}>Tổng giá trị các gói:</span>
+                      <span style={{ fontWeight: 700, color: '#28a745', fontSize: '18px' }}>
+                        {formatCurrency(selectedPackages.reduce((sum: number, pkg: any) => sum + (pkg.price || 0), 0))}
+                      </span>
+                    </div>
                   </div>
+                )}
+                
+                <>
+                  {/* DEBUG: Log state values at render time */}
+                  {(() => {
+                    console.log('🎨 RENDER TIME STATE:', {
+                      partsCount,
+                      partsTotal,
+                      partsList,
+                      suggestionsCount,
+                      suggestionsTotal,
+                      suggestionsList,
+                      issuesCount,
+                      issuesTotal,
+                      issuesList,
+                      selectedPackagesCount: selectedPackages.length
+                    });
+                    return null;
+                  })()}
                   
+                  <div style={{ margin: '24px 0', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
+                    <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
+                      💵 Chi phí dịch vụ
+                    </h3>
+                  
+                  {/* Package Price - Hide this if selectedPackages is displayed */}
+                  {selectedPackages.length === 0 && (
+                    <div className="detail-row" style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'white', borderRadius: '8px' }}>
+                      <span className="label" style={{ fontSize: '14px' }}>Giá gói dịch vụ:</span>
+                      <span className="value" style={{ fontSize: '16px', fontWeight: '700', color: '#059669' }}>
+                        {loadingPackagePrice ? 'Đang tải...' : formatCurrency(packagePrice)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Issue Pricing (Staff định giá) */}
+                  {issuesList.length > 0 && (
+                    <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#fef3c7', borderRadius: '8px', border: '1px solid #f59e0b' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                        <AlertCircle size={16} color="#b45309" />
+                        <span style={{ fontWeight: '600', color: '#b45309', fontSize: '14px' }}>
+                          💰 Định giá vấn đề ({issuesList.length} vấn đề)
+                        </span>
+                      </div>
+                      <div style={{ paddingLeft: '24px' }}>
+                        {issuesList.map((issue: any, index: number) => (
+                          <div key={index} style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            padding: '4px 0',
+                            fontSize: '12px',
+                            color: '#92400e',
+                            borderBottom: index < issuesList.length - 1 ? '1px dashed #fde68a' : 'none'
+                          }}>
+                            <div style={{ flex: 1 }}>
+                              <span style={{ fontWeight: '600' }}>• {issue.issue}</span>
+                              {issue.severity && (
+                                <span style={{ 
+                                  marginLeft: '8px', 
+                                  padding: '2px 6px', 
+                                  backgroundColor: issue.severity === 'HIGH' ? '#fecaca' : issue.severity === 'MEDIUM' ? '#fed7aa' : '#fef3c7',
+                                  borderRadius: '4px',
+                                  fontSize: '10px',
+                                  fontWeight: '600'
+                                }}>
+                                  {issue.severity}
+                                </span>
+                              )}
+                            </div>
+                            <span style={{ fontWeight: '600', whiteSpace: 'nowrap', marginLeft: '12px' }}>
+                              {issue.price?.toLocaleString('vi-VN')} đ
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 24px 0 24px', fontSize: '13px', fontWeight: '600', color: '#b45309' }}>
+                        <span>Tổng định giá vấn đề:</span>
+                        <span>+{issuesTotal.toLocaleString('vi-VN')} đ</span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Detailed list of added costs */}
-                  {(partsCount > 0 || suggestionsCount > 0) && (
+                  {(partsList.length > 0 || suggestionsList.length > 0) && (
                     <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f0fdf4', borderRadius: '8px', border: '1px solid #22c55e' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                         <Wrench size={16} color="#15803d" />
@@ -910,10 +1174,10 @@ const InvoiceManagement: React.FC = () => {
                       </div>
                       
                       {/* Parts detailed list */}
-                      {partsCount > 0 && (
-                        <div style={{ marginBottom: suggestionsCount > 0 ? '12px' : '0' }}>
+                      {partsList.length > 0 && (
+                        <div style={{ marginBottom: suggestionsList.length > 0 ? '12px' : '0' }}>
                           <div style={{ fontWeight: '600', color: '#166534', fontSize: '13px', marginBottom: '8px', paddingLeft: '8px' }}>
-                            🔧 Phụ tùng đã sử dụng ({partsCount} loại):
+                            🔧 Phụ tùng đã sử dụng ({partsList.length} loại):
                           </div>
                           <div style={{ paddingLeft: '24px' }}>
                             {partsList.map((part: any, index: number) => (
@@ -938,10 +1202,10 @@ const InvoiceManagement: React.FC = () => {
                       )}
                       
                       {/* Suggestions detailed list */}
-                      {suggestionsCount > 0 && (
+                      {suggestionsList.length > 0 && (
                         <div>
                           <div style={{ fontWeight: '600', color: '#166534', fontSize: '13px', marginBottom: '8px', paddingLeft: '8px' }}>
-                            💡 Dịch vụ bổ sung đã duyệt ({suggestionsCount} dịch vụ):
+                            💡 Dịch vụ bổ sung đã duyệt ({suggestionsList.length} dịch vụ):
                           </div>
                           <div style={{ paddingLeft: '24px' }}>
                             {suggestionsList.map((suggestion: any, index: number) => (
@@ -973,7 +1237,7 @@ const InvoiceManagement: React.FC = () => {
 
                   <div style={{ marginBottom: '12px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: '#475569' }}>
-                      Phí phát sinh (nếu có):
+                      Phí phát sinh khác (nếu có):
                     </label>
                     <input
                       type="number"
@@ -981,9 +1245,13 @@ const InvoiceManagement: React.FC = () => {
                       onChange={(e) => {
                         const fee = Number(e.target.value);
                         setAdditionalFee(fee);
-                        setInvoiceAmount(packagePrice + fee);
+                        // Calculate from arrays instead of state
+                        const calculatedPartsTotal = partsList.reduce((sum, part) => sum + (part.totalPrice || 0), 0);
+                        const calculatedSuggestionsTotal = suggestionsList.reduce((sum, s) => sum + (s.estimatedCost || 0), 0);
+                        const calculatedIssuesTotal = issuesList.reduce((sum, issue) => sum + (issue.price || 0), 0);
+                        setInvoiceAmount(packagePrice + calculatedPartsTotal + calculatedSuggestionsTotal + calculatedIssuesTotal + fee);
                       }}
-                      placeholder="Nhập phí phát sinh..."
+                      placeholder="Nhập phí phát sinh khác..."
                       min="0"
                       step="10000"
                       disabled={loadingPackagePrice}
@@ -998,7 +1266,7 @@ const InvoiceManagement: React.FC = () => {
                       }}
                     />
                     <p style={{ marginTop: '6px', fontSize: '12px', color: '#64748b' }}>
-                      💡 VD: Chi phí vật tư phụ tùng, công thêm ngoài gói...
+                      💡 VD: Chi phí vận chuyển, lưu xe qua đêm, phí tiện ích khác...
                     </p>
                   </div>
                 </div>
@@ -1015,33 +1283,62 @@ const InvoiceManagement: React.FC = () => {
                       <span className="value">{formatCurrency(packagePrice)}</span>
                     </div>
                     
-                    {additionalFee > 0 && (
-                      <div className="detail-row" style={{ marginBottom: '8px' }}>
-                        <span className="label">Phí phát sinh:</span>
-                        <span className="value" style={{ color: '#ea580c' }}>+{formatCurrency(additionalFee)}</span>
-                      </div>
-                    )}
-                    
-                    <div className="detail-row" style={{ marginBottom: '8px', paddingTop: '12px', borderTop: '1px solid #bfdbfe' }}>
-                      <span className="label">Tạm tính:</span>
-                      <span className="value" style={{ fontWeight: '700' }}>{formatCurrency(packagePrice + additionalFee)}</span>
-                    </div>
-                    
-                    <div className="detail-row" style={{ marginBottom: '8px' }}>
-                      <span className="label">Thuế VAT (10%):</span>
-                      <span className="value">{formatCurrency((packagePrice + additionalFee) * 0.1)}</span>
-                    </div>
-                    
-                    <div className="detail-row highlight" style={{ fontSize: '18px', fontWeight: '800', paddingTop: '12px', borderTop: '2px solid #3b82f6' }}>
-                      <span className="label" style={{ color: '#1e40af' }}>TỔNG THANH TOÁN:</span>
-                      <span className="value amount" style={{ fontSize: '20px' }}>{formatCurrency((packagePrice + additionalFee) * 1.1)}</span>
-                    </div>
-                    
-                    <p style={{ margin: '12px 0 0 0', fontSize: '12px', color: '#64748b', fontStyle: 'italic' }}>
-                      * Backend sẽ tự động cộng thêm chi phí phụ tùng và dịch vụ bổ sung vào hóa đơn cuối cùng
-                    </p>
+                    {(() => {
+                      // Calculate totals from arrays (more reliable than state)
+                      const calculatedIssuesTotal = issuesList.reduce((sum, issue) => sum + (issue.price || 0), 0);
+                      const calculatedPartsTotal = partsList.reduce((sum, part) => sum + (part.totalPrice || 0), 0);
+                      const calculatedSuggestionsTotal = suggestionsList.reduce((sum, s) => sum + (s.estimatedCost || 0), 0);
+                      
+                      return (
+                        <>
+                          {calculatedIssuesTotal > 0 && (
+                            <div className="detail-row" style={{ marginBottom: '8px' }}>
+                              <span className="label">Định giá vấn đề:</span>
+                              <span className="value" style={{ color: '#f59e0b' }}>+{formatCurrency(calculatedIssuesTotal)}</span>
+                            </div>
+                          )}
+                          
+                          {calculatedPartsTotal > 0 && (
+                            <div className="detail-row" style={{ marginBottom: '8px' }}>
+                              <span className="label">Chi phí phụ tùng:</span>
+                              <span className="value" style={{ color: '#22c55e' }}>+{formatCurrency(calculatedPartsTotal)}</span>
+                            </div>
+                          )}
+                          
+                          {calculatedSuggestionsTotal > 0 && (
+                            <div className="detail-row" style={{ marginBottom: '8px' }}>
+                              <span className="label">Dịch vụ bổ sung:</span>
+                              <span className="value" style={{ color: '#22c55e' }}>+{formatCurrency(calculatedSuggestionsTotal)}</span>
+                            </div>
+                          )}
+                          
+                          {additionalFee > 0 && (
+                            <div className="detail-row" style={{ marginBottom: '8px' }}>
+                              <span className="label">Phí phát sinh khác:</span>
+                              <span className="value" style={{ color: '#ea580c' }}>+{formatCurrency(additionalFee)}</span>
+                            </div>
+                          )}
+                          
+                          <div className="detail-row" style={{ marginBottom: '8px', paddingTop: '12px', borderTop: '1px solid #bfdbfe' }}>
+                            <span className="label">Tạm tính:</span>
+                            <span className="value" style={{ fontWeight: '700' }}>{formatCurrency(packagePrice + calculatedIssuesTotal + calculatedPartsTotal + calculatedSuggestionsTotal + additionalFee)}</span>
+                          </div>
+                          
+                          <div className="detail-row" style={{ marginBottom: '8px' }}>
+                            <span className="label">Thuế VAT (10%):</span>
+                            <span className="value">{formatCurrency((packagePrice + calculatedIssuesTotal + calculatedPartsTotal + calculatedSuggestionsTotal + additionalFee) * 0.1)}</span>
+                          </div>
+                          
+                          <div className="detail-row highlight" style={{ fontSize: '18px', fontWeight: '800', paddingTop: '12px', borderTop: '2px solid #3b82f6' }}>
+                            <span className="label" style={{ color: '#1e40af' }}>TỔNG THANH TOÁN:</span>
+                            <span className="value amount" style={{ fontSize: '20px' }}>{formatCurrency((packagePrice + calculatedIssuesTotal + calculatedPartsTotal + calculatedSuggestionsTotal + additionalFee) * 1.1)}</span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
+                </>
               </div>
             </div>
             <div className="modal-footer">
@@ -1054,7 +1351,9 @@ const InvoiceManagement: React.FC = () => {
                   setPackagePrice(0);
                   setAdditionalFee(0);
                   setPartsCount(0);
+                  setIssuesCount(0);
                   setSuggestionsCount(0);
+                  setChecklistItems([]);
                 }}
               >
                 Hủy

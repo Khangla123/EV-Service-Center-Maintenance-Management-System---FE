@@ -20,6 +20,7 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [serviceOrderId, setServiceOrderId] = useState<string | null>(null);
+  const [selectedPackages, setSelectedPackages] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     subtotal: 0,
     taxRate: 10, // 10%
@@ -33,6 +34,7 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   useEffect(() => {
     // Lấy service order ID từ appointment
     loadServiceOrder();
+    loadSelectedPackages();
     
     // Tính ngày hết hạn mặc định (7 ngày sau)
     const dueDate = new Date();
@@ -42,6 +44,25 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
       dueDate: dueDate.toISOString().split('T')[0]
     }));
   }, [appointment]);
+
+  const loadSelectedPackages = async () => {
+    try {
+      console.log('📦 Loading selected packages for appointment:', appointment.id);
+      const response = await fetch(`http://localhost:8080/api/appointments/${appointment.id}/packages`);
+      const data = await response.json();
+      
+      if (data.code === 1000 && data.result) {
+        console.log('✅ Selected packages:', data.result);
+        setSelectedPackages(data.result);
+      } else {
+        console.warn('⚠️ No packages found or error:', data);
+        setSelectedPackages([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading packages:', error);
+      setSelectedPackages([]);
+    }
+  };
 
   const loadServiceOrder = async () => {
     try {
@@ -183,14 +204,47 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
                   <span className="value">{appointment.vehicleLicensePlate}</span>
                 </div>
                 <div className="info-item">
-                  <span className="label">Dịch vụ:</span>
-                  <span className="value">{appointment.servicePackageName}</span>
-                </div>
-                <div className="info-item">
                   <span className="label">Kỹ thuật viên:</span>
                   <span className="value">{appointment.technicianName || 'N/A'}</span>
                 </div>
               </div>
+
+              {/* Hiển thị danh sách các gói dịch vụ đã chọn */}
+              {selectedPackages.length > 0 && (
+                <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 600, color: '#495057' }}>
+                    📦 Các gói dịch vụ đã chọn ({selectedPackages.length} gói):
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {selectedPackages.map((pkg, index) => (
+                      <div key={index} style={{ 
+                        padding: '12px', 
+                        backgroundColor: '#ffffff', 
+                        borderRadius: '6px', 
+                        border: '1px solid #e9ecef',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: 600, color: '#212529' }}>
+                            {pkg.packageName}
+                          </div>
+                        </div>
+                        <div style={{ fontWeight: 600, color: '#28a745', fontSize: '16px', whiteSpace: 'nowrap', marginLeft: '20px' }}>
+                          {formatCurrency(pkg.price)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '2px solid #dee2e6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 600, color: '#495057' }}>Tổng giá trị các gói:</span>
+                    <span style={{ fontWeight: 700, color: '#28a745', fontSize: '18px' }}>
+                      {formatCurrency(selectedPackages.reduce((sum, pkg) => sum + (pkg.price || 0), 0))}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Thông tin tài chính */}

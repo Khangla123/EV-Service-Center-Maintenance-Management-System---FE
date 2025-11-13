@@ -11,6 +11,7 @@ interface ApiResponse<T> {
 export interface MaintenanceRecord {
   appointmentId: string;
   serviceTitle: string;
+  selectedPackageNames?: string; // Comma-separated names of all selected packages
   vehicleModel: string;
   licensePlate: string;
   mileage: number;

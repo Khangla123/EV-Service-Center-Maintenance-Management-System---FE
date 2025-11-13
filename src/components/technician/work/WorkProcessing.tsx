@@ -597,7 +597,16 @@ const WorkProcessing: React.FC = () => {
               )}
             </div>
             <div className="service-badge-container">
-              <span className="service-badge">{appointment.servicePackageName}</span>
+              {appointment.selectedPackageNames ? (
+                // Display multiple package names from backend
+                appointment.selectedPackageNames.split(', ').map((name, index) => (
+                  <span key={index} className="service-badge" style={{ marginRight: '8px' }}>
+                    {name}
+                  </span>
+                ))
+              ) : (
+                <span className="service-badge">{appointment.servicePackageName}</span>
+              )}
             </div>
           </div>
           <div className="header-right">
