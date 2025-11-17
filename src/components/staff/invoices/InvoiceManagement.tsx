@@ -382,7 +382,14 @@ const InvoiceManagement: React.FC = () => {
       const invoicesList = Array.isArray(data) ? data : ((data as any)?.result || []);
       console.log('✅ Processed invoices list:', invoicesList);
       
-      setInvoices(invoicesList || []);
+      // Sort by issue date - newest first
+      const sortedInvoices = [...invoicesList].sort((a, b) => {
+        const dateA = new Date(a.issueDate).getTime();
+        const dateB = new Date(b.issueDate).getTime();
+        return dateB - dateA; // Mới nhất trước
+      });
+      
+      setInvoices(sortedInvoices || []);
     } catch (error: any) {
       console.error('❌ Error loading invoices:', error);
       console.error('❌ Error response:', error?.response);

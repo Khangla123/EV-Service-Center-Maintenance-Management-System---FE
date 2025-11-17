@@ -184,20 +184,24 @@ const CustomerManagement: React.FC = () => {
                       onClick={() => viewCustomerDetails(customer)}
                       title="Xem chi tiết"
                     >
-                      <Eye size={16} />
+                      <Eye size={14} />
+                      <span>Xem</span>
                     </button>
                     <button
                       className="action-btn chat"
                       onClick={() => openChat(customer)}
                       title="Chat"
                     >
-                      <MessageSquare size={16} />
+                      <MessageSquare size={14} />
+                      <span>Chat</span>
                     </button>
                     <button className="action-btn edit" title="Sửa">
-                      <Edit size={16} />
+                      <Edit size={14} />
+                      <span>Sửa</span>
                     </button>
                     <button className="action-btn delete" title="Xóa">
-                      <Trash2 size={16} />
+                      <Trash2 size={14} />
+                      <span>Xóa</span>
                     </button>
                   </div>
                 </td>
