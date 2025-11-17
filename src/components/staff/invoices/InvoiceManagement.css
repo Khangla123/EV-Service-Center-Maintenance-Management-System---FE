@@ -340,7 +340,7 @@
 
 .invoice-table th {
   padding: 18px 16px;
-  text-align: left;
+  text-align: center;
   font-weight: 700;
   font-size: 13px;
   color: white;
@@ -351,6 +351,15 @@
   top: 0;
   z-index: 10;
 }
+
+/* Specific column widths for better layout */
+.invoice-table th:nth-child(1) { width: 12%; } /* Khách hàng */
+.invoice-table th:nth-child(2) { width: 10%; } /* Biển số xe */
+.invoice-table th:nth-child(3) { width: 20%; } /* Gói dịch vụ */
+.invoice-table th:nth-child(4) { width: 12%; } /* Ngày hoàn thành */
+.invoice-table th:nth-child(5) { width: 12%; } /* Kỹ thuật viên */
+.invoice-table th:nth-child(6) { width: 14%; } /* Trạng thái */
+.invoice-table th:nth-child(7) { width: 20%; } /* Thao tác - wider for buttons */
 
 .invoice-table tbody tr {
   transition: all 0.2s ease;
@@ -376,6 +385,26 @@
   color: #334155;
   vertical-align: middle;
   border-right: 1px solid #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+/* Match column widths with headers */
+.invoice-table td:nth-child(1) { width: 12%; } /* Khách hàng */
+.invoice-table td:nth-child(2) { width: 10%; } /* Biển số xe */
+.invoice-table td:nth-child(3) { width: 20%; } /* Gói dịch vụ */
+.invoice-table td:nth-child(4) { width: 12%; } /* Ngày hoàn thành */
+.invoice-table td:nth-child(5) { width: 12%; } /* Kỹ thuật viên */
+.invoice-table td:nth-child(6) { width: 14%; } /* Trạng thái */
+.invoice-table td:nth-child(7) { width: 20%; } /* Thao tác */
+
+/* Allow action column to wrap and display fully */
+.invoice-table td:nth-child(7) {
+  white-space: normal;
+  overflow: visible;
+  min-width: 200px;
 }
 
 .invoice-table td:last-child {
@@ -455,6 +484,9 @@
 .action-buttons {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .action-btn {

@@ -529,6 +529,16 @@ const InvoiceManagement: React.FC = () => {
     setShowDetailModal(true);
   };
 
+  // Sort appointments by date - always newest first
+  const getSortedAppointments = () => {
+    const sorted = [...pendingAppointments].sort((a, b) => {
+      const dateA = new Date(a.actualCompletion || a.appointmentDate).getTime();
+      const dateB = new Date(b.actualCompletion || b.appointmentDate).getTime();
+      return dateB - dateA; // Mới nhất trước
+    });
+    return sorted;
+  };
+
   const renderPendingOrders = () => {
     console.log('🎨 Rendering pending orders, count:', pendingAppointments.length, 'loading:', loading);
     
@@ -551,7 +561,6 @@ const InvoiceManagement: React.FC = () => {
         <table className="invoice-table">
           <thead>
             <tr>
-              <th>Mã lịch hẹn</th>
               <th>Khách hàng</th>
               <th>Biển số xe</th>
               <th>Gói dịch vụ</th>
@@ -562,13 +571,8 @@ const InvoiceManagement: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {pendingAppointments.map((appointment) => (
+            {getSortedAppointments().map((appointment) => (
               <tr key={appointment.id}>
-                <td>
-                  <span className="invoice-code">
-                    #{appointment.id.substring(0, 8)}
-                  </span>
-                </td>
                 <td>{appointment.customerName || 'N/A'}</td>
                 <td>
                   <span className="license-plate">
@@ -609,56 +613,32 @@ const InvoiceManagement: React.FC = () => {
                       style={{
                         backgroundColor: '#4CAF50',
                         color: 'white',
-                        padding: '8px 16px',
-                        borderRadius: '6px',
+                        padding: '12px 24px',
+                        borderRadius: '8px',
                         border: 'none',
                         cursor: creatingInvoiceFor === appointment.id ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '14px',
-                        fontWeight: '500',
+                        gap: '8px',
+                        fontSize: '15px',
+                        fontWeight: '600',
                         transition: 'all 0.3s ease',
-                        opacity: creatingInvoiceFor === appointment.id ? 0.6 : 1
+                        opacity: creatingInvoiceFor === appointment.id ? 0.6 : 1,
+                        minWidth: '160px',
+                        whiteSpace: 'nowrap'
                       }}
                     >
                       {creatingInvoiceFor === appointment.id ? (
                         <>
-                          <RefreshCw size={16} className="spinning" />
+                          <RefreshCw size={20} className="spinning" />
                           Đang tạo...
                         </>
                       ) : (
                         <>
-                          <Plus size={16} />
+                          <Plus size={20} />
                           Tạo hóa đơn
                         </>
                       )}
-                    </button>
-                    <button
-                      className="action-btn secondary"
-                      onClick={() => {
-                        console.log('� Viewing invoices tab');
-                        setViewMode('invoices');
-                        loadInvoices();
-                      }}
-                      title="Xem danh sách hóa đơn đã tạo"
-                      style={{
-                        backgroundColor: '#2196F3',
-                        color: 'white',
-                        padding: '8px 16px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      <FileText size={16} />
-                      Xem danh sách HĐ
                     </button>
                   </div>
                 </td>
@@ -699,7 +679,6 @@ const InvoiceManagement: React.FC = () => {
         <table className="invoice-table">
           <thead>
             <tr>
-              <th>Mã HĐ</th>
               <th>Khách hàng</th>
               <th>Biển số xe</th>
               <th>Ngày lập</th>
@@ -712,11 +691,6 @@ const InvoiceManagement: React.FC = () => {
           <tbody>
             {filteredInvoices.map((invoice) => (
               <tr key={invoice.id}>
-                <td>
-                  <span className="invoice-code">
-                    #{invoice.id.substring(0, 8)}
-                  </span>
-                </td>
                 <td>{invoice.customerName || 'N/A'}</td>
                 <td>
                   <span className="license-plate">
@@ -736,9 +710,24 @@ const InvoiceManagement: React.FC = () => {
                     <button
                       className="action-btn view"
                       onClick={() => handleViewDetail(invoice)}
-                      title="Xem chi tiết"
+                      title="Xem chi tiết hóa đơn"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '5px',
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        whiteSpace: 'nowrap',
+                        borderRadius: '5px',
+                        minWidth: 'auto',
+                        width: 'auto',
+                        height: 'auto'
+                      }}
                     >
-                      <Eye size={16} />
+                      <Eye size={13} />
+                      <span>Xem chi tiết</span>
                     </button>
                   </div>
                 </td>
@@ -808,6 +797,7 @@ const InvoiceManagement: React.FC = () => {
           <FileText size={18} />
           Hóa đơn đã tạo ({invoices.length})
         </button>
+        
         <button
           className="refresh-btn"
           onClick={() => {
@@ -848,11 +838,6 @@ const InvoiceManagement: React.FC = () => {
               <option value="CANCELLED">Đã hủy</option>
             </select>
           </div>
-
-          <button className="refresh-btn" onClick={loadInvoices}>
-            <RefreshCw size={18} />
-            Làm mới
-          </button>
         </div>
       )}
 
