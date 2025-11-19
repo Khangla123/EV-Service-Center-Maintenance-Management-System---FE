@@ -21,7 +21,9 @@ const StaffManagement: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
+  const [deletingStaff, setDeletingStaff] = useState<Staff | null>(null);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -155,16 +157,29 @@ const StaffManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteStaff = async (staffId: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
-      try {
-        await staffService.deleteStaff(staffId);
-        alert('Xóa nhân viên thành công');
-        loadStaff();
-      } catch (error) {
-        console.error('Error deleting staff:', error);
-        alert('Không thể xóa nhân viên');
-      }
+  const handleDeleteStaff = (staffId: string) => {
+    const staff = staffList.find(s => s.id === staffId);
+    if (staff) {
+      setDeletingStaff(staff);
+      setShowDeleteModal(true);
+    }
+  };
+
+  const confirmDeleteStaff = async () => {
+    if (!deletingStaff) return;
+
+    try {
+      setSubmitting(true);
+      await staffService.deleteStaff(deletingStaff.id);
+      alert('Xóa nhân viên thành công');
+      setShowDeleteModal(false);
+      setDeletingStaff(null);
+      loadStaff();
+    } catch (error) {
+      console.error('Error deleting staff:', error);
+      alert('Không thể xóa nhân viên: ' + (error as any)?.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -650,6 +665,64 @@ const StaffManagement: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && deletingStaff && (
+        <div className="modal-overlay">
+          <div className="modal-content modal-delete">
+            <div className="modal-header">
+              <h2>Xác nhận xóa</h2>
+              <button 
+                className="btn-close" 
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingStaff(null);
+                }}
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="delete-warning">
+                <Trash2 size={48} color="#ef4444" />
+                <h3>Bạn có chắc chắn muốn xóa nhân viên này?</h3>
+                <div className="staff-info-delete">
+                  <p><strong>Họ và tên:</strong> {deletingStaff.fullName}</p>
+                  <p><strong>Email:</strong> {deletingStaff.email}</p>
+                  <p><strong>Vai trò:</strong> {deletingStaff.role === 'STAFF' ? 'Nhân viên' : 'Kỹ thuật viên'}</p>
+                </div>
+                <p className="warning-text">
+                  <strong>⚠️ Chú ý:</strong> Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan đến nhân viên này sẽ bị xóa vĩnh viễn.
+                </p>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                type="button"
+                className="btn-cancel" 
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingStaff(null);
+                }}
+                disabled={submitting}
+              >
+                Hủy
+              </button>
+              <button 
+                type="button"
+                className="btn-delete"
+                onClick={confirmDeleteStaff}
+                disabled={submitting}
+              >
+                {submitting ? 'Đang xóa...' : 'Xóa nhân viên'}
+              </button>
+            </div>
           </div>
         </div>
       )}
