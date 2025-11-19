@@ -477,9 +477,27 @@ const AppointmentManagement: React.FC = () => {
       {/* Appointments Grid */}
       <div className="appointments-grid">
         {filteredAppointments.length === 0 ? (
-          <div className="no-results">
-            <Calendar size={48} />
-            <p>Không tìm thấy lịch hẹn nào</p>
+          <div className="no-appointments">
+            <Calendar size={64} color="#cbd5e0" />
+            <h3>Không có lịch hẹn</h3>
+            <p>
+              {filterDate === 'today' && 'Không có lịch hẹn nào cho hôm nay'}
+              {filterDate === 'week' && 'Không có lịch hẹn nào trong tuần này'}
+              {filterDate === 'month' && 'Không có lịch hẹn nào trong tháng này'}
+              {filterDate === 'all' && 'Không có lịch hẹn nào trong hệ thống'}
+            </p>
+            {filterStatus !== 'all' && (
+              <p className="filter-hint">
+                Bộ lọc trạng thái: <strong>{
+                  filterStatus === 'PENDING' ? 'Chờ xác nhận' :
+                  filterStatus === 'CONFIRMED' ? 'Đã xác nhận' :
+                  filterStatus === 'ASSIGNED' ? 'Đã phân công' :
+                  filterStatus === 'IN_PROGRESS' ? 'Đang thực hiện' :
+                  filterStatus === 'COMPLETED' ? 'Hoàn thành' :
+                  filterStatus === 'CANCELLED' ? 'Đã hủy' : ''
+                }</strong>
+              </p>
+            )}
           </div>
         ) : (
           filteredAppointments.map((appointment) => {
