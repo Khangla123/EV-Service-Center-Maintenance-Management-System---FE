@@ -76,14 +76,30 @@ class PaymentService {
     amount: number,
     orderInfo?: string
   ): Promise<string> {
-    const params = new URLSearchParams({
-      invoiceId,
-      amount: amount.toString(),
-      ...(orderInfo && { orderInfo })
-    });
+    try {
+      const params = new URLSearchParams({
+        invoiceId,
+        amount: amount.toString(),
+        ...(orderInfo && { orderInfo })
+      });
 
-    const response = await api.post(`/payments/vnpay/create?${params.toString()}`);
-    return response.data.result || response.data;
+      console.log('Creating VNPay payment URL with params:', {
+        invoiceId,
+        amount,
+        orderInfo,
+        fullUrl: `/payments/vnpay/create?${params.toString()}`
+      });
+
+      const response = await api.post(`/payments/vnpay/create?${params.toString()}`);
+      
+      console.log('VNPay payment URL response:', response.data);
+      
+      return response.data.result || response.data;
+    } catch (error: any) {
+      console.error('Error creating VNPay payment URL:', error);
+      console.error('Error response:', error.response?.data);
+      throw error;
+    }
   }
 
   // Xử lý callback từ VNPay
