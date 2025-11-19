@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, User, Car, Check, X, Edit, Filter, Plus, UserPlus } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, Car, Check, X, Edit, Filter, Plus, UserPlus, CheckCircle } from 'lucide-react';
 import { MDButton } from '../../ui';
 import appointmentService, { Appointment } from '../../../services/appointmentService';
 import staffService, { Staff } from '../../../services/staffService';
@@ -545,6 +545,55 @@ const AppointmentManagement: React.FC = () => {
 
   return (
     <div className="appointment-management">
+      {/* Statistics Cards */}
+      <div className="appointment-stats">
+        <div className="stat-card">
+          <div className="stat-icon total">
+            <CalendarIcon size={24} />
+          </div>
+          <div className="stat-info">
+            <p className="stat-label">Tổng lịch hẹn</p>
+            <p className="stat-value">{appointments.length}</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon pending">
+            <Clock size={24} />
+          </div>
+          <div className="stat-info">
+            <p className="stat-label">Chờ xác nhận</p>
+            <p className="stat-value">
+              {appointments.filter(apt => apt.status === 'PENDING' || apt.status === 'CONFIRMED').length}
+            </p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon in-progress">
+            <Clock size={24} />
+          </div>
+          <div className="stat-info">
+            <p className="stat-label">Đang thực hiện</p>
+            <p className="stat-value">
+              {appointments.filter(apt => apt.status === 'IN_PROGRESS' || apt.status === 'ASSIGNED').length}
+            </p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon completed">
+            <CheckCircle size={24} />
+          </div>
+          <div className="stat-info">
+            <p className="stat-label">Hoàn thành</p>
+            <p className="stat-value">
+              {appointments.filter(apt => apt.status === 'COMPLETED').length}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Header Controls */}
       <div className="controls-bar">
         <div className="filters-container">

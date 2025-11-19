@@ -3,23 +3,41 @@ import {
   Calendar,
   Clock,
   Users,
-  Filter,
-  Search,
   CheckCircle,
   XCircle,
   AlertCircle,
   User,
   Wrench,
   UserPlus,
-  X
+  X,
+  Car,
+  Edit,
+  Check
 } from 'lucide-react';
 import './AppointmentManagement.css';
 import appointmentService, { Appointment } from '../../../services/appointmentService';
 import staffService, { Staff } from '../../../services/staffService';
 import serviceOrderService from '../../../services/serviceOrderService';
 
+// Utility function to generate short display code from UUID
+const generateDisplayCode = (id: string, date?: Date): string => {
+  if (!id) return 'N/A';
+  
+  // Take first 8 characters of UUID and convert to uppercase
+  const shortId = id.substring(0, 8).toUpperCase();
+  
+  // If date is available, add date prefix
+  if (date) {
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `APT${month}${day}-${shortId}`;
+  }
+  
+  return `APT-${shortId}`;
+};
+
 const AppointmentManagement: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterDate, setFilterDate] = useState<string>('today');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -244,33 +262,21 @@ const AppointmentManagement: React.FC = () => {
     }
   };
 
-  const getStatusBadgeClass = (status: string) => {
-    const normalizedStatus = status.toUpperCase().replace('_', '-');
-    switch (normalizedStatus) {
-      case 'PENDING': return 'status-pending';
-      case 'CONFIRMED': return 'status-confirmed';
-      case 'ASSIGNED': return 'status-assigned';
-      case 'IN-PROGRESS': return 'status-in-progress';
-      case 'COMPLETED': return 'status-completed';
-      case 'CANCELLED': return 'status-cancelled';
-      default: return '';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
+  const getStatusColor = (status: string) => {
     const normalizedStatus = status.toUpperCase();
     switch (normalizedStatus) {
-      case 'CONFIRMED': return <CheckCircle size={14} />;
-      case 'ASSIGNED': return <UserPlus size={14} />;
-      case 'IN_PROGRESS': 
-      case 'IN-PROGRESS': return <Clock size={14} />;
-      case 'COMPLETED': return <CheckCircle size={14} />;
-      case 'CANCELLED': return <XCircle size={14} />;
-      default: return <AlertCircle size={14} />;
+      case 'PENDING': return 'warning';
+      case 'CONFIRMED': return 'info';
+      case 'ASSIGNED': return 'warning';
+      case 'IN_PROGRESS':
+      case 'IN-PROGRESS': return 'primary';
+      case 'COMPLETED': return 'success';
+      case 'CANCELLED': return 'error';
+      default: return 'info';
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusLabel = (status: string) => {
     const normalizedStatus = status.toUpperCase();
     switch (normalizedStatus) {
       case 'PENDING': return 'Chờ xác nhận';
@@ -284,70 +290,67 @@ const AppointmentManagement: React.FC = () => {
     }
   };
 
+  // Compatibility aliases for old code
+  const getStatusText = getStatusLabel;
+  const getStatusBadgeClass = (status: string) => {
+    return getStatusColor(status);
+  };
+  const getStatusIcon = (status: string) => {
+    const normalizedStatus = status.toUpperCase();
+    switch (normalizedStatus) {
+      case 'PENDING': return <AlertCircle size={14} />;
+      case 'CONFIRMED': return <CheckCircle size={14} />;
+      case 'ASSIGNED': return <UserPlus size={14} />;
+      case 'IN_PROGRESS':
+      case 'IN-PROGRESS': return <Clock size={14} />;
+      case 'COMPLETED': return <CheckCircle size={14} />;
+      case 'CANCELLED': return <XCircle size={14} />;
+      default: return <AlertCircle size={14} />;
+    }
+  };
+
   const filteredAppointments = appointments.filter(apt => {
-    const matchesSearch = 
-      apt.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.servicePackageName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.serviceCenterName?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Parse appointment date - backend trả về ISO string format
+    const aptDate = new Date(apt.appointmentDate);
+    const now = new Date();
+    
+    // Validate date
+    if (isNaN(aptDate.getTime())) return false;
+    
+    // Date filter - So sánh ngày, tháng, năm
+    let matchesDate = true;
+    if (filterDate === 'today') {
+      matchesDate = 
+        aptDate.getDate() === now.getDate() &&
+        aptDate.getMonth() === now.getMonth() &&
+        aptDate.getFullYear() === now.getFullYear();
+    } else if (filterDate === 'week') {
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - now.getDay()); // Chủ nhật đầu tuần
+      weekStart.setHours(0, 0, 0, 0);
+      
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
+      
+      matchesDate = aptDate >= weekStart && aptDate <= weekEnd;
+    } else if (filterDate === 'month') {
+      matchesDate = 
+        aptDate.getMonth() === now.getMonth() && 
+        aptDate.getFullYear() === now.getFullYear();
+    }
+    // 'all' thì matchesDate = true (mặc định)
+    
+    // Status filter
     const matchesStatus = filterStatus === 'all' || apt.status.toUpperCase() === filterStatus.toUpperCase();
     
-    // Filter by date
-    let matchesDate = true;
-    if (filterDate !== 'all' && apt.appointmentDate) {
-      const aptDate = new Date(apt.appointmentDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      switch (filterDate) {
-        case 'today':
-          const todayEnd = new Date(today);
-          todayEnd.setHours(23, 59, 59, 999);
-          matchesDate = aptDate >= today && aptDate <= todayEnd;
-          break;
-        case 'week':
-          const weekEnd = new Date(today);
-          weekEnd.setDate(today.getDate() + 7);
-          matchesDate = aptDate >= today && aptDate <= weekEnd;
-          break;
-        case 'month':
-          const monthEnd = new Date(today);
-          monthEnd.setMonth(today.getMonth() + 1);
-          matchesDate = aptDate >= today && aptDate <= monthEnd;
-          break;
-        default:
-          matchesDate = true;
-      }
-    }
-    
-    return matchesSearch && matchesStatus && matchesDate;
+    return matchesStatus && matchesDate;
+  }).sort((a, b) => {
+    // Sắp xếp theo giờ (sớm nhất lên đầu)
+    const dateA = new Date(a.appointmentDate).getTime();
+    const dateB = new Date(b.appointmentDate).getTime();
+    return dateA - dateB;
   });
-
-  const stats = [
-    {
-      label: 'Tổng lịch hẹn',
-      value: appointments.length,
-      icon: <Calendar size={20} />,
-      color: 'blue'
-    },
-    {
-      label: 'Chờ xác nhận',
-      value: appointments.filter(a => a.status.toUpperCase() === 'PENDING').length,
-      icon: <AlertCircle size={20} />,
-      color: 'yellow'
-    },
-    {
-      label: 'Đang thực hiện',
-      value: appointments.filter(a => a.status.toUpperCase() === 'IN_PROGRESS').length,
-      icon: <Clock size={20} />,
-      color: 'purple'
-    },
-    {
-      label: 'Hoàn thành',
-      value: appointments.filter(a => a.status.toUpperCase() === 'COMPLETED').length,
-      icon: <CheckCircle size={20} />,
-      color: 'green'
-    }
-  ];
 
   if (loading) {
     return (
@@ -371,51 +374,108 @@ const AppointmentManagement: React.FC = () => {
 
       {/* Stats */}
       <div className="appointment-stats">
-        {stats.map((stat, index) => (
-          <div key={index} className={`stat-card stat-${stat.color}`}>
-            <div className="stat-icon">{stat.icon}</div>
-            <div className="stat-content">
-              <p className="stat-label">{stat.label}</p>
-              <p className="stat-value">{stat.value}</p>
-            </div>
+        <div className="stat-card">
+          <div className="stat-icon total">
+            <Calendar size={24} />
           </div>
-        ))}
+          <div className="stat-content">
+            <p className="stat-label">TỔNG LỊCH HẸN</p>
+            <p className="stat-value">{appointments.length}</p>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon pending">
+            <Clock size={24} />
+          </div>
+          <div className="stat-content">
+            <p className="stat-label">CHỜ XÁC NHẬN</p>
+            <p className="stat-value">
+              {appointments.filter(apt => apt.status === 'PENDING' || apt.status === 'CONFIRMED').length}
+            </p>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon in-progress">
+            <Clock size={24} />
+          </div>
+          <div className="stat-content">
+            <p className="stat-label">ĐANG THỰC HIỆN</p>
+            <p className="stat-value">
+              {appointments.filter(apt => apt.status === 'IN_PROGRESS' || apt.status === 'ASSIGNED').length}
+            </p>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon completed">
+            <CheckCircle size={24} />
+          </div>
+          <div className="stat-content">
+            <p className="stat-label">HOÀN THÀNH</p>
+            <p className="stat-value">
+              {appointments.filter(apt => apt.status === 'COMPLETED').length}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="appointment-filters">
-        <div className="search-box">
-          <Search size={20} />
-          <input
-            type="text"
-            placeholder="Tìm kiếm theo tên khách hàng, dịch vụ..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      <div className="controls-bar">
+        <div className="filters-container">
+          {/* Date Filter */}
+          <div className="filter-group">
+            <label>THỜI GIAN:</label>
+            <div className="filter-tabs">
+              <button
+                className={`filter-tab ${filterDate === 'today' ? 'active' : ''}`}
+                onClick={() => setFilterDate('today')}
+              >
+                Hôm nay
+              </button>
+              <button
+                className={`filter-tab ${filterDate === 'week' ? 'active' : ''}`}
+                onClick={() => setFilterDate('week')}
+              >
+                Tuần này
+              </button>
+              <button
+                className={`filter-tab ${filterDate === 'month' ? 'active' : ''}`}
+                onClick={() => setFilterDate('month')}
+              >
+                Tháng này
+              </button>
+              <button
+                className={`filter-tab ${filterDate === 'all' ? 'active' : ''}`}
+                onClick={() => setFilterDate('all')}
+              >
+                Toàn bộ
+              </button>
+            </div>
+          </div>
 
-        <div className="filter-group">
-          <Filter size={18} />
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            <option value="all">Tất cả trạng thái</option>
-            <option value="pending">Chờ xác nhận</option>
-            <option value="confirmed">Đã xác nhận</option>
-            <option value="in-progress">Đang thực hiện</option>
-            <option value="completed">Hoàn thành</option>
-            <option value="cancelled">Đã hủy</option>
-          </select>
-
-          <select value={filterDate} onChange={(e) => setFilterDate(e.target.value)}>
-            <option value="today">Hôm nay</option>
-            <option value="week">Tuần này</option>
-            <option value="month">Tháng này</option>
-            <option value="all">Tất cả</option>
-          </select>
+          {/* Status Filter */}
+          <div className="filter-group">
+            <label>TRẠNG THÁI:</label>
+            <select 
+              className="filter-select"
+              value={filterStatus} 
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">Tất cả</option>
+              <option value="pending">Chờ xác nhận</option>
+              <option value="confirmed">Đã xác nhận</option>
+              <option value="in-progress">Đang thực hiện</option>
+              <option value="completed">Hoàn thành</option>
+              <option value="cancelled">Đã hủy</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Appointments List */}
-      <div className="appointments-list">
+      {/* Appointments Grid */}
+      <div className="appointments-grid">
         {filteredAppointments.length === 0 ? (
           <div className="no-results">
             <Calendar size={48} />
@@ -424,59 +484,78 @@ const AppointmentManagement: React.FC = () => {
         ) : (
           filteredAppointments.map((appointment) => {
             const appointmentDate = appointment.appointmentDate ? new Date(appointment.appointmentDate) : null;
-            const timeStr = appointmentDate ? appointmentDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'N/A';
-            const dateStr = appointmentDate ? appointmentDate.toLocaleDateString('vi-VN') : 'N/A';
 
             return (
-              <div key={appointment.id} className="appointment-card">
-                <div className="appointment-time">
-                  <Clock size={20} />
-                  <div>
-                    <p className="time">{timeStr}</p>
-                    <p className="date">{dateStr}</p>
+              <div key={appointment.id} className={`appointment-card ${appointment.status.toLowerCase()}`}>
+                <div className="card-header">
+                  <div className="appointment-id" title={`UUID: ${appointment.id}`}>
+                    #{generateDisplayCode(appointment.id, appointment.appointmentDate)}
                   </div>
-                </div>
-
-                <div className="appointment-details">
-                  <div className="detail-row">
-                    <User size={16} />
-                    <div>
-                      <p className="label">Khách hàng</p>
-                      <p className="value">{appointment.customerName || 'N/A'}</p>
-                    </div>
-                  </div>
-
-                  <div className="detail-row">
-                    <Wrench size={16} />
-                    <div>
-                      <p className="label">Dịch vụ</p>
-                      <p className="value">{appointment.servicePackageName || 'N/A'}</p>
-                      <p className="sub-value">{appointment.serviceCenterName || 'N/A'}</p>
-                    </div>
-                  </div>
-
-                  <div className="detail-row">
-                    <Users size={16} />
-                    <div>
-                      <p className="label">Kỹ thuật viên</p>
-                      <p className="value">{getTechnicianName(appointment)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="appointment-status">
-                  <span className={`status-badge ${getStatusBadgeClass(appointment.status)}`}>
-                    {getStatusIcon(appointment.status)}
-                    {getStatusText(appointment.status)}
+                  <span className={`status-badge ${getStatusColor(appointment.status)}`}>
+                    {getStatusLabel(appointment.status)}
                   </span>
                 </div>
 
-                <div className="appointment-actions">
+                <div className="card-body">
+                  <div className="customer-section">
+                    <div className="section-icon">
+                      <User size={18} />
+                    </div>
+                    <div className="section-content">
+                      <div className="customer-name">{appointment.customerName || 'N/A'}</div>
+                    </div>
+                  </div>
+
+                  <div className="vehicle-section">
+                    <div className="section-icon">
+                      <Car size={18} />
+                    </div>
+                    <div className="section-content">
+                      <div className="vehicle-model">Trung tâm: {appointment.serviceCenterName || 'N/A'}</div>
+                    </div>
+                  </div>
+
+                  <div className="schedule-section">
+                    <div className="schedule-item">
+                      <Calendar size={16} />
+                      <span>{appointmentDate ? new Intl.DateTimeFormat('vi-VN').format(appointmentDate) : 'N/A'}</span>
+                    </div>
+                    <div className="schedule-item">
+                      <Clock size={16} />
+                      <span>{appointmentDate ? appointmentDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
+                    </div>
+                  </div>
+
+                  <div className="service-type">
+                    <strong>Gói dịch vụ:</strong> {appointment.servicePackageName || 'N/A'}
+                  </div>
+
+                  {getTechnicianName(appointment) !== 'Chưa phân công' && (
+                    <div className="technician-info">
+                      <UserPlus size={16} />
+                      <span><strong>KTV:</strong> {getTechnicianName(appointment)}</span>
+                    </div>
+                  )}
+
+                  {appointment.notes && (
+                    <div className="appointment-notes">
+                      <strong>Ghi chú:</strong> {appointment.notes}
+                    </div>
+                  )}
+                </div>
+
+                <div className="card-footer">
                   <button 
                     className="btn-action btn-view"
                     onClick={() => handleViewDetails(appointment)}
                   >
-                    Xem chi tiết
+                    Xem hóa đơn
+                  </button>
+                  <button 
+                    className="btn-action btn-detail"
+                    onClick={() => handleViewDetails(appointment)}
+                  >
+                    Chi tiết
                   </button>
                   {(appointment.status.toUpperCase() === 'PENDING' || 
                     appointment.status.toUpperCase() === 'CONFIRMED') && (
@@ -485,25 +564,7 @@ const AppointmentManagement: React.FC = () => {
                       onClick={() => handleAssignClick(appointment)}
                     >
                       <UserPlus size={16} />
-                      Phân công
-                    </button>
-                  )}
-                  {(appointment.status.toUpperCase() === 'ASSIGNED' || 
-                    appointment.status.toUpperCase() === 'IN_PROGRESS') && (
-                    <button 
-                      className="btn-action btn-edit"
-                      onClick={() => handleEditClick(appointment)}
-                    >
-                      <UserPlus size={16} />
-                      Đổi KTV
-                    </button>
-                  )}
-                  {(appointment.status.toUpperCase() === 'CONFIRMED') && (
-                    <button 
-                      className="btn-action btn-edit"
-                      onClick={() => handleEditClick(appointment)}
-                    >
-                      Chỉnh sửa
+                      Phân công KTV
                     </button>
                   )}
                 </div>

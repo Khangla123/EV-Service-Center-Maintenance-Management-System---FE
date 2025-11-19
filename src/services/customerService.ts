@@ -3,14 +3,23 @@ import api from './api';
 export interface Customer {
   id: string;
   userId: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;  // API trả về fullName
+  username?: string;
   email: string;
   phone?: string;
   address?: string;
   avatar?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  role?: string;
+  active?: boolean;
+  emailVerified?: boolean;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  dateOfBirth?: Date | string;
+  lastLogin?: Date | string;
+  subscriptionExpiry?: Date | string;
+  totalSpent?: number;
 }
 
 export interface CreateCustomerRequest {

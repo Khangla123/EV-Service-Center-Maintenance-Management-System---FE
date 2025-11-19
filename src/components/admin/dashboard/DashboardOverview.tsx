@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -7,10 +7,11 @@ import {
   DollarSign, 
   Activity,
   AlertTriangle,
-  Package,
-  Award,
   Clock
 } from 'lucide-react';
+import appointmentService from '../../../services/appointmentService';
+import vehicleService from '../../../services/vehicleService';
+import invoiceService from '../../../services/invoiceService';
 import './DashboardOverview.css';
 
 interface StatCard {
@@ -22,36 +23,144 @@ interface StatCard {
 }
 
 const DashboardOverview: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [appointmentsData, vehiclesData, invoicesData] = await Promise.all([
+        appointmentService.getAllAppointments(),
+        vehicleService.searchVehicles({ page: 1, size: 10000 }).catch(() => ({ vehicles: [], total: 0, page: 1, size: 0 })),
+        invoiceService.getAllInvoices().catch(() => [])
+      ]);
+
+      setAppointments(appointmentsData.appointments || []);
+      setVehicles(vehiclesData.vehicles || []);
+      setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Tính toán doanh thu tháng này
+  const calculateMonthlyRevenue = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const monthlyInvoices = invoices.filter(invoice => {
+      const invoiceDate = new Date(invoice.createdAt || invoice.issueDate);
+      return invoiceDate.getMonth() === currentMonth && 
+             invoiceDate.getFullYear() === currentYear &&
+             invoice.status === 'PAID';
+    });
+
+    const total = monthlyInvoices.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
+    return total;
+  };
+
+  // Tính lịch hẹn trong tuần
+  const getWeeklyAppointments = () => {
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    return appointments.filter(apt => {
+      const aptDate = new Date(apt.appointmentDate);
+      return aptDate >= weekStart && aptDate <= weekEnd;
+    });
+  };
+
+  // Tính hiệu suất (appointments completed / total trong tháng này)
+  const calculatePerformance = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Lọc appointments trong tháng này, loại trừ CANCELLED
+    const thisMonthAppointments = appointments.filter(apt => {
+      const aptDate = new Date(apt.appointmentDate);
+      return aptDate.getMonth() === currentMonth && 
+             aptDate.getFullYear() === currentYear &&
+             apt.status !== 'CANCELLED';
+    });
+
+    if (thisMonthAppointments.length === 0) return 0;
+    
+    const completed = thisMonthAppointments.filter(apt => apt.status === 'COMPLETED').length;
+    return ((completed / thisMonthAppointments.length) * 100).toFixed(1);
+  };
+
   const stats: StatCard[] = [
     {
       label: 'Tổng doanh thu tháng',
-      value: '₫325,450,000',
+      value: `₫${calculateMonthlyRevenue().toLocaleString('vi-VN')}`,
       change: '+15.3%',
       isPositive: true,
       icon: <DollarSign size={24} />
     },
     {
       label: 'Tổng số xe đang quản lý',
-      value: '1,234',
+      value: vehicles.length.toLocaleString('vi-VN'),
       change: '+8.2%',
       isPositive: true,
       icon: <Users size={24} />
     },
     {
       label: 'Lịch hẹn trong tuần',
-      value: '156',
+      value: getWeeklyAppointments().length.toString(),
       change: '+12%',
       isPositive: true,
       icon: <Calendar size={24} />
     },
     {
       label: 'Hiệu suất trung bình',
-      value: '94.5%',
+      value: `${calculatePerformance()}%`,
       change: '+2.1%',
       isPositive: true,
       icon: <Activity size={24} />
     }
   ];
+
+  // Lấy activities từ appointments gần đây
+  const getRecentActivities = () => {
+    return appointments
+      .sort((a, b) => new Date(b.createdAt || b.appointmentDate).getTime() - new Date(a.createdAt || a.appointmentDate).getTime())
+      .slice(0, 4)
+      .map((apt, index) => ({
+        id: index + 1,
+        type: apt.status === 'COMPLETED' ? 'service' : 'appointment',
+        description: `${apt.status === 'COMPLETED' ? 'Hoàn thành' : 'Lịch hẹn mới'} - ${apt.customerName || 'Khách hàng'}`,
+        time: getTimeAgo(apt.createdAt || apt.appointmentDate)
+      }));
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} ngày trước`;
+  };
 
   const alerts = [
     {
@@ -77,39 +186,18 @@ const DashboardOverview: React.FC = () => {
     }
   ];
 
-  const recentActivities = [
-    {
-      id: 1,
-      type: 'appointment',
-      description: 'Lịch hẹn mới được tạo - Nguyễn Văn A',
-      time: '5 phút trước'
-    },
-    {
-      id: 2,
-      type: 'payment',
-      description: 'Thanh toán hoàn thành - ₫2,500,000',
-      time: '15 phút trước'
-    },
-    {
-      id: 3,
-      type: 'service',
-      description: 'Hoàn thành bảo dưỡng VF9 - KTV Đỗ Văn Thuật',
-      time: '30 phút trước'
-    },
-    {
-      id: 4,
-      type: 'user',
-      description: 'Khách hàng mới đăng ký - Trần Thị B',
-      time: '1 giờ trước'
-    }
-  ];
+  const recentActivities = getRecentActivities();
 
-  const topServices = [
-    { name: 'Bảo dưỡng định kỳ', count: 45, revenue: '₫112.5M', percentage: 35 },
-    { name: 'Thay pin EV', count: 28, revenue: '₫98.0M', percentage: 28 },
-    { name: 'Kiểm tra hệ thống điện', count: 38, revenue: '₫57.0M', percentage: 22 },
-    { name: 'Sửa chữa khẩn cấp', count: 12, revenue: '₫36.0M', percentage: 15 }
-  ];
+  if (loading) {
+    return (
+      <div className="dashboard-overview">
+        <div className="loading-state">
+          <Activity size={48} />
+          <p>Đang tải dữ liệu dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-overview">
@@ -180,32 +268,6 @@ const DashboardOverview: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Top Services */}
-      <div className="dashboard-section top-services-section">
-        <div className="section-header">
-          <Award size={20} />
-          <h2>Dịch vụ Phổ biến Nhất</h2>
-        </div>
-        <div className="top-services-grid">
-          {topServices.map((service, index) => (
-            <div key={index} className="service-item">
-              <div className="service-header">
-                <h4>{service.name}</h4>
-                <span className="service-count">{service.count} lần</span>
-              </div>
-              <div className="service-revenue">{service.revenue}</div>
-              <div className="service-bar">
-                <div 
-                  className="service-bar-fill" 
-                  style={{ width: `${service.percentage}%` }}
-                />
-              </div>
-              <div className="service-percentage">{service.percentage}% tổng doanh thu</div>
-            </div>
-          ))}
         </div>
       </div>
     </div>
