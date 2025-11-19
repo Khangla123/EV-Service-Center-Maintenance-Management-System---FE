@@ -62,16 +62,19 @@ const OnlinePayment: React.FC = () => {
       setProcessing(true);
       setError(null);
 
-      // Tạo URL thanh toán GIẢ LẬP (mock payment)
+      // Tạo URL thanh toán VNPay SANDBOX (tài khoản test)
       const orderInfo = `Thanh toan hoa don ${invoice.id.substring(0, 8)}`;
       
-      const paymentUrl = await paymentService.createMockPaymentUrl(
+      // Sử dụng VNPay thật thay vì mock
+      const paymentUrl = await paymentService.createVNPayPaymentUrl(
         invoice.id,
         invoice.finalAmount,
         orderInfo
       );
 
-      // Redirect đến trang thanh toán giả lập
+      console.log('🔗 VNPay payment URL:', paymentUrl);
+
+      // Redirect đến trang thanh toán VNPay sandbox
       window.location.href = paymentUrl;
     } catch (error: any) {
       console.error('Error creating payment:', error);

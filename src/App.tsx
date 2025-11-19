@@ -171,6 +171,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/mock-payment" element={<MockPayment />} />
       <Route path="/mock-payment/result" element={<PaymentResult />} />
       
+      {/* PUBLIC VNPay Payment Result Route - NO AUTHENTICATION REQUIRED */}
+      <Route path="/customer/payment/result" element={<PaymentResult />} />
+      
       {/* Appointment Success Route */}
       <Route path="/appointments/success" element={
         <Layout>

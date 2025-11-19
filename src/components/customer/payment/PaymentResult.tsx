@@ -140,43 +140,53 @@ const PaymentResult: React.FC = () => {
   return (
     <div style={{ 
       padding: '20px', 
-      backgroundColor: '#f5f7fa', 
+      backgroundColor: '#f5f5f5', 
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      fontFamily: 'Arial, sans-serif'
     }}>
       <div style={{
-        maxWidth: '480px',
+        maxWidth: '500px',
         width: '100%',
         backgroundColor: '#fff',
-        borderRadius: '16px',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+        borderRadius: '8px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         overflow: 'hidden'
       }}>
-        {/* Header */}
+        {/* Header với icon và tiêu đề */}
         <div style={{ 
           background: paymentResult?.success 
-            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-            : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-          padding: '40px 24px',
+            ? '#1eb854'
+            : '#dc3545',
+          padding: '32px 24px',
           textAlign: 'center',
           color: '#fff'
         }}>
-          <div style={{ fontSize: '72px', marginBottom: '16px' }}>
-            {paymentResult?.success ? '✅' : '❌'}
+          <div style={{ 
+            width: '80px',
+            height: '80px',
+            margin: '0 auto 16px',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '48px'
+          }}>
+            {paymentResult?.success ? '✓' : '✕'}
           </div>
-          <h2 style={{ fontSize: '24px', fontWeight: '600', margin: '0', letterSpacing: '-0.5px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '600', margin: '0' }}>
             {paymentResult?.success ? 'Thanh toán thành công!' : 'Thanh toán thất bại'}
           </h2>
         </div>
 
         {/* Content */}
-        <div style={{ padding: '32px 24px' }}>
+        <div style={{ padding: '24px' }}>
           <p style={{ 
-            fontSize: '15px', 
-            color: '#4b5563', 
+            fontSize: '14px', 
+            color: '#666', 
             lineHeight: '1.6', 
             marginBottom: '24px',
             textAlign: 'center'
@@ -186,16 +196,22 @@ const PaymentResult: React.FC = () => {
 
           {paymentResult?.transactionId && (
             <div style={{ 
-              backgroundColor: '#f8f9fc', 
-              borderRadius: '12px',
-              padding: '20px',
-              marginBottom: '24px',
+              backgroundColor: '#fff', 
+              border: '1px solid #e5e5e5',
+              borderRadius: '4px',
+              padding: '16px',
+              marginBottom: '20px',
               fontSize: '14px'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span style={{ color: '#8492a6' }}>Mã giao dịch</span>
-                <span style={{ fontWeight: '500', color: '#1f2d3d', fontSize: '13px' }}>
-                  {paymentResult.transactionId.substring(0, 24)}...
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                padding: '8px 0',
+                borderBottom: '1px solid #f0f0f0'
+              }}>
+                <span style={{ color: '#666' }}>Mã giao dịch</span>
+                <span style={{ fontWeight: '600', color: '#333' }}>
+                  {paymentResult.transactionId.substring(0, 20)}...
                 </span>
               </div>
 
@@ -203,21 +219,24 @@ const PaymentResult: React.FC = () => {
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
-                  paddingTop: '12px',
-                  borderTop: '1px solid #e4e7eb',
-                  marginTop: '12px'
+                  padding: '8px 0',
+                  borderBottom: '1px solid #f0f0f0'
                 }}>
-                  <span style={{ color: '#8492a6' }}>Số tiền</span>
-                  <span style={{ fontWeight: '700', color: '#667eea', fontSize: '18px' }}>
+                  <span style={{ color: '#666' }}>Số tiền</span>
+                  <span style={{ fontWeight: '700', color: '#1eb854', fontSize: '16px' }}>
                     {formatCurrency(paymentResult.amount)}
                   </span>
                 </div>
               )}
 
               {paymentResult.paymentDate && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px' }}>
-                  <span style={{ color: '#8492a6' }}>Thời gian</span>
-                  <span style={{ fontWeight: '500', color: '#1f2d3d' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  padding: '8px 0'
+                }}>
+                  <span style={{ color: '#666' }}>Thời gian</span>
+                  <span style={{ fontWeight: '500', color: '#333' }}>
                     {new Date(paymentResult.paymentDate).toLocaleString('vi-VN')}
                   </span>
                 </div>
@@ -231,29 +250,41 @@ const PaymentResult: React.FC = () => {
                 <button
                   onClick={() => navigate('/customer/history')}
                   style={{
-                    padding: '14px',
-                    fontSize: '16px',
+                    padding: '12px 24px',
+                    fontSize: '15px',
                     fontWeight: '600',
-                    backgroundColor: '#667eea',
+                    backgroundColor: '#ff7518',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '10px',
+                    borderRadius: '4px',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                    transition: 'background-color 0.2s'
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e66a15'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ff7518'}
                 >
-                  📜 Xem lịch sử
+                  📋 Xem lịch sử
                 </button>
                 <button
                   onClick={() => navigate('/customer/dashboard')}
                   style={{
-                    padding: '12px',
+                    padding: '12px 24px',
                     fontSize: '15px',
+                    fontWeight: '500',
                     backgroundColor: 'transparent',
-                    color: '#8492a6',
-                    border: '1px solid #e4e7eb',
-                    borderRadius: '10px',
-                    cursor: 'pointer'
+                    color: '#666',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f5f5f5';
+                    e.currentTarget.style.borderColor = '#999';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.borderColor = '#ddd';
                   }}
                 >
                   🏠 Về trang chủ
@@ -264,29 +295,41 @@ const PaymentResult: React.FC = () => {
                 <button
                   onClick={() => navigate('/customer/payment')}
                   style={{
-                    padding: '14px',
-                    fontSize: '16px',
+                    padding: '12px 24px',
+                    fontSize: '15px',
                     fontWeight: '600',
-                    backgroundColor: '#667eea',
+                    backgroundColor: '#ff7518',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '10px',
+                    borderRadius: '4px',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                    transition: 'background-color 0.2s'
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e66a15'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ff7518'}
                 >
                   🔄 Thử lại
                 </button>
                 <button
                   onClick={() => navigate('/customer/dashboard')}
                   style={{
-                    padding: '12px',
+                    padding: '12px 24px',
                     fontSize: '15px',
+                    fontWeight: '500',
                     backgroundColor: 'transparent',
-                    color: '#8492a6',
-                    border: '1px solid #e4e7eb',
-                    borderRadius: '10px',
-                    cursor: 'pointer'
+                    color: '#666',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f5f5f5';
+                    e.currentTarget.style.borderColor = '#999';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.borderColor = '#ddd';
                   }}
                 >
                   🏠 Về trang chủ
@@ -297,17 +340,23 @@ const PaymentResult: React.FC = () => {
 
           {paymentResult?.success && (
             <div style={{
-              marginTop: '24px',
-              padding: '16px',
-              backgroundColor: '#f0fdf4',
-              borderRadius: '10px',
+              marginTop: '20px',
+              padding: '12px 16px',
+              backgroundColor: '#f0f9ff',
+              border: '1px solid #e0f2fe',
+              borderRadius: '4px',
               fontSize: '13px',
-              color: '#166534',
-              textAlign: 'center',
+              color: '#0369a1',
               lineHeight: '1.6'
             }}>
-              <p style={{ margin: '0 0 8px' }}>✉️ Hóa đơn điện tử đã được gửi về email</p>
-              <p style={{ margin: 0 }}>📱 Cảm ơn bạn đã sử dụng dịch vụ!</p>
+              <div style={{ marginBottom: '4px' }}>
+                <input type="checkbox" id="emailNotif" style={{ marginRight: '8px' }} />
+                <label htmlFor="emailNotif">Hóa đơn điện tử đã được gửi về email</label>
+              </div>
+              <div>
+                <input type="checkbox" id="serviceUsage" style={{ marginRight: '8px' }} />
+                <label htmlFor="serviceUsage">Cảm ơn bạn đã sử dụng dịch vụ!</label>
+              </div>
             </div>
           )}
         </div>

@@ -252,7 +252,30 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
     // Don't auto-advance, let user click Continue button
   };
 
+  // Kiểm tra xem service có bị disable không
+  const isServiceDisabled = (service: ServiceType) => {
+    const isBasicPackage = service.name.toLowerCase().includes('cơ bản');
+    const isComprehensivePackage = service.name.toLowerCase().includes('toàn diện');
+    
+    // Nếu đã chọn "Cơ bản" thì disable "Toàn diện"
+    if (isComprehensivePackage && selectedServices.some(s => s.name.toLowerCase().includes('cơ bản'))) {
+      return true;
+    }
+    
+    // Nếu đã chọn "Toàn diện" thì disable "Cơ bản"
+    if (isBasicPackage && selectedServices.some(s => s.name.toLowerCase().includes('toàn diện'))) {
+      return true;
+    }
+    
+    return false;
+  };
+
   const handleServiceSelect = (service: ServiceType) => {
+    // Kiểm tra nếu service bị disabled thì không cho chọn
+    if (isServiceDisabled(service)) {
+      return; // Không làm gì cả
+    }
+    
     console.log('🎯 Service clicked:', service.name);
     setSelectedServices(prev => {
       const isAlreadySelected = prev.some(s => s.id === service.id);
@@ -261,9 +284,11 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
       
       let newServices;
       if (isAlreadySelected) {
+        // Bỏ chọn service này
         newServices = prev.filter(s => s.id !== service.id);
         console.log('➖ Removing service. New count:', newServices.length);
       } else {
+        // Thêm service vào danh sách
         newServices = [...prev, service];
         console.log('➕ Adding service. New count:', newServices.length);
       }
@@ -431,21 +456,31 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
           <div className="step-content">
             <h2>Chọn dịch vụ</h2>
             <div className="services-grid">
-              {serviceTypes.map(service => (
+              {serviceTypes.map(service => {
+                const isDisabled = isServiceDisabled(service);
+                const isSelected = selectedServices.some(s => s.id === service.id);
+                return (
                 <div
                   key={service.id}
-                  className={`service-card ${selectedServices.some(s => s.id === service.id) ? 'selected' : ''}`}
-                  onClick={() => handleServiceSelect(service)}
+                  className={`service-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                  onClick={() => !isDisabled && handleServiceSelect(service)}
+                  style={isDisabled ? { cursor: 'not-allowed', opacity: 0.5, pointerEvents: 'none' } : {}}
                 >
                   <div className="service-header">
                     <h3>{service.name}</h3>
                     <input
                       type="checkbox"
-                      checked={selectedServices.some(s => s.id === service.id)}
-                      onChange={() => handleServiceSelect(service)}
+                      checked={isSelected}
+                      disabled={isDisabled}
+                      onChange={() => !isDisabled && handleServiceSelect(service)}
                     />
                   </div>
                   <p className="service-description">{service.description}</p>
+                  {isDisabled && (
+                    <p className="conflict-warning" style={{ color: '#ff9800', fontSize: '0.85rem', marginTop: '8px', fontWeight: '500' }}>
+                      Không thể chọn cùng gói {selectedServices.some(s => s.name.toLowerCase().includes('cơ bản')) ? 'Cơ bản' : 'Toàn diện'}
+                    </p>
+                  )}
                   <div className="service-details">
                     <div className="price-info">
                       <span className="price">{formatCurrency((service as any).price || service.basePrice || 0)}</span>
@@ -455,7 +490,8 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
             {selectedServices.length > 0 && (
               <div className="selection-summary">
@@ -659,13 +695,53 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
                   <div className="time-grid">
                     {availableTimeSlots.map(time => {
                       const isBooked = bookedTimeSlots.has(time);
+                      
+                      // Kiểm tra xem time slot có phải là thời gian đã qua không
+                      const isPastTime = (() => {
+                        const selectedDate = new Date(formData.scheduledDate);
+                        const today = new Date();
+                        
+                        // Reset hours để so sánh chỉ ngày
+                        const selectedDateOnly = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+                        const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                        
+                        // Nếu ngày đã chọn là ngày mai hoặc sau đó, cho phép tất cả time slots
+                        if (selectedDateOnly > todayOnly) {
+                          return false;
+                        }
+                        
+                        // Nếu ngày đã chọn là hôm nay, kiểm tra giờ
+                        if (selectedDateOnly.getTime() === todayOnly.getTime()) {
+                          const [slotHour, slotMinute] = time.split(':').map(Number);
+                          const currentHour = today.getHours();
+                          const currentMinute = today.getMinutes();
+                          
+                          // So sánh giờ và phút
+                          if (slotHour < currentHour) {
+                            return true; // Giờ đã qua
+                          }
+                          if (slotHour === currentHour && slotMinute <= currentMinute) {
+                            return true; // Cùng giờ nhưng phút đã qua hoặc bằng
+                          }
+                        }
+                        
+                        return false;
+                      })();
+                      
+                      const isDisabled = isBooked || isPastTime;
+                      
                       return (
                         <button
                           key={time}
-                          className={`time-slot ${formData.scheduledTime === time ? 'selected' : ''} ${isBooked ? 'booked' : ''}`}
-                          onClick={() => !isBooked && setFormData(prev => ({ ...prev, scheduledTime: time }))}
-                          disabled={isBooked}
-                          title={isBooked ? 'Giờ này đã có xe đăng ký' : 'Chọn giờ này'}
+                          className={`time-slot ${formData.scheduledTime === time ? 'selected' : ''} ${isBooked ? 'booked' : ''} ${isPastTime ? 'past-time' : ''}`}
+                          onClick={() => !isDisabled && setFormData(prev => ({ ...prev, scheduledTime: time }))}
+                          disabled={isDisabled}
+                          title={
+                            isBooked ? 'Giờ này đã có xe đăng ký' : 
+                            isPastTime ? 'Không thể chọn giờ đã qua' : 
+                            'Chọn giờ này'
+                          }
+                          style={isPastTime ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
                         >
                           {time}
                         </button>
