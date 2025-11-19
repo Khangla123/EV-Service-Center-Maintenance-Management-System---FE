@@ -20,6 +20,8 @@ const StaffManagement: React.FC = () => {
   const [filterRole, setFilterRole] = useState<'all' | 'STAFF' | 'TECHNICIAN'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -116,7 +118,41 @@ const StaffManagement: React.FC = () => {
   };
 
   const handleEditStaff = (staffId: string) => {
-    console.log('Edit staff:', staffId);
+    const staff = staffList.find(s => s.id === staffId);
+    if (staff) {
+      setEditingStaff(staff);
+      setShowEditModal(true);
+    }
+  };
+
+  const handleSubmitEditStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingStaff) return;
+
+    // Validation
+    if (!editingStaff.fullName || !editingStaff.phone) {
+      alert('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await staffService.updateStaff(editingStaff.id, {
+        fullName: editingStaff.fullName,
+        phone: editingStaff.phone,
+      });
+      
+      alert('Cập nhật nhân viên thành công');
+      setShowEditModal(false);
+      setEditingStaff(null);
+      loadStaff();
+    } catch (error) {
+      console.error('Error updating staff:', error);
+      alert('Không thể cập nhật nhân viên: ' + (error as any)?.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleDeleteStaff = async (staffId: string) => {
@@ -181,17 +217,11 @@ const StaffManagement: React.FC = () => {
   return (
     <div className="staff-management">
       <div className="staff-header">
-        <div className="header-left">
-          <h1>Quản lý Nhân sự</h1>
-          <p>Quản lý thông tin nhân viên và kỹ thuật viên</p>
-        </div>
-        <button className="btn-add-staff" onClick={handleAddStaff}>
-          <Plus size={20} />
-          Thêm nhân viên
-        </button>
+        <h1>Quản lý Nhân sự</h1>
+        <p>Quản lý thông tin nhân viên và kỹ thuật viên</p>
       </div>
 
-      {/* Filters */}
+      {/* Filters and Add Button */}
       <div className="staff-filters">
         <div className="search-box">
           <Search size={20} />
@@ -217,6 +247,11 @@ const StaffManagement: React.FC = () => {
             <option value="inactive">Ngừng làm việc</option>
           </select>
         </div>
+
+        <button className="btn-add-staff" onClick={handleAddStaff}>
+          <Plus size={20} />
+          Thêm nhân viên
+        </button>
       </div>
 
       {/* Stats */}
@@ -502,6 +537,116 @@ const StaffManagement: React.FC = () => {
                   disabled={submitting}
                 >
                   {submitting ? 'Đang xử lý...' : 'Thêm nhân viên'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Staff Modal */}
+      {showEditModal && editingStaff && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Chỉnh sửa thông tin nhân viên</h2>
+              <button 
+                className="btn-close" 
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingStaff(null);
+                }}
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitEditStaff}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label htmlFor="edit-fullName">
+                    Họ và tên <span className="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-fullName"
+                    className="form-control"
+                    placeholder="Nhập họ và tên"
+                    value={editingStaff.fullName}
+                    onChange={(e) => setEditingStaff({ ...editingStaff, fullName: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="edit-email">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="edit-email"
+                    className="form-control"
+                    value={editingStaff.email}
+                    disabled
+                    style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                  />
+                  <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    Email không thể thay đổi
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="edit-phone">
+                    Số điện thoại <span className="required">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    id="edit-phone"
+                    className="form-control"
+                    placeholder="0123456789"
+                    value={editingStaff.phone}
+                    onChange={(e) => setEditingStaff({ ...editingStaff, phone: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="edit-role">
+                    Vai trò
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-role"
+                    className="form-control"
+                    value={editingStaff.role === 'STAFF' ? 'Nhân viên' : 'Kỹ thuật viên'}
+                    disabled
+                    style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                  />
+                  <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    Vai trò không thể thay đổi
+                  </small>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button 
+                  type="button"
+                  className="btn-cancel" 
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingStaff(null);
+                  }}
+                  disabled={submitting}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit"
+                  className="btn-confirm"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Đang xử lý...' : 'Cập nhật'}
                 </button>
               </div>
             </form>
