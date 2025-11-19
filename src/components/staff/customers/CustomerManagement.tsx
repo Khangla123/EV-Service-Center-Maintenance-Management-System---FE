@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, Plus, Phone, Mail, Car, MessageSquare,
-  Eye, Edit, Trash2, Filter, Download
+  Eye, Edit, Trash2
 } from 'lucide-react';
 import { MDButton } from '../../ui';
 import customerService, { Customer } from '../../../services/customerService';
@@ -14,6 +14,9 @@ const CustomerManagement: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadCustomers();
@@ -62,20 +65,28 @@ const CustomerManagement: React.FC = () => {
     setShowDetails(false);
   };
 
-  const handleDeleteCustomer = async (customer: Customer) => {
-    const customerName = customer.fullName || `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'khách hàng này';
-    
-    if (window.confirm(`Bạn có chắc chắn muốn xóa ${customerName}?`)) {
-      try {
-        // TODO: Uncomment when API is ready
-        // await customerService.deleteCustomer(customer.id);
-        // await loadCustomers();
-        
-        alert('Chức năng xóa khách hàng sẽ được kết nối với API sau');
-      } catch (error) {
-        console.error('Error deleting customer:', error);
-        alert('Không thể xóa khách hàng. Vui lòng thử lại!');
-      }
+  const handleDeleteCustomer = (customer: Customer) => {
+    setDeletingCustomer(customer);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCustomer = async () => {
+    if (!deletingCustomer) return;
+
+    try {
+      setSubmitting(true);
+      // TODO: Uncomment when API is ready
+      // await customerService.deleteCustomer(deletingCustomer.id);
+      // await loadCustomers();
+      
+      alert('Chức năng xóa khách hàng sẽ được kết nối với API sau');
+      setShowDeleteModal(false);
+      setDeletingCustomer(null);
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+      alert('Không thể xóa khách hàng. Vui lòng thử lại!');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -97,16 +108,11 @@ const CustomerManagement: React.FC = () => {
     <div className="customer-management">
       {/* Header */}
       <div className="customer-header">
-        <div className="header-left">
-          <h1>Quản lý Khách hàng</h1>
-          <p>Quản lý thông tin khách hàng và dịch vụ</p>
-        </div>
-        <MDButton variant="filled" startIcon={<Plus />}>
-          Thêm khách hàng
-        </MDButton>
+        <h1>Quản lý Khách hàng</h1>
+        <p>Quản lý thông tin khách hàng và dịch vụ</p>
       </div>
 
-      {/* Filters */}
+      {/* Filters and Add Button */}
       <div className="customer-filters">
         <div className="search-box">
           <Search size={18} />
@@ -117,12 +123,9 @@ const CustomerManagement: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="filter-group">
-          <Filter size={18} />
-          <MDButton variant="outlined" startIcon={<Download />}>
-            Xuất Excel
-          </MDButton>
-        </div>
+        <MDButton variant="filled" startIcon={<Plus />}>
+          Thêm khách hàng
+        </MDButton>
       </div>
 
       {/* Stats */}
@@ -355,6 +358,64 @@ const CustomerManagement: React.FC = () => {
                   <MDButton variant="filled">Gửi</MDButton>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && deletingCustomer && (
+        <div className="modal-overlay">
+          <div className="modal-content modal-delete">
+            <div className="modal-header">
+              <h2>Xác nhận xóa</h2>
+              <button 
+                className="btn-close" 
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingCustomer(null);
+                }}
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="delete-warning">
+                <Trash2 size={48} color="#ef4444" />
+                <h3>Bạn có chắc chắn muốn xóa khách hàng này?</h3>
+                <div className="customer-info-delete">
+                  <p><strong>Họ và tên:</strong> {deletingCustomer.fullName || `${deletingCustomer.firstName || ''} ${deletingCustomer.lastName || ''}`.trim()}</p>
+                  <p><strong>Email:</strong> {deletingCustomer.email}</p>
+                  <p><strong>Số điện thoại:</strong> {deletingCustomer.phone || 'N/A'}</p>
+                </div>
+                <p className="warning-text">
+                  <strong>⚠️ Chú ý:</strong> Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan đến khách hàng này (xe, lịch hẹn, hóa đơn) sẽ bị xóa vĩnh viễn.
+                </p>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                type="button"
+                className="btn-cancel" 
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletingCustomer(null);
+                }}
+                disabled={submitting}
+              >
+                Hủy
+              </button>
+              <button 
+                type="button"
+                className="btn-delete"
+                onClick={confirmDeleteCustomer}
+                disabled={submitting}
+              >
+                {submitting ? 'Đang xóa...' : 'Xóa khách hàng'}
+              </button>
             </div>
           </div>
         </div>
