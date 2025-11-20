@@ -85,16 +85,16 @@ const AppointmentManagement: React.FC = () => {
         console.log('All staff loaded:', allStaff);
       }
       
-      // Lọc staff có thể làm kỹ thuật viên
+      // Lọc CHẶT CHẼ chỉ lấy kỹ thuật viên (TECHNICIAN role)
       console.log('[STAFF PAGE] Total staff from API:', allStaff.length);
       
       let techs = allStaff.filter(staff => {
         const hasRole = staff.role && staff.role.toLowerCase().includes('tech');
-        const hasSpecialization = staff.specialization && staff.specialization.trim() !== '';
         const isActive = staff.isActive !== false;
         const isAvailable = staff.isAvailable !== false;
         
-        return isActive && isAvailable && (hasRole || hasSpecialization);
+        // CHỈ LẤY TECHNICIAN, không lấy staff khác
+        return isActive && isAvailable && hasRole;
       });
       
       console.log('[STAFF PAGE] Filtered technicians:', techs);
@@ -106,11 +106,12 @@ const AppointmentManagement: React.FC = () => {
           id: techs[0].id,
           userId: techs[0].userId,
           fullName: techs[0].fullName,
+          role: techs[0].role,
           hasUserId: !!techs[0].userId
         });
       }
       
-      // Nếu không có technician nào, hiển thị tất cả staff available
+      // Không fallback sang tất cả staff nữa - chỉ hiển thị technicians
       if (techs.length === 0 && allStaff.length > 0) {
         console.warn('[STAFF PAGE] No technicians found, showing all available staff');
         techs = allStaff.filter(s => s.isAvailable !== false && s.isActive !== false);
@@ -136,7 +137,34 @@ const AppointmentManagement: React.FC = () => {
           return acc;
         }, {})
       );
-      setAppointments(response.appointments || []);
+      
+      // Process appointments to ensure selectedPackageNames is available
+      const processedAppointments = await Promise.all((response.appointments || []).map(async (apt: any) => {
+        // If selectedPackageNames is not available but selectedPackages is, parse it
+        if (!apt.selectedPackageNames && apt.selectedPackages) {
+          try {
+            const packageIds = JSON.parse(apt.selectedPackages);
+            if (Array.isArray(packageIds) && packageIds.length > 0) {
+              const packageNames = await Promise.all(
+                packageIds.map(async (id: string) => {
+                  try {
+                    const pkg = await servicePackageService.getServicePackageById(id);
+                    return pkg.name;
+                  } catch {
+                    return null;
+                  }
+                })
+              );
+              apt.selectedPackageNames = packageNames.filter(n => n).join(', ');
+            }
+          } catch (error) {
+            console.error('Error parsing selected packages:', error);
+          }
+        }
+        return apt;
+      }));
+      
+      setAppointments(processedAppointments);
     } catch (err) {
       setError('Không thể tải danh sách lịch hẹn');
       console.error('Error loading appointments:', err);
@@ -839,7 +867,7 @@ const AppointmentManagement: React.FC = () => {
               <div className="appointment-info">
                 <p><strong>Mã lịch hẹn:</strong> #{generateDisplayCode(selectedAppointment.id, selectedAppointment.appointmentDate)}</p>
                 <p><strong>Khách hàng:</strong> {selectedAppointment.customerName}</p>
-                <p><strong>Dịch vụ:</strong> {selectedAppointment.servicePackageName}</p>
+                <p><strong>Dịch vụ:</strong> {selectedAppointment.selectedPackageNames || selectedAppointment.servicePackageName}</p>
               </div>
               <div className="form-group">
                 <label>Chọn kỹ thuật viên:</label>

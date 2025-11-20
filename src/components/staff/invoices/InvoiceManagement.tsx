@@ -88,6 +88,7 @@ const InvoiceManagement: React.FC = () => {
           console.log('📦 Service package services:', (servicePackage as any)?.services || (servicePackage as any)?.includedServices);
           
           // Parse selected packages from appointment.selectedPackageNames
+          let selectedPackagesData: any[] = [];
           try {
             console.log('📦 Parsing selected packages from appointment...');
             console.log('📦 selectedPackageNames:', appointment.selectedPackageNames);
@@ -102,17 +103,19 @@ const InvoiceManagement: React.FC = () => {
               const packagesPromises = packageIds.map((id: string) => 
                 servicePackageService.getServicePackageById(id)
               );
-              const packages = await Promise.all(packagesPromises);
+              selectedPackagesData = await Promise.all(packagesPromises);
               
-              console.log('✅ Selected packages loaded:', packages);
-              setSelectedPackages(packages);
+              console.log('✅ Selected packages loaded:', selectedPackagesData);
+              setSelectedPackages(selectedPackagesData);
             } else {
               console.warn('⚠️ No selected_packages, using single package fallback');
-              setSelectedPackages([servicePackage]);
+              selectedPackagesData = [servicePackage];
+              setSelectedPackages(selectedPackagesData);
             }
           } catch (error) {
             console.error('❌ Error parsing selected packages:', error);
-            setSelectedPackages([servicePackage]);
+            selectedPackagesData = [servicePackage];
+            setSelectedPackages(selectedPackagesData);
           }
           
           // Load summary info (counts and totals) from backend
@@ -246,16 +249,16 @@ const InvoiceManagement: React.FC = () => {
           }
           
           // Update invoice amount with all costs
-          // Calculate total package price from ALL selected packages
-          const totalPackagePrice = selectedPackages.length > 0
-            ? selectedPackages.reduce((sum, pkg) => sum + (pkg.price || 0), 0)
+          // Calculate total package price from ALL selected packages (use the fetched data, not state)
+          const totalPackagePrice = selectedPackagesData.length > 0
+            ? selectedPackagesData.reduce((sum, pkg) => sum + (pkg.price || 0), 0)
             : servicePackage.price;
           
           const finalAmount = totalPackagePrice + totalPartsAmount + totalSuggestionsAmount + totalIssuesAmount;
           setInvoiceAmount(finalAmount);
           setPackagePrice(totalPackagePrice); // Update package price to reflect all packages
           console.log('💰 Final invoice amount:', { 
-            packagesCount: selectedPackages.length,
+            packagesCount: selectedPackagesData.length,
             packagePrice: totalPackagePrice, 
             parts: totalPartsAmount, 
             suggestions: totalSuggestionsAmount, 
@@ -299,14 +302,13 @@ const InvoiceManagement: React.FC = () => {
       
       // Use provided amount (backend will check for duplicates)
       const subtotal = amount;
-      const taxAmount = Math.round(subtotal * 0.1 * 100) / 100; // 10% tax
       const discountAmount = 0; // No discount
       
       // Create invoice with correct request format
       const createRequest: CreateInvoiceRequest = {
         serviceOrderId: serviceOrder.id,
         subtotal: subtotal,
-        taxAmount: taxAmount,
+        taxAmount: 0,
         discountAmount: discountAmount,
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       };
@@ -316,8 +318,6 @@ const InvoiceManagement: React.FC = () => {
         serviceOrderId: serviceOrder.id,
         subtotalType: typeof subtotal,
         subtotalValue: subtotal,
-        taxAmountType: typeof taxAmount,
-        taxAmountValue: taxAmount,
         discountAmountType: typeof discountAmount,
         discountAmountValue: discountAmount,
         dueDateType: typeof createRequest.dueDate,
@@ -1311,19 +1311,9 @@ const InvoiceManagement: React.FC = () => {
                             </div>
                           )}
                           
-                          <div className="detail-row" style={{ marginBottom: '8px', paddingTop: '12px', borderTop: '1px solid #bfdbfe' }}>
-                            <span className="label">Tạm tính:</span>
-                            <span className="value" style={{ fontWeight: '700' }}>{formatCurrency(packagePrice + calculatedIssuesTotal + calculatedPartsTotal + calculatedSuggestionsTotal + additionalFee)}</span>
-                          </div>
-                          
-                          <div className="detail-row" style={{ marginBottom: '8px' }}>
-                            <span className="label">Thuế VAT (10%):</span>
-                            <span className="value">{formatCurrency((packagePrice + calculatedIssuesTotal + calculatedPartsTotal + calculatedSuggestionsTotal + additionalFee) * 0.1)}</span>
-                          </div>
-                          
                           <div className="detail-row highlight" style={{ fontSize: '18px', fontWeight: '800', paddingTop: '12px', borderTop: '2px solid #3b82f6' }}>
                             <span className="label" style={{ color: '#1e40af' }}>TỔNG THANH TOÁN:</span>
-                            <span className="value amount" style={{ fontSize: '20px' }}>{formatCurrency((packagePrice + calculatedIssuesTotal + calculatedPartsTotal + calculatedSuggestionsTotal + additionalFee) * 1.1)}</span>
+                            <span className="value amount" style={{ fontSize: '20px' }}>{formatCurrency(packagePrice + calculatedIssuesTotal + calculatedPartsTotal + calculatedSuggestionsTotal + additionalFee)}</span>
                           </div>
                         </>
                       );
