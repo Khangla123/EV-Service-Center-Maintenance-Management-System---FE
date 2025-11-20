@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, Calendar, Wrench, Package,
-  MessageSquare, TrendingUp, Bell, FileText
+  MessageSquare, TrendingUp, Bell, FileText, Activity
 } from 'lucide-react';
 import { CustomerManagement } from './customers';
 import { AppointmentManagement } from './appointments';
 import { InvoiceManagement } from './invoices';
 import IssuePricing from './pricing/IssuePricing';
+import appointmentService from '../../services/appointmentService';
+import customerService from '../../services/customerService';
+import partService from '../../services/partService';
 import './StaffDashboard.css';
 
 type StaffView = 
@@ -18,43 +21,105 @@ type StaffView =
 
 const StaffDashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<StaffView>('overview');
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState({
+    todayAppointments: 0,
+    inProgressCount: 0,
+    newCustomersThisWeek: 0,
+    lowStockParts: 0,
+    recentAppointments: [] as any[]
+  });
 
-  // Debug: Log component mount
-  React.useEffect(() => {
-    console.log('✅ StaffDashboard mounted');
-    console.log('Current view:', currentView);
+  useEffect(() => {
+    if (currentView === 'overview') {
+      loadDashboardData();
+    }
   }, [currentView]);
 
-  const stats = [
-    {
-      icon: <Calendar className="stat-icon" />,
-      label: 'Lịch hẹn hôm nay',
-      value: '12',
-      trend: '+3',
-      color: 'blue'
-    },
-    {
-      icon: <Wrench className="stat-icon" />,
-      label: 'Đang bảo dưỡng',
-      value: '8',
-      trend: '2 hoàn tất',
-      color: 'orange'
-    },
-    {
-      icon: <Users className="stat-icon" />,
-      label: 'Khách hàng mới',
-      value: '5',
-      trend: '+2 tuần này',
-      color: 'green'
-    },
-    {
-      icon: <Package className="stat-icon" />,
-      label: 'Phụ tùng sắp hết',
-      value: '4',
-      trend: 'Cần đặt hàng',
-      color: 'red'
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      const [appointmentsResponse, customersResponse, parts] = await Promise.all([
+        appointmentService.getAllAppointments(),
+        customerService.getAllCustomers(),
+        partService.getAllParts()
+      ]);
+
+      // Handle paginated response for appointments
+      const appointments = Array.isArray(appointmentsResponse) 
+        ? appointmentsResponse 
+        : (appointmentsResponse.appointments || []);
+
+      const now = new Date();
+      const today = now.toDateString();
+      
+      // Count today's appointments
+      const todayAppointments = appointments.filter((apt: any) => {
+        const aptDate = new Date(apt.appointmentDate);
+        return aptDate.toDateString() === today;
+      }).length;
+
+      // Count in-progress appointments
+      const inProgressCount = appointments.filter((apt: any) => 
+        apt.status === 'IN_PROGRESS' || apt.status === 'ASSIGNED'
+      ).length;
+
+      // Count new customers this week
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const customersList = customersResponse.content || customersResponse || [];
+      const newCustomersThisWeek = customersList.filter((customer: any) => {
+        if (!customer.createdAt) return false;
+        const createdDate = new Date(customer.createdAt);
+        return createdDate >= oneWeekAgo;
+      }).length;
+
+      // Count low stock parts (quantity < 10)
+      const lowStockParts = parts.filter((part: any) => part.quantity < 10).length;
+
+      // Get recent appointments (last 4)
+      const recentAppointments = appointments
+        .sort((a: any, b: any) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime())
+        .slice(0, 4);
+
+      setDashboardData({
+        todayAppointments,
+        inProgressCount,
+        newCustomersThisWeek,
+        lowStockParts,
+        recentAppointments
+      });
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const getTimeAgo = (date: Date | string) => {
+    const now = new Date();
+    const past = new Date(date);
+    const diffMs = now.getTime() - past.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    return `${diffDays} ngày trước`;
+  };
+
+  const getStatusText = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      'PENDING': 'Chờ xác nhận',
+      'CONFIRMED': 'Đã xác nhận',
+      'ASSIGNED': 'Đã phân công',
+      'IN_PROGRESS': 'Đang thực hiện',
+      'COMPLETED': 'Hoàn thành',
+      'CANCELLED': 'Đã hủy'
+    };
+    return statusMap[status] || status;
+  };
 
   const menuItems = [
     { id: 'overview', icon: <TrendingUp />, label: 'Tổng quan', color: '#667eea' },
@@ -76,6 +141,48 @@ const StaffDashboard: React.FC = () => {
         return <IssuePricing />;
       case 'overview':
       default:
+        if (loading) {
+          return (
+            <div className="overview-content">
+              <div className="loading-state">
+                <Activity className="loading-icon" size={48} />
+                <p>Đang tải dữ liệu tổng quan...</p>
+              </div>
+            </div>
+          );
+        }
+
+        const stats = [
+          {
+            icon: <Calendar className="stat-icon" />,
+            label: 'Lịch hẹn hôm nay',
+            value: dashboardData.todayAppointments.toString(),
+            trend: dashboardData.todayAppointments > 0 ? 'Có lịch hẹn' : 'Chưa có lịch',
+            color: 'blue'
+          },
+          {
+            icon: <Wrench className="stat-icon" />,
+            label: 'Đang bảo dưỡng',
+            value: dashboardData.inProgressCount.toString(),
+            trend: dashboardData.inProgressCount > 0 ? 'Đang thực hiện' : 'Không có',
+            color: 'orange'
+          },
+          {
+            icon: <Users className="stat-icon" />,
+            label: 'Khách hàng mới',
+            value: dashboardData.newCustomersThisWeek.toString(),
+            trend: 'Tuần này',
+            color: 'green'
+          },
+          {
+            icon: <Package className="stat-icon" />,
+            label: 'Phụ tùng sắp hết',
+            value: dashboardData.lowStockParts.toString(),
+            trend: dashboardData.lowStockParts > 0 ? 'Cần đặt hàng' : 'Đủ hàng',
+            color: 'red'
+          }
+        ];
+
         return (
           <div className="overview-content">
             <div className="stats-grid">
@@ -98,55 +205,45 @@ const StaffDashboard: React.FC = () => {
               <div className="actions-grid">
                 <button className="action-btn" onClick={() => setCurrentView('appointments')}>
                   <Calendar />
-                  <span>Tạo lịch hẹn mới</span>
+                  <span>Quản lý lịch hẹn</span>
                 </button>
                 <button className="action-btn" onClick={() => setCurrentView('customers')}>
                   <Users />
-                  <span>Thêm khách hàng</span>
+                  <span>Quản lý khách hàng</span>
                 </button>
               </div>
             </div>
 
             <div className="recent-activities">
-              <h3>Hoạt động gần đây</h3>
-              <div className="activity-list">
-                <div className="activity-item">
-                  <div className="activity-icon blue">
-                    <Calendar />
-                  </div>
-                  <div className="activity-content">
-                    <div className="activity-title">Lịch hẹn mới từ Nguyễn Văn A</div>
-                    <div className="activity-time">5 phút trước</div>
-                  </div>
+              <h3>Lịch hẹn gần đây</h3>
+              {dashboardData.recentAppointments.length === 0 ? (
+                <div className="empty-activities">
+                  <Calendar size={48} style={{ opacity: 0.3 }} />
+                  <p>Chưa có lịch hẹn nào</p>
                 </div>
-                <div className="activity-item">
-                  <div className="activity-icon green">
-                    <Wrench />
-                  </div>
-                  <div className="activity-content">
-                    <div className="activity-title">Hoàn thành bảo dưỡng VF8 - BKS: 30A-123.45</div>
-                    <div className="activity-time">15 phút trước</div>
-                  </div>
+              ) : (
+                <div className="activity-list">
+                  {dashboardData.recentAppointments.map((appointment, index) => (
+                    <div key={appointment.id || index} className="activity-item">
+                      <div className={`activity-icon ${
+                        appointment.status === 'COMPLETED' ? 'green' :
+                        appointment.status === 'IN_PROGRESS' || appointment.status === 'ASSIGNED' ? 'orange' :
+                        appointment.status === 'CONFIRMED' ? 'blue' : 'gray'
+                      }`}>
+                        <Calendar />
+                      </div>
+                      <div className="activity-content">
+                        <div className="activity-title">
+                          {appointment.servicePackageName || 'Dịch vụ'} - {getStatusText(appointment.status)}
+                        </div>
+                        <div className="activity-time">
+                          {new Date(appointment.appointmentDate).toLocaleDateString('vi-VN')} - {getTimeAgo(appointment.createdAt || appointment.appointmentDate)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="activity-item">
-                  <div className="activity-icon red">
-                    <Bell />
-                  </div>
-                  <div className="activity-content">
-                    <div className="activity-title">Cảnh báo: Pin Li-ion sắp hết hàng</div>
-                    <div className="activity-time">30 phút trước</div>
-                  </div>
-                </div>
-                <div className="activity-item">
-                  <div className="activity-icon orange">
-                    <MessageSquare />
-                  </div>
-                  <div className="activity-content">
-                    <div className="activity-title">Tin nhắn mới từ khách hàng Trần Thị B</div>
-                    <div className="activity-time">1 giờ trước</div>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         );

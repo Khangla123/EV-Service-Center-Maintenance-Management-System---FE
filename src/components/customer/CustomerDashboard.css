@@ -3,7 +3,6 @@
   background: #ffffff;
   display: flex;
   position: relative;
-  overflow-x: hidden;
 }
 
 .customer-dashboard::before {
