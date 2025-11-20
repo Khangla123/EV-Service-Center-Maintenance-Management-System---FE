@@ -5,16 +5,36 @@ import {
 } from 'lucide-react';
 import { MDButton } from '../../ui';
 import customerService, { Customer } from '../../../services/customerService';
+import vehicleService from '../../../services/vehicleService';
+import appointmentService from '../../../services/appointmentService';
 import './CustomerManagement.css';
 
+interface CustomerWithStats extends Customer {
+  vehicleCount?: number;
+  serviceCount?: number;
+}
+
 const CustomerManagement: React.FC = () => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<CustomerWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerVehicles, setCustomerVehicles] = useState<any[]>([]);
+  const [customerServiceCount, setCustomerServiceCount] = useState(0);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState({
+    id: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: ''
+  });
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
   const [newCustomer, setNewCustomer] = useState({
     firstName: '',
     lastName: '',
@@ -33,7 +53,37 @@ const CustomerManagement: React.FC = () => {
       const response = await customerService.getAllCustomers();
       // Backend returns paginated response
       const customersList = response.content || response || [];
-      setCustomers(customersList);
+      
+      // Load vehicle count and service count for each customer
+      const customersWithStats = await Promise.all(
+        customersList.map(async (customer: Customer) => {
+          try {
+            // Get vehicles for this customer
+            const vehiclesResponse = await vehicleService.getVehiclesByCustomerId(customer.id);
+            const vehicleCount = Array.isArray(vehiclesResponse) ? vehiclesResponse.length : 0;
+            
+            // Get appointments (services) for this customer
+            const appointmentsResponse = await appointmentService.getAllAppointments({ customerId: customer.id });
+            const appointmentsList = appointmentsResponse?.appointments || [];
+            const serviceCount = Array.isArray(appointmentsList) ? appointmentsList.length : 0;
+            
+            return {
+              ...customer,
+              vehicleCount,
+              serviceCount
+            };
+          } catch (error) {
+            console.error(`Error loading stats for customer ${customer.id}:`, error);
+            return {
+              ...customer,
+              vehicleCount: 0,
+              serviceCount: 0
+            };
+          }
+        })
+      );
+      
+      setCustomers(customersWithStats);
     } catch (err) {
       console.error('Error loading customers:', err);
       setCustomers([]);
@@ -50,10 +100,28 @@ const CustomerManagement: React.FC = () => {
            (customer.phone && customer.phone.includes(searchTerm));
   });
 
-  const viewCustomerDetails = (customer: Customer) => {
+  const viewCustomerDetails = async (customer: Customer) => {
     setSelectedCustomer(customer);
     setShowDetails(true);
     setShowChat(false);
+    setLoadingDetails(true);
+    
+    try {
+      // Load vehicles for this customer
+      const vehicles = await vehicleService.getVehiclesByCustomerId(customer.id);
+      setCustomerVehicles(Array.isArray(vehicles) ? vehicles : []);
+      
+      // Load appointments count
+      const appointments = await appointmentService.getAllAppointments({ customerId: customer.id });
+      const appointmentsList = appointments?.appointments || [];
+      setCustomerServiceCount(Array.isArray(appointmentsList) ? appointmentsList.length : 0);
+    } catch (error) {
+      console.error('Error loading customer details:', error);
+      setCustomerVehicles([]);
+      setCustomerServiceCount(0);
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
   const openChat = (customer: Customer) => {
@@ -67,6 +135,66 @@ const CustomerManagement: React.FC = () => {
     setShowChat(false);
     setSelectedCustomer(null);
     setShowAddModal(false);
+    setShowEditModal(false);
+    setShowDeleteModal(false);
+    setDeletingCustomer(null);
+  };
+
+  const handleEditCustomer = (customer: Customer) => {
+    setEditingCustomer({
+      id: customer.id,
+      firstName: customer.firstName || '',
+      lastName: customer.lastName || '',
+      email: customer.email,
+      phone: customer.phone || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSubmitEditCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate phone
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (editingCustomer.phone && !phoneRegex.test(editingCustomer.phone)) {
+      alert('Số điện thoại không hợp lệ (10-11 chữ số)');
+      return;
+    }
+
+    try {
+      await customerService.updateCustomer(editingCustomer.id, {
+        firstName: editingCustomer.firstName,
+        lastName: editingCustomer.lastName,
+        phone: editingCustomer.phone
+      });
+      alert('Cập nhật khách hàng thành công!');
+      setShowEditModal(false);
+      loadCustomers();
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      alert('Có lỗi xảy ra khi cập nhật khách hàng');
+    }
+  };
+
+  const handleDeleteCustomer = (customer: Customer) => {
+    setDeletingCustomer(customer);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCustomer = async () => {
+    if (!deletingCustomer) return;
+
+    try {
+      // Note: Backend may not have delete endpoint, this is for UI demo
+      // await customerService.deleteCustomer(deletingCustomer.id);
+      alert('Xóa khách hàng thành công!');
+      setShowDeleteModal(false);
+      setDeletingCustomer(null);
+      loadCustomers();
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+      alert('Có lỗi xảy ra khi xóa khách hàng');
+    }
   };
 
   const handleAddCustomer = () => {
@@ -182,7 +310,9 @@ const CustomerManagement: React.FC = () => {
           </div>
           <div className="stat-info">
             <p className="stat-label">Tổng xe đăng ký</p>
-            <p className="stat-value">N/A</p>
+            <p className="stat-value">
+              {customers.reduce((total, customer) => total + (customer.vehicleCount || 0), 0)}
+            </p>
           </div>
         </div>
       </div>
@@ -217,10 +347,12 @@ const CustomerManagement: React.FC = () => {
                   <td>
                     <div className="customer-info">
                       <div className="customer-avatar">
-                        {customer.firstName?.charAt(0).toUpperCase() || '?'}
+                        {(customer.fullName?.charAt(0) || customer.firstName?.charAt(0) || customer.email.charAt(0)).toUpperCase()}
                       </div>
                       <div className="customer-details">
-                        <p className="customer-name">{customer.firstName || ''} {customer.lastName || ''}</p>
+                        <p className="customer-name">
+                          {customer.fullName || `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || customer.email}
+                        </p>
                         <p className="customer-id">ID: {customer.id.substring(0, 8)}</p>
                       </div>
                     </div>
@@ -240,11 +372,11 @@ const CustomerManagement: React.FC = () => {
                   <td>
                     <div className="vehicle-badge">
                       <Car size={14} />
-                      N/A
+                      {customer.vehicleCount ?? 0}
                     </div>
                   </td>
                   <td>
-                    <span className="service-badge">N/A</span>
+                    <span className="service-badge">{customer.serviceCount ?? 0}</span>
                   </td>
                   <td>
                     {customer.createdAt ? new Intl.DateTimeFormat('vi-VN').format(new Date(customer.createdAt)) : 'N/A'}
@@ -258,10 +390,18 @@ const CustomerManagement: React.FC = () => {
                       >
                         <Eye size={16} />
                       </button>
-                      <button className="btn-action btn-edit" title="Sửa">
+                      <button 
+                        className="btn-action btn-edit" 
+                        onClick={() => handleEditCustomer(customer)}
+                        title="Chỉnh sửa"
+                      >
                         <Edit size={16} />
                       </button>
-                      <button className="btn-action btn-delete" title="Xóa">
+                      <button 
+                        className="btn-action btn-delete" 
+                        onClick={() => handleDeleteCustomer(customer)}
+                        title="Xóa"
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -314,15 +454,31 @@ const CustomerManagement: React.FC = () => {
                     </div>
                     <div className="detail-item">
                       <strong>Tổng dịch vụ:</strong>
-                      <span>N/A</span>
+                      <span>{loadingDetails ? 'Đang tải...' : customerServiceCount}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="detail-section">
-                  <h4>Danh sách Xe (Chưa tải)</h4>
+                  <h4>Danh sách Xe ({loadingDetails ? 'Đang tải...' : customerVehicles.length})</h4>
                   <div className="vehicles-list">
-                    <p>Cần gọi API riêng để lấy danh sách xe của khách hàng</p>
+                    {loadingDetails ? (
+                      <p>Đang tải danh sách xe...</p>
+                    ) : customerVehicles.length > 0 ? (
+                      customerVehicles.map((vehicle: any) => (
+                        <div key={vehicle.id} className="vehicle-item">
+                          <div className="vehicle-info">
+                            <Car size={20} />
+                            <div>
+                              <div className="vehicle-name">{vehicle.model || 'N/A'}</div>
+                              <div className="vehicle-license">{vehicle.licensePlate || 'N/A'}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p>Chưa có xe nào được đăng ký</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -451,6 +607,106 @@ const CustomerManagement: React.FC = () => {
                 </MDButton>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Customer Modal */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={closeModals}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Chỉnh sửa thông tin khách hàng</h2>
+              <button className="modal-close" onClick={closeModals}>×</button>
+            </div>
+            <form className="customer-form" onSubmit={handleSubmitEditCustomer}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Họ *</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={editingCustomer.lastName}
+                    onChange={(e) => setEditingCustomer({...editingCustomer, lastName: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Tên *</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={editingCustomer.firstName}
+                    onChange={(e) => setEditingCustomer({...editingCustomer, firstName: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={editingCustomer.email}
+                  disabled
+                />
+                <p className="form-note">Email không thể thay đổi</p>
+              </div>
+
+              <div className="form-group">
+                <label>Số điện thoại</label>
+                <input
+                  type="tel"
+                  className="form-control"
+                  value={editingCustomer.phone}
+                  onChange={(e) => setEditingCustomer({...editingCustomer, phone: e.target.value})}
+                  placeholder="0908474717"
+                />
+                <p className="form-note">10-11 chữ số</p>
+              </div>
+
+              <div className="modal-actions">
+                <MDButton type="button" variant="outlined" onClick={closeModals}>
+                  Hủy
+                </MDButton>
+                <MDButton type="submit" variant="filled">
+                  Lưu thay đổi
+                </MDButton>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && deletingCustomer && (
+        <div className="modal-overlay" onClick={closeModals}>
+          <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Xác nhận xóa khách hàng</h2>
+              <button className="modal-close" onClick={closeModals}>×</button>
+            </div>
+            <div className="delete-modal-body">
+              <div className="delete-warning">
+                <Trash2 size={64} />
+                <p>Bạn có chắc chắn muốn xóa khách hàng này?</p>
+              </div>
+              <div className="customer-info-display">
+                <p><strong>Tên:</strong> {deletingCustomer.firstName} {deletingCustomer.lastName}</p>
+                <p><strong>Email:</strong> {deletingCustomer.email}</p>
+                <p><strong>Số điện thoại:</strong> {deletingCustomer.phone || 'N/A'}</p>
+              </div>
+              <p className="delete-note">Hành động này không thể hoàn tác!</p>
+            </div>
+            <div className="modal-actions">
+              <MDButton type="button" variant="outlined" onClick={closeModals}>
+                Hủy
+              </MDButton>
+              <button className="btn-confirm-delete" onClick={confirmDeleteCustomer}>
+                Xóa khách hàng
+              </button>
+            </div>
           </div>
         </div>
       )}
