@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, Plus, Phone, Mail, Car, MessageSquare,
-  Eye, Edit, Trash2, Filter, Download
+  Eye, Edit, Trash2
 } from 'lucide-react';
 import { MDButton } from '../../ui';
 import customerService, { Customer } from '../../../services/customerService';
@@ -14,6 +14,14 @@ const CustomerManagement: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    phone: ''
+  });
 
   useEffect(() => {
     loadCustomers();
@@ -58,6 +66,60 @@ const CustomerManagement: React.FC = () => {
     setShowDetails(false);
     setShowChat(false);
     setSelectedCustomer(null);
+    setShowAddModal(false);
+  };
+
+  const handleAddCustomer = () => {
+    setShowAddModal(true);
+  };
+
+  const handleSubmitNewCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newCustomer.email)) {
+      alert('Email không hợp lệ');
+      return;
+    }
+
+    // Validate password
+    if (newCustomer.password.length < 6) {
+      alert('Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+
+    // Validate phone
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (newCustomer.phone && !phoneRegex.test(newCustomer.phone)) {
+      alert('Số điện thoại không hợp lệ (10-11 chữ số)');
+      return;
+    }
+
+    try {
+      // Use the same format as register endpoint
+      const customerData = {
+        email: newCustomer.email,
+        fullName: `${newCustomer.lastName} ${newCustomer.firstName}`.trim(),
+        phone: newCustomer.phone,
+        password: newCustomer.password
+      };
+      
+      await customerService.createCustomer(customerData as any);
+      alert('Thêm khách hàng thành công!');
+      setShowAddModal(false);
+      setNewCustomer({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        phone: ''
+      });
+      loadCustomers();
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      alert('Có lỗi xảy ra khi thêm khách hàng');
+    }
   };
 
   if (loading) {
@@ -70,17 +132,6 @@ const CustomerManagement: React.FC = () => {
 
   return (
     <div className="customer-management">
-      {/* Header */}
-      <div className="customer-header">
-        <div className="header-left">
-          <h1>Quản lý Khách hàng</h1>
-          <p>Quản lý thông tin khách hàng và dịch vụ</p>
-        </div>
-        <MDButton variant="filled" startIcon={<Plus />}>
-          Thêm khách hàng
-        </MDButton>
-      </div>
-
       {/* Filters */}
       <div className="customer-filters">
         <div className="search-box">
@@ -92,12 +143,9 @@ const CustomerManagement: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="filter-group">
-          <Filter size={18} />
-          <MDButton variant="outlined" startIcon={<Download />}>
-            Xuất Excel
-          </MDButton>
-        </div>
+        <MDButton variant="filled" startIcon={<Plus />} onClick={handleAddCustomer}>
+          Thêm khách hàng
+        </MDButton>
       </div>
 
       {/* Stats */}
@@ -322,6 +370,87 @@ const CustomerManagement: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Customer Modal */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={closeModals}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Thêm khách hàng mới</h2>
+              <button className="modal-close" onClick={closeModals}>×</button>
+            </div>
+            <form className="customer-form" onSubmit={handleSubmitNewCustomer}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Họ *</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={newCustomer.lastName}
+                    onChange={(e) => setNewCustomer({...newCustomer, lastName: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Tên *</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={newCustomer.firstName}
+                    onChange={(e) => setNewCustomer({...newCustomer, firstName: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={newCustomer.email}
+                  onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Mật khẩu *</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  value={newCustomer.password}
+                  onChange={(e) => setNewCustomer({...newCustomer, password: e.target.value})}
+                  required
+                  minLength={6}
+                />
+                <p className="form-note">Tối thiểu 6 ký tự</p>
+              </div>
+
+              <div className="form-group">
+                <label>Số điện thoại</label>
+                <input
+                  type="tel"
+                  className="form-control"
+                  value={newCustomer.phone}
+                  onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                  placeholder="0908474717"
+                />
+                <p className="form-note">10-11 chữ số</p>
+              </div>
+
+              <div className="modal-actions">
+                <MDButton type="button" variant="outlined" onClick={closeModals}>
+                  Hủy
+                </MDButton>
+                <MDButton type="submit" variant="filled">
+                  Thêm khách hàng
+                </MDButton>
+              </div>
+            </form>
           </div>
         </div>
       )}
