@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, Plus, Phone, Mail, Car, MessageSquare,
-  Eye, Edit, Trash2
+  Eye, Edit, Trash2, Filter, Download
 } from 'lucide-react';
 import { MDButton } from '../../ui';
 import customerService, { Customer } from '../../../services/customerService';
@@ -14,19 +14,6 @@ const CustomerManagement: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [newCustomer, setNewCustomer] = useState({
-    email: '',
-    password: '',
-    fullName: '',
-    phone: ''
-  });
 
   useEffect(() => {
     loadCustomers();
@@ -38,14 +25,6 @@ const CustomerManagement: React.FC = () => {
       const response = await customerService.getAllCustomers();
       // Backend returns paginated response
       const customersList = response.content || response || [];
-      
-      // Log để debug cấu trúc dữ liệu
-      console.log('Raw API response:', response);
-      console.log('Customers list:', customersList);
-      if (customersList.length > 0) {
-        console.log('First customer structure:', customersList[0]);
-      }
-      
       setCustomers(customersList);
     } catch (err) {
       console.error('Error loading customers:', err);
@@ -56,7 +35,7 @@ const CustomerManagement: React.FC = () => {
   };
 
   const filteredCustomers = customers.filter(customer => {
-    const fullName = (customer.fullName || `${customer.firstName} ${customer.lastName}`).toLowerCase();
+    const fullName = `${customer.firstName} ${customer.lastName}`.toLowerCase();
     const search = searchTerm.toLowerCase();
     return fullName.includes(search) ||
            customer.email.toLowerCase().includes(search) ||
@@ -73,139 +52,6 @@ const CustomerManagement: React.FC = () => {
     setSelectedCustomer(customer);
     setShowChat(true);
     setShowDetails(false);
-  };
-
-  const handleDeleteCustomer = (customer: Customer) => {
-    setDeletingCustomer(customer);
-    setShowDeleteModal(true);
-  };
-
-  const handleEditCustomer = (customer: Customer) => {
-    setEditingCustomer(customer);
-    setShowEditModal(true);
-  };
-
-  const handleAddCustomer = () => {
-    setNewCustomer({
-      email: '',
-      password: '',
-      fullName: '',
-      phone: ''
-    });
-    setShowAddModal(true);
-  };
-
-  const handleSubmitNewCustomer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validation
-    if (!newCustomer.email || !newCustomer.password || !newCustomer.fullName || !newCustomer.phone) {
-      alert('Vui lòng điền đầy đủ thông tin');
-      return;
-    }
-
-    if (newCustomer.password.length < 6) {
-      alert('Mật khẩu phải có ít nhất 6 ký tự');
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newCustomer.email)) {
-      alert('Email không hợp lệ');
-      return;
-    }
-
-    // Validate phone format (Vietnamese phone number)
-    const phoneRegex = /^[0-9]{10,11}$/;
-    if (!phoneRegex.test(newCustomer.phone)) {
-      alert('Số điện thoại phải có 10-11 chữ số');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      // TODO: Uncomment when API is ready
-      // await customerService.createCustomer({
-      //   email: newCustomer.email,
-      //   password: newCustomer.password,
-      //   fullName: newCustomer.fullName,
-      //   phone: newCustomer.phone
-      // });
-      
-      alert('Thêm khách hàng thành công! (Chức năng sẽ được kết nối với API)');
-      setShowAddModal(false);
-      setNewCustomer({
-        email: '',
-        password: '',
-        fullName: '',
-        phone: ''
-      });
-      // await loadCustomers();
-    } catch (error) {
-      console.error('Error adding customer:', error);
-      alert('Không thể thêm khách hàng: ' + (error as any)?.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleSubmitEditCustomer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!editingCustomer) return;
-
-    // Validation
-    if (!editingCustomer.fullName && !editingCustomer.firstName && !editingCustomer.lastName) {
-      alert('Vui lòng nhập họ tên');
-      return;
-    }
-
-    if (!editingCustomer.phone) {
-      alert('Vui lòng nhập số điện thoại');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      // TODO: Uncomment when API is ready
-      // await customerService.updateCustomer(editingCustomer.id, {
-      //   fullName: editingCustomer.fullName,
-      //   firstName: editingCustomer.firstName,
-      //   lastName: editingCustomer.lastName,
-      //   phone: editingCustomer.phone,
-      // });
-      
-      alert('Chức năng cập nhật khách hàng sẽ được kết nối với API sau');
-      setShowEditModal(false);
-      setEditingCustomer(null);
-      // await loadCustomers();
-    } catch (error) {
-      console.error('Error updating customer:', error);
-      alert('Không thể cập nhật khách hàng: ' + (error as any)?.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const confirmDeleteCustomer = async () => {
-    if (!deletingCustomer) return;
-
-    try {
-      setSubmitting(true);
-      // TODO: Uncomment when API is ready
-      // await customerService.deleteCustomer(deletingCustomer.id);
-      // await loadCustomers();
-      
-      alert('Chức năng xóa khách hàng sẽ được kết nối với API sau');
-      setShowDeleteModal(false);
-      setDeletingCustomer(null);
-    } catch (error) {
-      console.error('Error deleting customer:', error);
-      alert('Không thể xóa khách hàng. Vui lòng thử lại!');
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   const closeModals = () => {
@@ -226,11 +72,16 @@ const CustomerManagement: React.FC = () => {
     <div className="customer-management">
       {/* Header */}
       <div className="customer-header">
-        <h1>Quản lý Khách hàng</h1>
-        <p>Quản lý thông tin khách hàng và dịch vụ</p>
+        <div className="header-left">
+          <h1>Quản lý Khách hàng</h1>
+          <p>Quản lý thông tin khách hàng và dịch vụ</p>
+        </div>
+        <MDButton variant="filled" startIcon={<Plus />}>
+          Thêm khách hàng
+        </MDButton>
       </div>
 
-      {/* Filters and Add Button */}
+      {/* Filters */}
       <div className="customer-filters">
         <div className="search-box">
           <Search size={18} />
@@ -241,9 +92,12 @@ const CustomerManagement: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <MDButton variant="filled" startIcon={<Plus />} onClick={handleAddCustomer}>
-          Thêm khách hàng
-        </MDButton>
+        <div className="filter-group">
+          <Filter size={18} />
+          <MDButton variant="outlined" startIcon={<Download />}>
+            Xuất Excel
+          </MDButton>
+        </div>
       </div>
 
       {/* Stats */}
@@ -280,11 +134,7 @@ const CustomerManagement: React.FC = () => {
           </div>
           <div className="stat-info">
             <p className="stat-label">Tổng xe đăng ký</p>
-            <p className="stat-value">
-              {customers.reduce((total, c) => {
-                return total + ((c as any).vehicleCount || (c as any).totalVehicles || 0);
-              }, 0)}
-            </p>
+            <p className="stat-value">N/A</p>
           </div>
         </div>
       </div>
@@ -319,12 +169,10 @@ const CustomerManagement: React.FC = () => {
                   <td>
                     <div className="customer-info">
                       <div className="customer-avatar">
-                        {(customer.fullName || customer.firstName || 'U')?.charAt(0).toUpperCase()}
+                        {customer.firstName?.charAt(0).toUpperCase() || '?'}
                       </div>
                       <div className="customer-details">
-                        <p className="customer-name">
-                          {customer.fullName || `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'N/A'}
-                        </p>
+                        <p className="customer-name">{customer.firstName || ''} {customer.lastName || ''}</p>
                         <p className="customer-id">ID: {customer.id.substring(0, 8)}</p>
                       </div>
                     </div>
@@ -344,13 +192,11 @@ const CustomerManagement: React.FC = () => {
                   <td>
                     <div className="vehicle-badge">
                       <Car size={14} />
-                      {(customer as any).vehicleCount || (customer as any).totalVehicles || 0}
+                      N/A
                     </div>
                   </td>
                   <td>
-                    <span className="service-badge">
-                      {(customer as any).serviceCount || (customer as any).totalServices || 0}
-                    </span>
+                    <span className="service-badge">N/A</span>
                   </td>
                   <td>
                     {customer.createdAt ? new Intl.DateTimeFormat('vi-VN').format(new Date(customer.createdAt)) : 'N/A'}
@@ -364,18 +210,10 @@ const CustomerManagement: React.FC = () => {
                       >
                         <Eye size={16} />
                       </button>
-                      <button
-                        className="btn-action btn-edit"
-                        onClick={() => handleEditCustomer(customer)}
-                        title="Chỉnh sửa"
-                      >
+                      <button className="btn-action btn-edit" title="Sửa">
                         <Edit size={16} />
                       </button>
-                      <button 
-                        className="btn-action btn-delete" 
-                        onClick={() => handleDeleteCustomer(customer)}
-                        title="Xóa"
-                      >
+                      <button className="btn-action btn-delete" title="Xóa">
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -402,7 +240,7 @@ const CustomerManagement: React.FC = () => {
                   <div className="detail-grid">
                     <div className="detail-item">
                       <strong>Họ tên:</strong>
-                      <span>{selectedCustomer.fullName || `${selectedCustomer.firstName || ''} ${selectedCustomer.lastName || ''}`.trim() || 'N/A'}</span>
+                      <span>{selectedCustomer.firstName} {selectedCustomer.lastName}</span>
                     </div>
                     <div className="detail-item">
                       <strong>Mã KH:</strong>
@@ -451,7 +289,7 @@ const CustomerManagement: React.FC = () => {
           <div className="modal-content chat-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div className="chat-header-info">
-                <h3>Chat với {selectedCustomer.fullName || `${selectedCustomer.firstName || ''} ${selectedCustomer.lastName || ''}`.trim() || 'Khách hàng'}</h3>
+                <h3>Chat với {selectedCustomer.firstName} {selectedCustomer.lastName}</h3>
                 <span className="online-status">● Online</span>
               </div>
               <button className="close-btn" onClick={closeModals}>×</button>
@@ -483,264 +321,6 @@ const CustomerManagement: React.FC = () => {
                   <MDButton variant="filled">Gửi</MDButton>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Customer Modal */}
-      {showAddModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>Thêm khách hàng mới</h2>
-              <button 
-                className="btn-close" 
-                onClick={() => setShowAddModal(false)}
-                type="button"
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitNewCustomer}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label htmlFor="fullName">
-                    Họ và tên <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="fullName"
-                    className="form-control"
-                    placeholder="Nhập họ và tên"
-                    value={newCustomer.fullName}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, fullName: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="email">
-                    Email <span className="required">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    className="form-control"
-                    placeholder="email@example.com"
-                    value={newCustomer.email}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="password">
-                    Mật khẩu <span className="required">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    id="password"
-                    className="form-control"
-                    placeholder="Tối thiểu 6 ký tự"
-                    value={newCustomer.password}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, password: e.target.value })}
-                    required
-                    minLength={6}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="phone">
-                    Số điện thoại <span className="required">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    className="form-control"
-                    placeholder="0123456789"
-                    value={newCustomer.phone}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-note">
-                  <p>
-                    <strong>💡 Lưu ý:</strong> Khách hàng sẽ nhận email và mật khẩu để đăng nhập vào hệ thống.
-                  </p>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button 
-                  type="button"
-                  className="btn-cancel" 
-                  onClick={() => setShowAddModal(false)}
-                  disabled={submitting}
-                >
-                  Hủy
-                </button>
-                <button 
-                  type="submit"
-                  className="btn-confirm"
-                  disabled={submitting}
-                >
-                  {submitting ? 'Đang xử lý...' : 'Thêm khách hàng'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Customer Modal */}
-      {showEditModal && editingCustomer && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>Chỉnh sửa thông tin khách hàng</h2>
-              <button 
-                className="btn-close" 
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingCustomer(null);
-                }}
-                type="button"
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitEditCustomer}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label htmlFor="edit-fullName">
-                    Họ và tên <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-fullName"
-                    className="form-control"
-                    placeholder="Nhập họ và tên"
-                    value={editingCustomer.fullName || `${editingCustomer.firstName || ''} ${editingCustomer.lastName || ''}`.trim()}
-                    onChange={(e) => setEditingCustomer({ ...editingCustomer, fullName: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="edit-email">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="edit-email"
-                    className="form-control"
-                    value={editingCustomer.email}
-                    disabled
-                    style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
-                  />
-                  <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                    Email không thể thay đổi
-                  </small>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="edit-phone">
-                    Số điện thoại <span className="required">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    id="edit-phone"
-                    className="form-control"
-                    placeholder="0123456789"
-                    value={editingCustomer.phone || ''}
-                    onChange={(e) => setEditingCustomer({ ...editingCustomer, phone: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button 
-                  type="button"
-                  className="btn-cancel" 
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditingCustomer(null);
-                  }}
-                  disabled={submitting}
-                >
-                  Hủy
-                </button>
-                <button 
-                  type="submit"
-                  className="btn-confirm"
-                  disabled={submitting}
-                >
-                  {submitting ? 'Đang xử lý...' : 'Cập nhật'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && deletingCustomer && (
-        <div className="modal-overlay">
-          <div className="modal-content modal-delete">
-            <div className="modal-header">
-              <h2>Xác nhận xóa</h2>
-              <button 
-                className="btn-close" 
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeletingCustomer(null);
-                }}
-                type="button"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="delete-warning">
-                <Trash2 size={48} color="#ef4444" />
-                <h3>Bạn có chắc chắn muốn xóa khách hàng này?</h3>
-                <div className="customer-info-delete">
-                  <p><strong>Họ và tên:</strong> {deletingCustomer.fullName || `${deletingCustomer.firstName || ''} ${deletingCustomer.lastName || ''}`.trim()}</p>
-                  <p><strong>Email:</strong> {deletingCustomer.email}</p>
-                  <p><strong>Số điện thoại:</strong> {deletingCustomer.phone || 'N/A'}</p>
-                </div>
-                <p className="warning-text">
-                  <strong>⚠️ Chú ý:</strong> Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan đến khách hàng này (xe, lịch hẹn, hóa đơn) sẽ bị xóa vĩnh viễn.
-                </p>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button 
-                type="button"
-                className="btn-cancel" 
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeletingCustomer(null);
-                }}
-                disabled={submitting}
-              >
-                Hủy
-              </button>
-              <button 
-                type="button"
-                className="btn-delete"
-                onClick={confirmDeleteCustomer}
-                disabled={submitting}
-              >
-                {submitting ? 'Đang xóa...' : 'Xóa khách hàng'}
-              </button>
             </div>
           </div>
         </div>
