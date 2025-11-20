@@ -445,6 +445,89 @@
   border-top: 2px solid #e2e8f0;
   padding-top: 12px;
   margin-top: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 8px 0 0;
+  border: none;
+}
+
+.cost-item.total span {
+  color: white;
+}
+
+.loading-details {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.work-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.service-item {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.service-item strong {
+  color: #667eea;
+  font-size: 0.95rem;
+}
+
+.service-item span {
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+.selected-packages {
+  padding: 16px;
+  background: #f0f4ff;
+  border-left: 4px solid #667eea;
+  border-radius: 8px;
+}
+
+.selected-packages strong {
+  display: block;
+  margin-bottom: 12px;
+  color: #1a1a1a;
+  font-size: 1rem;
+}
+
+.packages-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.packages-list li {
+  padding: 10px 16px;
+  background: white;
+  border-radius: 6px;
+  color: #2d3748;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.packages-list li::before {
+  content: '✓';
+  color: #667eea;
+  font-weight: bold;
+  margin-right: 10px;
+  font-size: 1.1rem;
 }
 
 .warranty-info p {

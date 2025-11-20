@@ -5,6 +5,8 @@ import { ServiceRecord, Vehicle } from '../../../types';
 import { MDButton } from '../../ui';
 import maintenanceHistoryService from '../../../services/maintenanceHistoryService';
 import vehicleService from '../../../services/vehicleService';
+import appointmentService, { Appointment } from '../../../services/appointmentService';
+import servicePackageService, { ServicePackage } from '../../../services/servicePackageService';
 import './MaintenanceHistory.css';
 
 interface MaintenanceHistoryProps {
@@ -31,6 +33,9 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
   const [selectedVehicle, setSelectedVehicle] = useState<string>(vehicleId || preSelectedVehicleId || 'all');
   const [selectedRecord, setSelectedRecord] = useState<ServiceRecord | null>(null);
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [servicePackages, setServicePackages] = useState<ServicePackage[]>([]);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [appointmentDetails, setAppointmentDetails] = useState<Appointment | null>(null);
 
   useEffect(() => {
     console.log('=== MaintenanceHistory useEffect ===');
@@ -142,7 +147,37 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
       console.error('Error loading vehicles:', error);
       setVehicles([]);
     }
-  };  const getVehicleInfo = (vehicleId: string) => {
+  };
+
+  const loadServicePackages = async () => {
+    try {
+      const packages = await servicePackageService.getAllServicePackages();
+      setServicePackages(packages || []);
+    } catch (error) {
+      console.error('Error loading service packages:', error);
+      setServicePackages([]);
+    }
+  };
+
+  const loadAppointmentDetails = async (appointmentId: string) => {
+    try {
+      setLoadingDetails(true);
+      const details = await appointmentService.getAppointmentById(appointmentId);
+      setAppointmentDetails(details);
+      
+      // Load service packages if not already loaded
+      if (servicePackages.length === 0) {
+        await loadServicePackages();
+      }
+    } catch (error) {
+      console.error('Error loading appointment details:', error);
+      setAppointmentDetails(null);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const getVehicleInfo = (vehicleId: string) => {
     return vehicles.find(v => v.id === vehicleId);
   };
 
@@ -291,7 +326,10 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
                 key={record.id}
                 record={record}
                 vehicle={getVehicleInfo(record.vehicleId)}
-                onClick={() => setSelectedRecord(record)}
+                onClick={() => {
+                  setSelectedRecord(record);
+                  loadAppointmentDetails(record.appointmentId);
+                }}
               />
             ))}
           </div>
@@ -367,6 +405,28 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
     vehicle?: Vehicle;
     onClose: () => void;
   }) {
+    // Parse selected packages and calculate costs
+    const selectedPackageNames = appointmentDetails?.selectedPackageNames 
+      ? appointmentDetails.selectedPackageNames.split(',').map(name => name.trim()).filter(name => name)
+      : [];
+    
+    // Find main service package
+    const mainPackage = servicePackages.find(pkg => pkg.name === appointmentDetails?.servicePackageName);
+    const mainPackagePrice = mainPackage?.price || 0;
+    
+    // Find prices for selected packages
+    const selectedPackagesWithPrices = selectedPackageNames.map(name => {
+      const pkg = servicePackages.find(p => p.name === name);
+      return {
+        name: name,
+        price: pkg?.price || 0
+      };
+    });
+    
+    // Calculate total
+    const selectedPackagesTotal = selectedPackagesWithPrices.reduce((sum, pkg) => sum + pkg.price, 0);
+    const calculatedTotal = mainPackagePrice + selectedPackagesTotal;
+    
     return (
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -376,6 +436,12 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
           </div>
 
           <div className="modal-body">
+            {loadingDetails && (
+              <div className="loading-details">
+                <p>Đang tải chi tiết...</p>
+              </div>
+            )}
+            
             <div className="detail-section">
               <h4>Thông tin chung</h4>
               <div className="detail-grid">
@@ -399,7 +465,22 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
 
             <div className="detail-section">
               <h4>Công việc thực hiện</h4>
-              <p>{record.workPerformed}</p>
+              <div className="work-details">
+                <div className="service-item">
+                  <strong>Dịch vụ chính:</strong> 
+                  <span>{appointmentDetails?.servicePackageName || record.serviceType.name}</span>
+                </div>
+                {selectedPackageNames.length > 0 && (
+                  <div className="selected-packages">
+                    <strong>Các gói dịch vụ đã chọn:</strong>
+                    <ul className="packages-list">
+                      {selectedPackageNames.map((name, idx) => (
+                        <li key={idx}>{name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
 
             {record.partsUsed.length > 0 && (
@@ -433,18 +514,30 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
             <div className="detail-section">
               <h4>Chi phí</h4>
               <div className="cost-breakdown">
-                <div className="cost-item">
-                  <span>Chi phí công:</span>
-                  <span>{formatCurrency(record.laborCost)}</span>
-                </div>
-                <div className="cost-item">
-                  <span>Chi phí phụ tùng:</span>
-                  <span>{formatCurrency(record.partsCost)}</span>
-                </div>
-                <div className="cost-item total">
-                  <span>Tổng chi phí:</span>
-                  <span>{formatCurrency(record.totalCost)}</span>
-                </div>
+                {!loadingDetails && appointmentDetails && (
+                  <>
+                    <div className="cost-item">
+                      <span>Dịch vụ chính ({appointmentDetails.servicePackageName}):</span>
+                      <span>{formatCurrency(mainPackagePrice)}</span>
+                    </div>
+                    {selectedPackagesWithPrices.map((pkg, idx) => (
+                      <div key={idx} className="cost-item">
+                        <span>+ {pkg.name}:</span>
+                        <span>{formatCurrency(pkg.price)}</span>
+                      </div>
+                    ))}
+                    <div className="cost-item total">
+                      <span>Tổng chi phí:</span>
+                      <span>{formatCurrency(calculatedTotal)}</span>
+                    </div>
+                  </>
+                )}
+                {(loadingDetails || !appointmentDetails) && (
+                  <div className="cost-item total">
+                    <span>Tổng chi phí:</span>
+                    <span>{formatCurrency(record.totalCost)}</span>
+                  </div>
+                )}
               </div>
             </div>
 
