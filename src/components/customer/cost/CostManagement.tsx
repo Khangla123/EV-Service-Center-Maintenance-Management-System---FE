@@ -266,7 +266,6 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
       'Chi phí phụ tùng',
       'Chi phí khác',
       'Giảm giá',
-      'Thuế',
       'Tổng cộng',
       'Trạng thái'
     ];
@@ -282,7 +281,6 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
         record.partsCost,
         record.additionalCosts,
         record.discount,
-        record.tax,
         record.totalCost,
         getStatusLabel(record.paymentStatus)
       ].join(','))
@@ -314,10 +312,7 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
         // Calculate breakdown from invoice totals
         const discount = invoice.discount || 0;
         const subtotal = invoice.totalAmount || 0;
-        // Try to get tax from invoice, or calculate it
-        const invoiceAny = invoice as any;
-        const tax = invoiceAny.tax || invoiceAny.taxAmount || (invoice.finalAmount - invoice.totalAmount) || 0;
-        console.log('💰 Invoice breakdown - subtotal:', subtotal, 'discount:', discount, 'tax:', tax, 'final:', invoice.finalAmount);
+        console.log('💰 Invoice breakdown - subtotal:', subtotal, 'discount:', discount, 'final:', invoice.finalAmount);
         
         // Try to fetch service order for parts details
         let parts: any[] = [];
@@ -685,10 +680,6 @@ const CostManagement: React.FC<CostManagementProps> = ({ className }) => {
                   <div className="cost-item">
                     <span>Giảm giá:</span>
                     <span>-{formatCurrency(selectedRecord.discount)}</span>
-                  </div>
-                  <div className="cost-item">
-                    <span>Thuế (VAT 10%):</span>
-                    <span>{formatCurrency(selectedRecord.tax)}</span>
                   </div>
                   <div className="cost-item total">
                     <span>Tổng cộng:</span>

@@ -23,8 +23,6 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   const [selectedPackages, setSelectedPackages] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     subtotal: 0,
-    taxRate: 10, // 10%
-    taxAmount: 0,
     discountAmount: 0,
     totalAmount: 0,
     dueDate: '',
@@ -87,13 +85,11 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
         
         // Tính toán từ service order
         const subtotal = order.totalCost || 0;
-        const taxAmount = subtotal * (formData.taxRate / 100);
-        const totalAmount = subtotal + taxAmount - formData.discountAmount;
+        const totalAmount = subtotal - formData.discountAmount;
         
         setFormData(prev => ({
           ...prev,
           subtotal,
-          taxAmount,
           totalAmount
         }));
       } else {
@@ -115,14 +111,12 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     setFormData(prev => {
       const updated = { ...prev, [name]: numValue };
       
-      // Tính lại tổng tiền khi thay đổi subtotal, tax, hoặc discount
-      if (name === 'subtotal' || name === 'taxRate' || name === 'discountAmount') {
+      // Tính lại tổng tiền khi thay đổi subtotal hoặc discount
+      if (name === 'subtotal' || name === 'discountAmount') {
         const subtotal = name === 'subtotal' ? (numValue as number) : prev.subtotal;
-        const taxRate = name === 'taxRate' ? (numValue as number) : prev.taxRate;
         const discountAmount = name === 'discountAmount' ? (numValue as number) : prev.discountAmount;
         
-        updated.taxAmount = subtotal * (taxRate / 100);
-        updated.totalAmount = subtotal + updated.taxAmount - discountAmount;
+        updated.totalAmount = subtotal - discountAmount;
       }
       
       return updated;
@@ -144,7 +138,7 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
       const createRequest = {
         serviceOrderId: serviceOrderId,
         subtotal: formData.subtotal,
-        taxAmount: formData.taxAmount,
+        taxAmount: 0,
         discountAmount: formData.discountAmount,
         dueDate: new Date(formData.dueDate).toISOString(),
         notes: formData.notes
@@ -268,33 +262,6 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
                 />
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="taxRate">Thuế (%)</label>
-                  <input
-                    type="number"
-                    id="taxRate"
-                    name="taxRate"
-                    value={formData.taxRate}
-                    onChange={handleInputChange}
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="taxAmount">Tiền thuế (VNĐ)</label>
-                  <input
-                    type="number"
-                    id="taxAmount"
-                    name="taxAmount"
-                    value={formData.taxAmount.toFixed(0)}
-                    readOnly
-                    disabled
-                  />
-                </div>
-              </div>
-
               <div className="form-group">
                 <label htmlFor="discountAmount">Giảm giá (VNĐ)</label>
                 <input
@@ -340,10 +307,6 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
                 <div className="total-row">
                   <span>Tổng tiền dịch vụ:</span>
                   <span>{formatCurrency(formData.subtotal)}</span>
-                </div>
-                <div className="total-row">
-                  <span>Thuế ({formData.taxRate}%):</span>
-                  <span>{formatCurrency(formData.taxAmount)}</span>
                 </div>
                 {formData.discountAmount > 0 && (
                   <div className="total-row discount">
