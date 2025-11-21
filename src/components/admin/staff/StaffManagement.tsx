@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import './StaffManagement.css';
 import staffService, { Staff, CreateStaffRequest } from '../../../services/staffService';
+import serviceCenterService, { ServiceCenter } from '../../../services/serviceCenterService';
 
 const StaffManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +27,7 @@ const StaffManagement: React.FC = () => {
   const [deletingStaff, setDeletingStaff] = useState<Staff | null>(null);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
+  const [serviceCenters, setServiceCenters] = useState<ServiceCenter[]>([]);
   
   // Form states for adding new staff
   const [newStaff, setNewStaff] = useState<CreateStaffRequest>({
@@ -33,13 +35,25 @@ const StaffManagement: React.FC = () => {
     password: '',
     fullName: '',
     phone: '',
-    role: 'STAFF'
+    role: 'STAFF',
+    serviceCenterId: ''
   });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadStaff();
+    loadServiceCenters();
   }, []);
+
+  const loadServiceCenters = async () => {
+    try {
+      const response = await serviceCenterService.getAllServiceCenters();
+      setServiceCenters(response.serviceCenters || []);
+    } catch (error) {
+      console.error('Error loading service centers:', error);
+      setServiceCenters([]);
+    }
+  };
 
   const loadStaff = async () => {
     try {
@@ -85,7 +99,8 @@ const StaffManagement: React.FC = () => {
       password: '',
       fullName: '',
       phone: '',
-      role: 'STAFF'
+      role: 'STAFF',
+      serviceCenterId: ''
     });
     setShowAddModal(true);
   };
@@ -533,6 +548,26 @@ const StaffManagement: React.FC = () => {
                   >
                     <option value="STAFF">Nhân viên</option>
                     <option value="TECHNICIAN">Kỹ thuật viên</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="serviceCenter">
+                    Trung tâm dịch vụ <span className="required">*</span>
+                  </label>
+                  <select
+                    id="serviceCenter"
+                    className="form-control"
+                    value={newStaff.serviceCenterId}
+                    onChange={(e) => setNewStaff({ ...newStaff, serviceCenterId: e.target.value })}
+                    required
+                  >
+                    <option value="">Chọn trung tâm</option>
+                    {serviceCenters.map(center => (
+                      <option key={center.id} value={center.id}>
+                        {center.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

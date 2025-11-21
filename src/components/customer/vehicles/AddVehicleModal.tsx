@@ -114,7 +114,23 @@ const AddVehicleModal: React.FC<AddVehicleModalProps> = ({ isOpen, onClose, onSu
       setSelectedManufacturer('');
     } catch (err: any) {
       console.error('Error creating vehicle:', err);
-      setError(err.response?.data?.message || err.message || 'Không thể thêm xe. Vui lòng thử lại.');
+      console.error('Error response:', err.response);
+      
+      // Xử lý các lỗi cụ thể
+      let errorMessage = 'Không thể thêm xe. Vui lòng thử lại.';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+        
+        // Customize message cho các trường hợp đặc biệt
+        if (errorMessage.includes('Người dùng đã tồn tại') || errorMessage.includes('USER_EXISTED')) {
+          errorMessage = 'Xe đã tồn tại trong hệ thống (VIN hoặc biển số trùng lặp)';
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

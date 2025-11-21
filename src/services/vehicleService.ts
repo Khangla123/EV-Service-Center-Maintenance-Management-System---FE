@@ -54,9 +54,22 @@ class VehicleService {
     return response.data;
   }
 
+  // Cập nhật xe của tôi (customer)
+  async updateMyVehicle(vehicleId: string, data: UpdateVehicleRequest): Promise<Vehicle> {
+    const response = await api.put(`/vehicles/me/${vehicleId}`, data);
+    // Backend trả về { message: string, result: Vehicle }
+    return response.data.result || response.data;
+  }
+
   // Xóa xe
   async deleteVehicle(vehicleId: string): Promise<{ message: string }> {
     const response = await api.delete(`/vehicles/${vehicleId}`);
+    return response.data;
+  }
+
+  // Xóa xe của tôi (customer)
+  async deleteMyVehicle(vehicleId: string): Promise<{ message: string }> {
+    const response = await api.delete(`/vehicles/me/${vehicleId}`);
     return response.data;
   }
 
@@ -86,7 +99,8 @@ class VehicleService {
   // Đăng ký xe mới cho chính mình (customer)
   async registerMyVehicle(data: Omit<CreateVehicleRequest, 'customerId'>): Promise<Vehicle> {
     const response = await api.post('/vehicles/me', data);
-    return response.data;
+    // Backend trả về { message: string, result: Vehicle }
+    return response.data.result || response.data;
   }
 }
 

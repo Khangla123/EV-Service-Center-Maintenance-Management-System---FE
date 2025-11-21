@@ -288,6 +288,17 @@ const AppointmentManagement: React.FC = () => {
   const openAssignModal = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setSelectedTechnicianId(appointment.technicianId || '');
+    
+    // Filter technicians by service center
+    if (appointment.serviceCenterId) {
+      const centerTechs = technicians.filter(tech => tech.serviceCenterId === appointment.serviceCenterId);
+      console.log(`🏢 Filtering technicians for center ${appointment.serviceCenterId}:`, {
+        total: technicians.length,
+        filtered: centerTechs.length,
+        centerTechs
+      });
+    }
+    
     setShowAssignModal(true);
   };
 
@@ -868,6 +879,9 @@ const AppointmentManagement: React.FC = () => {
                 <p><strong>Mã lịch hẹn:</strong> #{generateDisplayCode(selectedAppointment.id, selectedAppointment.appointmentDate)}</p>
                 <p><strong>Khách hàng:</strong> {selectedAppointment.customerName}</p>
                 <p><strong>Dịch vụ:</strong> {selectedAppointment.selectedPackageNames || selectedAppointment.servicePackageName}</p>
+                {selectedAppointment.serviceCenterName && (
+                  <p><strong>Trung tâm:</strong> {selectedAppointment.serviceCenterName}</p>
+                )}
               </div>
               <div className="form-group">
                 <label>Chọn kỹ thuật viên:</label>
@@ -877,18 +891,26 @@ const AppointmentManagement: React.FC = () => {
                   className="form-control"
                 >
                   <option value="">-- Chọn KTV --</option>
-                  {technicians.length === 0 && (
-                    <option disabled>Không có kỹ thuật viên khả dụng</option>
-                  )}
-                  {technicians.map(tech => (
-                    <option key={tech.id} value={tech.id}>
-                      {tech.fullName} {tech.specialization ? `(${tech.specialization})` : ''}
-                    </option>
-                  ))}
+                  {(() => {
+                    // Filter technicians by service center
+                    const filteredTechs = selectedAppointment.serviceCenterId
+                      ? technicians.filter(tech => tech.serviceCenterId === selectedAppointment.serviceCenterId)
+                      : technicians;
+                    
+                    if (filteredTechs.length === 0) {
+                      return <option disabled>Không có kỹ thuật viên khả dụng tại trung tâm này</option>;
+                    }
+                    
+                    return filteredTechs.map(tech => (
+                      <option key={tech.id} value={tech.id}>
+                        {tech.fullName} {tech.specialization ? `(${tech.specialization})` : ''}
+                      </option>
+                    ));
+                  })()}
                 </select>
-                {technicians.length === 0 && (
+                {selectedAppointment.serviceCenterId && technicians.filter(tech => tech.serviceCenterId === selectedAppointment.serviceCenterId).length === 0 && (
                   <small className="text-muted">
-                    Vui lòng tạo staff với vai trò Technician hoặc có chuyên môn trong hệ thống
+                    ⚠️ Chưa có kỹ thuật viên nào tại trung tâm <strong>{selectedAppointment.serviceCenterName}</strong>. Vui lòng thêm kỹ thuật viên cho trung tâm này.
                   </small>
                 )}
               </div>

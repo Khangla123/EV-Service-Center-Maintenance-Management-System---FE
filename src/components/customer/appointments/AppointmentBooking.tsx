@@ -247,7 +247,32 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
     }
   };
 
-  const handleCenterSelect = (center: ServiceCenter) => {
+  const handleCenterSelect = async (center: ServiceCenter) => {
+    // Check if vehicle already has appointment on the selected date at this new center
+    if (selectedVehicle && formData.scheduledDate) {
+      try {
+        const appointmentService = (await import('../../../services/appointmentService')).default;
+        const response = await appointmentService.getMyAppointments();
+        const existingAppointments = response.appointments || [];
+        
+        const dateStr = new Date(formData.scheduledDate).toISOString().split('T')[0];
+        const hasConflict = existingAppointments.some(apt => {
+          const aptDate = new Date(apt.appointmentDate).toISOString().split('T')[0];
+          return apt.vehicleId === selectedVehicle.id && 
+                 apt.serviceCenterId === center.id && 
+                 aptDate === dateStr &&
+                 apt.status !== 'CANCELLED';
+        });
+        
+        if (hasConflict) {
+          alert(`❌ Xe "${selectedVehicle.model}" đã có lịch hẹn vào ngày ${dateStr} tại "${center.name}".\n\nVui lòng chọn ngày khác hoặc trung tâm khác.`);
+          return; // Don't select this center
+        }
+      } catch (error) {
+        console.error('Error checking conflicts:', error);
+      }
+    }
+    
     setSelectedCenter(center);
     // Don't auto-advance, let user click Continue button
   };
@@ -303,7 +328,32 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
     setFormData(prev => ({ ...prev, vehicleId: vehicle.id }));
   };
 
-  const handleDateChange = (date: string) => {
+  const handleDateChange = async (date: string) => {
+    // Check if vehicle already has appointment on this date at this center
+    if (selectedVehicle && selectedCenter) {
+      try {
+        const appointmentService = (await import('../../../services/appointmentService')).default;
+        const response = await appointmentService.getMyAppointments();
+        const existingAppointments = response.appointments || [];
+        
+        const dateStr = new Date(date).toISOString().split('T')[0];
+        const hasConflict = existingAppointments.some(apt => {
+          const aptDate = new Date(apt.appointmentDate).toISOString().split('T')[0];
+          return apt.vehicleId === selectedVehicle.id && 
+                 apt.serviceCenterId === selectedCenter.id && 
+                 aptDate === dateStr &&
+                 apt.status !== 'CANCELLED';
+        });
+        
+        if (hasConflict) {
+          alert(`❌ Xe "${selectedVehicle.model}" đã có lịch hẹn vào ngày ${dateStr} tại "${selectedCenter.name}".\n\nVui lòng chọn ngày khác hoặc trung tâm khác.`);
+          return; // Don't update the date
+        }
+      } catch (error) {
+        console.error('Error checking conflicts:', error);
+      }
+    }
+    
     setFormData(prev => ({ ...prev, scheduledDate: date, scheduledTime: '' }));
     if (selectedCenter) {
       const slots = generateTimeSlots(date, selectedCenter);
@@ -341,8 +391,55 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
         return;
       }
 
-      // Tạo 1 appointment gộp tất cả dịch vụ
+      // Check if vehicle already has appointment on this date at this center
       const appointmentService = (await import('../../../services/appointmentService')).default;
+      const selectedDate = new Date(formData.scheduledDate);
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      
+      console.log('🔍 Checking for conflicts...');
+      console.log('Selected vehicle:', selectedVehicle.id);
+      console.log('Selected center:', selectedCenter.id);
+      console.log('Selected date:', dateStr);
+      
+      try {
+        const response = await appointmentService.getMyAppointments();
+        const existingAppointments = response.appointments || [];
+        
+        console.log('📋 Total existing appointments:', existingAppointments.length);
+        console.log('Existing appointments:', existingAppointments);
+        
+        const conflictingAppointment = existingAppointments.find(apt => {
+          const aptDate = new Date(apt.appointmentDate).toISOString().split('T')[0];
+          const isConflict = apt.vehicleId === selectedVehicle.id && 
+                 apt.serviceCenterId === selectedCenter.id && 
+                 aptDate === dateStr &&
+                 apt.status !== 'CANCELLED';
+          
+          console.log(`Checking appointment ${apt.id}:`, {
+            vehicleMatch: apt.vehicleId === selectedVehicle.id,
+            centerMatch: apt.serviceCenterId === selectedCenter.id,
+            dateMatch: aptDate === dateStr,
+            notCancelled: apt.status !== 'CANCELLED',
+            isConflict
+          });
+          
+          return isConflict;
+        });
+        
+        if (conflictingAppointment) {
+          console.log('❌ CONFLICT FOUND:', conflictingAppointment);
+          alert(`❌ Xe này đã có lịch hẹn vào ngày ${dateStr} tại ${selectedCenter.name}.\n\nMã lịch hẹn: ${conflictingAppointment.id}\n\nVui lòng chọn ngày khác hoặc trung tâm khác.`);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('✅ No conflicts found, proceeding...');
+      } catch (checkError) {
+        console.error('Error checking existing appointments:', checkError);
+        // Continue if check fails
+      }
+
+      // Tạo 1 appointment gộp tất cả dịch vụ
       
       // Build notes with all selected services
       const servicesList = selectedServices.map(s => s.name).join(', ');
@@ -374,7 +471,11 @@ const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
           state: { 
             appointmentId: result.id,
             appointmentDate: appointmentData.appointmentDate,
-            totalServices: selectedServices.length
+            totalServices: selectedServices.length,
+            services: selectedServices.map(s => ({ id: s.id, name: s.name, price: (s as any).price || s.basePrice })),
+            vehicle: selectedVehicle,
+            serviceCenter: selectedCenter,
+            notes: formData.notes
           } 
         });
       }

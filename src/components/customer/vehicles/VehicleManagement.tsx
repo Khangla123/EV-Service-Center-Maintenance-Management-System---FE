@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { Vehicle } from '../../../types';
 import vehicleService from '../../../services/vehicleService';
 import AddVehicleModal from './AddVehicleModal';
+import EditVehicleModal from './EditVehicleModal';
 import { Car, Calendar, Battery, Gauge, Plus, Edit, Trash2 } from 'lucide-react';
 import './VehicleManagement.css';
 
@@ -14,6 +15,8 @@ const VehicleManagement: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
 
   const loadVehicles = async () => {
     setLoading(true);
@@ -132,10 +135,8 @@ const VehicleManagement: React.FC = () => {
       return;
     }
     
-    // TODO: Open edit modal with vehicle data
-    console.log('Edit vehicle:', vehicle);
-    const vehicleName = `${vehicle.make || 'N/A'} ${vehicle.model || 'N/A'}`.trim();
-    alert(`⚠️ Chức năng chỉnh sửa xe ${vehicleName} đang được phát triển.\n\nVui lòng liên hệ quản trị viên nếu cần thay đổi thông tin xe.`);
+    setEditingVehicle(vehicle);
+    setShowEditModal(true);
   };
 
   const handleDeleteVehicle = async (vehicleId: string) => {
@@ -147,7 +148,7 @@ const VehicleManagement: React.FC = () => {
     if (window.confirm(confirmMessage)) {
       try {
         setLoading(true);
-        await vehicleService.deleteVehicle(vehicleId);
+        await vehicleService.deleteMyVehicle(vehicleId);
         
         // Remove vehicle from list
         setVehicles(prev => prev.filter(v => v.id !== vehicleId));
@@ -351,6 +352,22 @@ const VehicleManagement: React.FC = () => {
         onClose={handleCloseModal}
         onSuccess={handleVehicleAdded}
       />
+
+      {/* Edit Vehicle Modal */}
+      {editingVehicle && (
+        <EditVehicleModal 
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingVehicle(null);
+          }}
+          onSuccess={() => {
+            loadVehicles();
+            alert('✅ Cập nhật xe thành công!');
+          }}
+          vehicle={editingVehicle}
+        />
+      )}
     </div>
   );
 };

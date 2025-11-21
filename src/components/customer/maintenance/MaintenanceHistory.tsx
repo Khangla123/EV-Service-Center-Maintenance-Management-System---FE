@@ -93,37 +93,45 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
       const fetchedRecords = response.maintenanceRecords || [];
       
       // Map MaintenanceRecord to ServiceRecord format
-      const mappedRecords = fetchedRecords.map((record: any) => ({
-        id: record.appointmentId,
-        appointmentId: record.appointmentId,
-        vehicleId: selectedVehicle || '',
-        technicianId: '',
-        serviceType: {
-          id: '',
-          name: record.serviceTitle || 'Bảo dưỡng',
-          description: record.serviceTitle || 'Dịch vụ bảo dưỡng định kỳ',
-          basePrice: Number(record.totalAmount) || 0,
-          estimatedDuration: 60,
-          category: 'REGULAR_MAINTENANCE' as any,
-          isActive: true
-        },
-        startTime: new Date(record.serviceDate),
-        endTime: record.serviceDate ? new Date(record.serviceDate) : undefined,
-        mileageAtService: record.mileage || 0,
-        workPerformed: record.serviceTitle || 'Bảo dưỡng định kỳ',
-        partsUsed: [],
-        laborCost: 0,
-        partsCost: 0,
-        totalCost: Number(record.totalAmount) || 0,
-        customerNotes: '',
-        technicianNotes: '',
-        qualityCheckPassed: record.inspectionPassed || false,
-        nextServiceDue: record.nextMaintenanceDate ? new Date(record.nextMaintenanceDate) : undefined,
-        warrantyInfo: 'Bảo hành theo chính sách',
-        images: [],
-        createdAt: new Date(record.serviceDate),
-        updatedAt: new Date(record.serviceDate)
-      }));
+      const mappedRecords = fetchedRecords.map((record: any) => {
+        // Combine main service and selected packages
+        let serviceName = record.serviceTitle || 'Bảo dưỡng';
+        if (record.selectedPackageNames) {
+          serviceName = `${serviceName}, ${record.selectedPackageNames}`;
+        }
+        
+        return {
+          id: record.appointmentId,
+          appointmentId: record.appointmentId,
+          vehicleId: selectedVehicle || '',
+          technicianId: '',
+          serviceType: {
+            id: '',
+            name: serviceName,
+            description: serviceName,
+            basePrice: Number(record.totalAmount) || 0,
+            estimatedDuration: 60,
+            category: 'REGULAR_MAINTENANCE' as any,
+            isActive: true
+          },
+          startTime: new Date(record.serviceDate),
+          endTime: record.serviceDate ? new Date(record.serviceDate) : undefined,
+          mileageAtService: record.mileage || 0,
+          workPerformed: serviceName,
+          partsUsed: [],
+          laborCost: 0,
+          partsCost: 0,
+          totalCost: Number(record.totalAmount) || 0,
+          customerNotes: '',
+          technicianNotes: '',
+          qualityCheckPassed: record.inspectionPassed || false,
+          nextServiceDue: record.nextMaintenanceDate ? new Date(record.nextMaintenanceDate) : undefined,
+          warrantyInfo: 'Bảo hành theo chính sách',
+          images: [],
+          createdAt: new Date(record.serviceDate),
+          updatedAt: new Date(record.serviceDate)
+        };
+      });
       
       console.log('Mapped records:', mappedRecords);
       setRecords(mappedRecords);
@@ -516,16 +524,14 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
               <div className="cost-breakdown">
                 {!loadingDetails && appointmentDetails && (
                   <>
+                    {/* Hiển thị tất cả các gói dịch vụ trong một dòng */}
                     <div className="cost-item">
-                      <span>Dịch vụ chính ({appointmentDetails.servicePackageName}):</span>
-                      <span>{formatCurrency(mainPackagePrice)}</span>
+                      <span>
+                        Gói dịch vụ: {appointmentDetails.servicePackageName}
+                        {selectedPackageNames.length > 0 && ` + ${selectedPackageNames.join(', ')}`}
+                      </span>
+                      <span>{formatCurrency(calculatedTotal)}</span>
                     </div>
-                    {selectedPackagesWithPrices.map((pkg, idx) => (
-                      <div key={idx} className="cost-item">
-                        <span>+ {pkg.name}:</span>
-                        <span>{formatCurrency(pkg.price)}</span>
-                      </div>
-                    ))}
                     <div className="cost-item total">
                       <span>Tổng chi phí:</span>
                       <span>{formatCurrency(calculatedTotal)}</span>
