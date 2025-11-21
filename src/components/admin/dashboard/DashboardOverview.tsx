@@ -202,7 +202,7 @@ const DashboardOverview: React.FC = () => {
   return (
     <div className="dashboard-overview">
       <div className="overview-header">
-        <h1>Dashboard Tổng Quan</h1>
+        <h1>Tổng Quan</h1>
         <p>Giám sát hoạt động trung tâm dịch vụ EV</p>
       </div>
 

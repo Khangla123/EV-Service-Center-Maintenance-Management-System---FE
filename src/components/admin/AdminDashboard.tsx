@@ -20,7 +20,7 @@ const AdminDashboard: React.FC = () => {
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
 
   const menuItems = [
-    { id: 'dashboard' as AdminView, label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+    { id: 'dashboard' as AdminView, label: 'Tổng quan', icon: <LayoutDashboard size={20} /> },
     { id: 'staff' as AdminView, label: 'Quản lý Nhân sự', icon: <Users size={20} /> },
     { id: 'appointments' as AdminView, label: 'Quản lý Lịch hẹn', icon: <Calendar size={20} /> },
     { id: 'inventory' as AdminView, label: 'Quản lý Kho', icon: <Package size={20} /> },
