@@ -25,7 +25,7 @@ const StaffDashboard: React.FC = () => {
   const [dashboardData, setDashboardData] = useState({
     todayAppointments: 0,
     inProgressCount: 0,
-    newCustomersThisWeek: 0,
+    totalCustomers: 0,
     lowStockParts: 0,
     recentAppointments: [] as any[]
   });
@@ -64,14 +64,9 @@ const StaffDashboard: React.FC = () => {
         apt.status === 'IN_PROGRESS' || apt.status === 'ASSIGNED'
       ).length;
 
-      // Count new customers this week
-      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      // Count all customers
       const customersList = customersResponse.content || customersResponse || [];
-      const newCustomersThisWeek = customersList.filter((customer: any) => {
-        if (!customer.createdAt) return false;
-        const createdDate = new Date(customer.createdAt);
-        return createdDate >= oneWeekAgo;
-      }).length;
+      const totalCustomers = customersList.length;
 
       // Count low stock parts (quantity < 10)
       const lowStockParts = parts.filter((part: any) => part.quantity < 10).length;
@@ -84,7 +79,7 @@ const StaffDashboard: React.FC = () => {
       setDashboardData({
         todayAppointments,
         inProgressCount,
-        newCustomersThisWeek,
+        totalCustomers,
         lowStockParts,
         recentAppointments
       });
@@ -122,7 +117,7 @@ const StaffDashboard: React.FC = () => {
   };
 
   const menuItems = [
-    { id: 'overview', icon: <TrendingUp />, label: 'Tổng quan', color: '#667eea' },
+    { id: 'overview', icon: <TrendingUp />, label: 'Tổng quan nhân viên', color: '#667eea' },
     { id: 'customers', icon: <Users />, label: 'Quản lý Khách hàng', color: '#10b981' },
     { id: 'appointments', icon: <Calendar />, label: 'Quản lý Lịch hẹn', color: '#3b82f6' },
     { id: 'invoices', icon: <FileText />, label: 'Quản lý Hóa đơn', color: '#f59e0b' },
@@ -169,9 +164,9 @@ const StaffDashboard: React.FC = () => {
           },
           {
             icon: <Users className="stat-icon" />,
-            label: 'Khách hàng mới',
-            value: dashboardData.newCustomersThisWeek.toString(),
-            trend: 'Tuần này',
+            label: 'Tổng khách hàng',
+            value: dashboardData.totalCustomers.toString(),
+            trend: 'Tổng số',
             color: 'green'
           },
           {
@@ -270,7 +265,7 @@ const StaffDashboard: React.FC = () => {
       <div className="dashboard-main">
         <div className="main-header">
           <h1>
-            {menuItems.find(item => item.id === currentView)?.label || 'Tổng quan'}
+            {menuItems.find(item => item.id === currentView)?.label || 'Tổng quan nhân viên'}
           </h1>
         </div>
         <div className="main-content">

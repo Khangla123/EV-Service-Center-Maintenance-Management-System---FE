@@ -34,36 +34,64 @@
 }
 
 .tasks-header {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .tasks-header h3 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin: 0 0 16px 0;
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 20px 0;
+  padding-bottom: 16px;
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-image-slice: 1;
+  letter-spacing: -0.5px;
 }
 
 .header-actions {
   display: flex;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .search-box,
 .filter-box {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 10px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 18px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.search-box:focus-within,
+.filter-box:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
+}
+
+.search-box svg,
+.filter-box svg {
+  color: #667eea;
+  flex-shrink: 0;
 }
 
 .search-box {
   flex: 1;
-  max-width: 400px;
+  max-width: 450px;
 }
 
 .search-box input,
@@ -72,51 +100,72 @@
   background: transparent;
   outline: none;
   font-size: 14px;
-  color: #1a1a1a;
+  color: #1f2937;
+  font-weight: 500;
   width: 100%;
 }
 
 .search-box input::placeholder {
   color: #9ca3af;
+  font-weight: 400;
 }
 
 .filter-box select {
   cursor: pointer;
   padding-right: 20px;
+  font-weight: 600;
+  color: #4b5563;
 }
 
 .tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 24px;
+  background: white;
+  padding: 8px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .tabs .tab {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
-  border-radius: 8px;
-  background: white;
-  border: 1px solid #e5e7eb;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: 10px;
+  background: transparent;
+  border: 2px solid transparent;
   color: #6b7280;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 1;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.tabs .tab svg {
+  width: 18px;
+  height: 18px;
 }
 
 .tabs .tab:hover {
-  background: #f9fafb;
-  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.08);
+  color: #667eea;
+  transform: translateY(-1px);
 }
 
 .tabs .tab.active {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border-color: transparent;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
 }
 
+/* Task List */
 .task-list {
   display: flex;
   flex-direction: column;
@@ -133,17 +182,36 @@
 }
 
 .task-card {
-  padding: 20px;
-  border-radius: 12px;
+  padding: 24px;
+  border-radius: 16px;
   background: white;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .task-card:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+  transform: translateY(-4px);
+  border-color: rgba(102, 126, 234, 0.2);
+}
+
+.task-card:hover::before {
+  opacity: 1;
 }
 
 .task-card.pending {
