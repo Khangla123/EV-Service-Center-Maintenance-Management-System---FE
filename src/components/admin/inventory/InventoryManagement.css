@@ -5,15 +5,16 @@
 }
 
 .inventory-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   margin-bottom: 32px;
   background: white;
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.header-left {
+  width: 100%;
 }
 
 .header-left h1 {
@@ -243,6 +244,7 @@
   gap: 16px;
   margin-bottom: 24px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .search-box {
@@ -276,6 +278,11 @@
 
 .filter-group svg {
   color: #666;
+}
+
+.inventory-filters .btn-add-item {
+  white-space: nowrap;
+  margin-left: auto;
 }
 
 .filter-group select {

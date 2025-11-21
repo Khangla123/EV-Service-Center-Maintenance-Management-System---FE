@@ -404,10 +404,6 @@ const InventoryManagement: React.FC = () => {
           <h1>Quản lý Kho Phụ tùng</h1>
           <p>Theo dõi tồn kho và đề xuất nhập hàng thông minh</p>
         </div>
-        <button className="btn-add-item" onClick={handleAddPart}>
-          <Plus size={20} />
-          Thêm phụ tùng
-        </button>
       </div>
 
       {/* Stats */}
@@ -475,6 +471,11 @@ const InventoryManagement: React.FC = () => {
             <option value="out-of-stock">Hết hàng</option>
           </select>
         </div>
+
+        <button className="btn-add-item" onClick={handleAddPart}>
+          <Plus size={20} />
+          Thêm phụ tùng
+        </button>
       </div>
 
       {/* Inventory Table */}

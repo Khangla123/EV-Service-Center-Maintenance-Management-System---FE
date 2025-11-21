@@ -41,6 +41,44 @@ const FinanceManagement: React.FC = () => {
     }
   };
 
+  // Xuất báo cáo tài chính
+  const handleExportReport = () => {
+    const revenue = calculateMonthlyRevenue();
+    const expenses = calculateMonthlyExpenses();
+    const profit = calculateMonthlyProfit();
+    const profitMargin = calculateProfitMargin();
+
+    // Tạo dữ liệu báo cáo
+    const reportData = [
+      ['BÁO CÁO TÀI CHÍNH'],
+      ['Thời gian', new Date().toLocaleDateString('vi-VN')],
+      ['Kỳ báo cáo', selectedPeriod === 'month' ? 'Tháng này' : selectedPeriod === 'week' ? 'Tuần này' : selectedPeriod === 'quarter' ? 'Quý này' : 'Năm này'],
+      [''],
+      ['CHỈ TIÊU', 'GIÁ TRỊ (VNĐ)'],
+      ['Tổng doanh thu', revenue.toLocaleString('vi-VN')],
+      ['Tổng chi phí', expenses.toLocaleString('vi-VN')],
+      ['Lợi nhuận', profit.toLocaleString('vi-VN')],
+      ['Tỷ suất lợi nhuận', profitMargin + '%'],
+      [''],
+      ['DOANH THU THEO THÁNG'],
+      ...getRevenueByMonth().map(item => [item.month, item.revenue.toLocaleString('vi-VN')])
+    ];
+
+    // Chuyển đổi thành CSV
+    const csvContent = reportData.map(row => row.join(',')).join('\n');
+    const BOM = '\uFEFF'; // UTF-8 BOM for Excel
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `bao_cao_tai_chinh_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Tính doanh thu tháng này
   const calculateMonthlyRevenue = () => {
     const now = new Date();
@@ -212,7 +250,7 @@ const FinanceManagement: React.FC = () => {
             <option value="quarter">Quý này</option>
             <option value="year">Năm này</option>
           </select>
-          <button className="btn-export">
+          <button className="btn-export" onClick={handleExportReport}>
             <Download size={18} />
             Xuất báo cáo
           </button>
