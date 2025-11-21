@@ -17,6 +17,16 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
+  // Clear form when component mounts (after logout)
+  useEffect(() => {
+    setFormData({
+      email: '',
+      password: '',
+    });
+    setShowPassword(false);
+    setErrors({});
+  }, []);
+  
   // Get return URL from location state, default to customer dashboard for customers
   const getReturnUrl = () => {
     const stateReturnUrl = (location.state as { returnUrl?: string })?.returnUrl;
@@ -128,7 +138,7 @@ const LoginPage: React.FC = () => {
 
           {/* Main Login Card */}
           <MDCard variant="elevated" className="md-login-page__form-card">
-            <form onSubmit={handleSubmit} className="md-login-page__form">
+            <form onSubmit={handleSubmit} className="md-login-page__form" autoComplete="off">
               {errors.general && (
                 <div className="md-login-page__error">
                   <AlertCircle className="md-login-page__error-icon" />
@@ -146,6 +156,7 @@ const LoginPage: React.FC = () => {
                 helperText={errors.email}
                 fullWidth
                 required
+                autoComplete="off"
               />
 
               <MDTextField
@@ -158,6 +169,7 @@ const LoginPage: React.FC = () => {
                 helperText={errors.password}
                 fullWidth
                 required
+                autoComplete="new-password"
                 endIcon={
                   <button
                     type="button"

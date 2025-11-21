@@ -149,11 +149,29 @@ const Header: React.FC<HeaderProps> = ({
 
   const navLinks = getNavLinks();
 
+  // Determine home path based on user role
+  const getHomePath = () => {
+    if (!user) return '/';
+    
+    switch (user.role) {
+      case UserRole.CUSTOMER:
+        return '/customer/dashboard';
+      case UserRole.STAFF:
+        return '/staff/dashboard';
+      case UserRole.TECHNICIAN:
+        return '/technician/tasks';
+      case UserRole.ADMIN:
+        return '/admin/dashboard';
+      default:
+        return '/';
+    }
+  };
+
   return (
     <header className="header" style={{ backgroundColor: '#ffffff', background: '#ffffff' }}>
       <div className="header__container">
         {/* Logo */}
-        <Link to="/" className="header__logo">
+        <Link to={getHomePath()} className="header__logo">
           <div className="header__logo-container">
             <img 
               src="/ev-service-logo.svg" 

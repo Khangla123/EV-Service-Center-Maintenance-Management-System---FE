@@ -12,18 +12,29 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding: 25px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  margin-bottom: 32px;
+  padding: 32px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 20px;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   position: relative;
-  z-index: 1;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.vehicle-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+}
+
+.vehicle-header:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .vehicle-title {
@@ -40,28 +51,32 @@
 
 .vehicle-title h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  color: #1a1a1a;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .add-vehicle-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
+  padding: 12px 24px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .add-vehicle-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
 }
 
 /* Loading State */

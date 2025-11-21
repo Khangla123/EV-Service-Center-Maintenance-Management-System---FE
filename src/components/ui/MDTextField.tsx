@@ -22,6 +22,7 @@ interface MDTextFieldProps {
   className?: string;
   id?: string;
   name?: string;
+  autoComplete?: string;
 }
 
 export const MDTextField: React.FC<MDTextFieldProps> = ({
@@ -45,6 +46,7 @@ export const MDTextField: React.FC<MDTextFieldProps> = ({
   className = '',
   id,
   name,
+  autoComplete,
 }) => {
   const [focused, setFocused] = useState(false);
   const [hasValue, setHasValue] = useState(Boolean(value || defaultValue));
@@ -109,6 +111,7 @@ export const MDTextField: React.FC<MDTextFieldProps> = ({
             onChange={handleChange}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            autoComplete={autoComplete}
           />
           
           {label && (
