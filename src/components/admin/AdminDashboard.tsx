@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard,
   Users, 
@@ -17,7 +18,38 @@ import './AdminDashboard.css';
 type AdminView = 'dashboard' | 'staff' | 'appointments' | 'inventory' | 'finance';
 
 const AdminDashboard: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
+
+  // Sync activeView with URL path
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes('/staff')) {
+      setActiveView('staff');
+    } else if (path.includes('/appointments')) {
+      setActiveView('appointments');
+    } else if (path.includes('/inventory')) {
+      setActiveView('inventory');
+    } else if (path.includes('/reports') || path.includes('/finance')) {
+      setActiveView('finance');
+    } else {
+      setActiveView('dashboard');
+    }
+  }, [location.pathname]);
+
+  const handleViewChange = (view: AdminView) => {
+    setActiveView(view);
+    // Navigate to the corresponding route
+    const routes: Record<AdminView, string> = {
+      dashboard: '/admin/dashboard',
+      staff: '/admin/staff',
+      appointments: '/admin/appointments',
+      inventory: '/admin/inventory',
+      finance: '/admin/reports'
+    };
+    navigate(routes[view]);
+  };
 
   const menuItems = [
     { id: 'dashboard' as AdminView, label: 'Tổng quan', icon: <LayoutDashboard size={20} /> },
@@ -52,7 +84,7 @@ const AdminDashboard: React.FC = () => {
             <button
               key={item.id}
               className={`nav-item ${activeView === item.id ? 'active' : ''}`}
-              onClick={() => setActiveView(item.id)}
+              onClick={() => handleViewChange(item.id)}
             >
               <span className="nav-icon">{item.icon}</span>
               <span className="nav-label">{item.label}</span>

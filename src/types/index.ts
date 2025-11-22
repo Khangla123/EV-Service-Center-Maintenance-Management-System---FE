@@ -110,6 +110,8 @@ export interface ServiceRecord {
   id: string;
   appointmentId: string;
   vehicleId: string;
+  vehicleModel?: string; // From backend response
+  licensePlate?: string; // From backend response
   technicianId: string;
   serviceType: ServiceType;
   startTime: Date;

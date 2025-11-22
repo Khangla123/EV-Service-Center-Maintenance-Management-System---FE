@@ -77,31 +77,7 @@ const VehicleManagement: React.FC = () => {
     return { status: 'Hết hạn', color: '#6b7280' };
   };
 
-  const getVehicleImage = (vehicle: Vehicle) => {
-    console.log(`🔍 Getting image for ${vehicle.make} ${vehicle.model}:`, vehicle.imageUrl); // Debug
-    
-    // Ưu tiên lấy ảnh từ database (imageUrl)
-    if (vehicle.imageUrl) {
-      console.log('✅ Using imageUrl from database:', vehicle.imageUrl);
-      return vehicle.imageUrl;
-    }
-    
-    // Fallback: Map vehicle model to image path (legacy code)
-    if (vehicle.make === 'VinFast') {
-      if (vehicle.model === 'VF8' || vehicle.model === 'VF 8') {
-        console.log('⚠️ Fallback to legacy VF8 path');
-        return '/assets/images/vehicles/vinfast-vf8.png'; // Updated path
-      }
-      if (vehicle.model === 'VF9' || vehicle.model === 'VF 9') {
-        console.log('⚠️ Fallback to legacy VF9 path');
-        return '/assets/images/vehicles/vinfast-vf9.png'; // Updated path
-      }
-    }
-    
-    // Default placeholder nếu không có ảnh
-    console.log('⚠️ No image found, using default');
-    return null; // Return null để hiển thị placeholder icon
-  };
+
 
   const handleBookService = (vehicleId: string) => {
     // Navigate to appointment booking with pre-selected vehicle
@@ -201,7 +177,6 @@ const VehicleManagement: React.FC = () => {
         <div className="vehicles-grid">
           {vehicles.map((vehicle) => {
             const warrantyStatus = getWarrantyStatus(vehicle.warrantyExpiration);
-            const vehicleImageSrc = getVehicleImage(vehicle); // Truyền toàn bộ vehicle object
             
             return (
               <div key={vehicle.id} className="vehicle-card">
@@ -236,34 +211,6 @@ const VehicleManagement: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="vehicle-image">
-                  {vehicleImageSrc ? (
-                    <div className="car-image-container">
-                      <img 
-                        src={vehicleImageSrc} 
-                        alt={`${vehicle.make} ${vehicle.model}`}
-                        className="vehicle-img"
-                        onError={(e) => {
-                          // Fallback to placeholder if image fails to load
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const fallback = target.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.style.display = 'flex';
-                        }}
-                      />
-                      <div className="car-placeholder fallback-placeholder" style={{ display: 'none' }}>
-                        <Car size={48} />
-                        <span className="vehicle-color">{vehicle.color}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="car-placeholder">
-                      <Car size={48} />
-                      <span className="vehicle-color">{vehicle.color}</span>
-                    </div>
-                  )}
-                </div>
-
                 <div className="vehicle-details">
                   <div className="detail-row">
                     <span className="detail-label">Biển số:</span>
@@ -273,6 +220,12 @@ const VehicleManagement: React.FC = () => {
                   <div className="detail-row">
                     <span className="detail-label">VIN:</span>
                     <span className="detail-value vin-code">{vehicle.vin}</span>
+                  </div>
+
+                  <div className="detail-row">
+                    <Car size={16} />
+                    <span className="detail-label">Màu sắc:</span>
+                    <span className="detail-value">{vehicle.color}</span>
                   </div>
 
                   <div className="detail-row">

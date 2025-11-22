@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Package, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
 import partService, { PartResponse } from '../../../services/partService';
+import staffService from '../../../services/staffService';
 import './PartsPersonal.css';
 
 type PartsView = 'inventory' | 'requests' | 'usage';
@@ -10,15 +12,39 @@ interface InventoryPart extends PartResponse {
 }
 
 const PartsPersonal: React.FC = () => {
+  const { state } = useAuth();
   const [activeView, setActiveView] = useState<PartsView>('inventory');
   const [searchTerm, setSearchTerm] = useState('');
   const [parts, setParts] = useState<InventoryPart[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [serviceCenterId, setServiceCenterId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadParts();
-  }, []);
+    loadTechnicianInfo();
+  }, [state.user]);
+
+  useEffect(() => {
+    if (serviceCenterId) {
+      loadParts();
+    }
+  }, [serviceCenterId]);
+
+  const loadTechnicianInfo = async () => {
+    try {
+      if (!state.user?.id) return;
+      
+      // Get technician's staff info to find their service center
+      const allStaff = await staffService.getAllStaff();
+      const technicianStaff = allStaff.find(staff => staff.userId === state.user?.id);
+      
+      if (technicianStaff?.serviceCenterId) {
+        setServiceCenterId(technicianStaff.serviceCenterId);
+      }
+    } catch (err) {
+      console.error('Error loading technician info:', err);
+    }
+  };
 
   const loadParts = async () => {
     try {
@@ -26,8 +52,13 @@ const PartsPersonal: React.FC = () => {
       setError(null);
       const response = await partService.getAllParts();
       
+      // Filter parts by service center ID
+      const filteredParts = serviceCenterId 
+        ? response.filter(part => part.serviceCenterId === serviceCenterId)
+        : response;
+      
       // Transform API response to include status
-      const partsWithStatus: InventoryPart[] = response.map(part => ({
+      const partsWithStatus: InventoryPart[] = filteredParts.map(part => ({
         ...part,
         status: part.stockQuantity === 0 
           ? 'out-of-stock' 

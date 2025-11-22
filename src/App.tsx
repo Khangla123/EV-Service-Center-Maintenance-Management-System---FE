@@ -194,10 +194,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/staff/*" element={
         <ProtectedRoute allowedRoles={[UserRole.STAFF]}>
           <Layout>
-            <Routes>
-              <Route path="dashboard" element={<StaffDashboard />} />
-              <Route path="*" element={<Navigate to="/staff/dashboard" replace />} />
-            </Routes>
+            <StaffDashboard />
           </Layout>
         </ProtectedRoute>
       } />

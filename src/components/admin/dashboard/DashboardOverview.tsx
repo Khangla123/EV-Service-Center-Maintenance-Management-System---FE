@@ -162,30 +162,6 @@ const DashboardOverview: React.FC = () => {
     return `${diffDays} ngày trước`;
   };
 
-  const alerts = [
-    {
-      id: 1,
-      type: 'warning',
-      title: 'Tồn kho thấp',
-      message: 'Pin VinFast VF8 chỉ còn 3 chiếc',
-      time: '10 phút trước'
-    },
-    {
-      id: 2,
-      type: 'danger',
-      title: 'Lịch hẹn quá tải',
-      message: 'Ngày 15/10 đã đầy, cần điều phối',
-      time: '25 phút trước'
-    },
-    {
-      id: 3,
-      type: 'warning',
-      title: 'Chứng chỉ sắp hết hạn',
-      message: 'KTV Hoàng Văn Kỹ - hết hạn 20/10',
-      time: '1 giờ trước'
-    }
-  ];
-
   const recentActivities = getRecentActivities();
 
   if (loading) {
@@ -224,28 +200,6 @@ const DashboardOverview: React.FC = () => {
       </div>
 
       <div className="dashboard-main-grid">
-        {/* Alerts Section */}
-        <div className="dashboard-section alerts-section">
-          <div className="section-header">
-            <AlertTriangle size={20} />
-            <h2>Cảnh báo Quan trọng</h2>
-          </div>
-          <div className="alerts-list">
-            {alerts.map((alert) => (
-              <div key={alert.id} className={`alert-item alert-${alert.type}`}>
-                <div className="alert-icon">
-                  <AlertTriangle size={18} />
-                </div>
-                <div className="alert-content">
-                  <h4>{alert.title}</h4>
-                  <p>{alert.message}</p>
-                  <span className="alert-time">{alert.time}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Recent Activities */}
         <div className="dashboard-section activities-section">
           <div className="section-header">
