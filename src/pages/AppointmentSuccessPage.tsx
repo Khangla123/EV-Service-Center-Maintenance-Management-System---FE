@@ -1,9 +1,32 @@
+/**
+ * AppointmentSuccessPage.tsx - Appointment Confirmation Page
+ * 
+ * Trang xác nhận đặt lịch thành công.
+ * Hiển thị thông tin chi tiết về lịch hẹn vừa tạo.
+ * 
+ * Features:
+ * - Hiển thị mã đặt lịch (shortened UUID)
+ * - Thông tin chi tiết appointment
+ * - Danh sách dịch vụ đã chọn với giá
+ * - Tổng chi phí dự kiến
+ * - Hướng dẫn các bước tiếp theo
+ * - CTA buttons (Xem lịch, Về trang chủ)
+ * - Load chi tiết từ API nếu cần
+ * 
+ * @module pages/AppointmentSuccessPage
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MDButton } from '../components/ui';
 import appointmentService, { Appointment } from '../services/appointmentService';
 import './AppointmentSuccessPage.css';
 
+/**
+ * LocationState - Interface cho location state từ booking page
+ * 
+ * @interface LocationState
+ */
 interface LocationState {
   appointmentId: string;
   appointmentDate?: string;
@@ -14,14 +37,26 @@ interface LocationState {
   notes?: string;
 }
 
-// Utility function to generate short display code from UUID
+/**
+ * generateDisplayCode - Tạo mã hiển thị ngắn gọn từ UUID
+ * 
+ * Chuyển đổi UUID dài thành mã ngắn gọn, dễ đọc cho người dùng.
+ * 
+ * @param {string} id - UUID của appointment
+ * @param {string} [date] - Ngày hẹn (optional)
+ * @returns {string} Display code (format: APT-XXXXXXXX hoặc APTmmdd-XXXXXXXX)
+ * 
+ * @example
+ * generateDisplayCode('123e4567-e89b-12d3-a456-426614174000', '2024-10-15')
+ * // Returns: 'APT1015-123E4567'
+ */
 const generateDisplayCode = (id: string, date?: string): string => {
   if (!id || id === 'UNKNOWN') return 'N/A';
   
-  // Take first 8 characters of UUID and convert to uppercase
+  // Lấy 8 ký tự đầu của UUID và chuyển thành uppercase
   const shortId = id.substring(0, 8).toUpperCase();
   
-  // If date is available, add date prefix
+  // Nếu có date, thêm prefix với tháng/ngày
   if (date) {
     const d = new Date(date);
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -32,14 +67,25 @@ const generateDisplayCode = (id: string, date?: string): string => {
   return `APT-${shortId}`;
 };
 
+/**
+ * AppointmentSuccessPage Component
+ * 
+ * Component hiển thị trang xác nhận đặt lịch thành công.
+ * Nhận data từ location state hoặc load từ API.
+ * 
+ * @returns {JSX.Element} AppointmentSuccessPage component
+ */
 const AppointmentSuccessPage: React.FC = () => {
+  // Hooks
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as LocationState;
   
-  const [appointmentDetails, setAppointmentDetails] = useState<Appointment | null>(null);
-  const [loading, setLoading] = useState(false);
+  // State
+  const [appointmentDetails, setAppointmentDetails] = useState<Appointment | null>(null);  // Chi tiết từ API
+  const [loading, setLoading] = useState(false);  // Loading state
   
+  // Extract data từ location state
   const appointmentId = state?.appointmentId || 'UNKNOWN';
   const appointmentDate = state?.appointmentDate;
   const totalServices = state?.totalServices || 1;
@@ -47,9 +93,17 @@ const AppointmentSuccessPage: React.FC = () => {
   const vehicle = state?.vehicle;
   const serviceCenter = state?.serviceCenter;
   const notes = state?.notes;
+  
+  // Generate display code cho UI
   const displayCode = generateDisplayCode(appointmentId, appointmentDate);
 
-  // Load appointment details from API if not in state
+  /**
+   * Effect: Load appointment details từ API nếu không có trong state
+   * 
+   * Chỉ load khi:
+   * - appointmentId hợp lệ (không phải 'UNKNOWN')
+   * - Chưa có services trong state
+   */
   useEffect(() => {
     const loadAppointmentDetails = async () => {
       if (appointmentId !== 'UNKNOWN' && !services.length) {
@@ -68,6 +122,12 @@ const AppointmentSuccessPage: React.FC = () => {
     loadAppointmentDetails();
   }, [appointmentId, services.length]);
 
+  /**
+   * formatDateTime - Format datetime string sang định dạng Việt Nam
+   * 
+   * @param {string} [dateTimeStr] - ISO datetime string
+   * @returns {string} Formatted datetime (dd/mm/yyyy hh:mm)
+   */
   const formatDateTime = (dateTimeStr?: string) => {
     if (!dateTimeStr) return 'Chưa xác định';
     const date = new Date(dateTimeStr);
@@ -80,6 +140,12 @@ const AppointmentSuccessPage: React.FC = () => {
     }).format(date);
   };
 
+  /**
+   * formatCurrency - Format số tiền sang VNĐ
+   * 
+   * @param {number} amount - Số tiền cần format
+   * @returns {string} Formatted currency (VNĐ)
+   */
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -87,14 +153,25 @@ const AppointmentSuccessPage: React.FC = () => {
     }).format(amount);
   };
 
+  /**
+   * getTotalPrice - Tính tổng giá của tất cả services
+   * 
+   * @returns {number} Tổng tiền
+   */
   const getTotalPrice = () => {
     return services.reduce((sum, service) => sum + service.price, 0);
   };
 
+  /**
+   * handleViewAppointments - Navigate đến trang danh sách appointments
+   */
   const handleViewAppointments = () => {
     navigate('/customer/appointments');
   };
 
+  /**
+   * handleGoHome - Navigate về trang chủ
+   */
   const handleGoHome = () => {
     navigate('/');
   };

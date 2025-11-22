@@ -1,3 +1,21 @@
+/**
+ * LoginPage.tsx - User Login Page
+ * 
+ * Trang đăng nhập của ứng dụng.
+ * Xử lý authentication và redirect dựa trên user role.
+ * 
+ * Features:
+ * - Form validation (email và password)
+ * - Show/hide password
+ * - Error handling và hiển thị error messages
+ * - Remember me checkbox
+ * - Forgot password link
+ * - Auto redirect sau khi login thành công
+ * - Role-based navigation (Customer/Staff/Technician/Admin)
+ * 
+ * @module pages/LoginPage
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
@@ -6,18 +24,33 @@ import { UserRole } from '../types';
 import { MDButton, MDTextField, MDCard } from '../components/ui';
 import './LoginPage.css';
 
+/**
+ * LoginPage Component
+ * 
+ * Component trang đăng nhập với form validation và role-based navigation.
+ * 
+ * @returns {JSX.Element} LoginPage component
+ */
 const LoginPage: React.FC = () => {
+  // Form data state - Lưu trữ email và password
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const { state, login, clearError } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
   
-  // Clear form when component mounts (after logout)
+  // UI state
+  const [showPassword, setShowPassword] = useState(false);  // Show/hide password toggle
+  const [errors, setErrors] = useState<{ [key: string]: string }>({}); // Form validation errors
+  
+  // Hooks
+  const { state, login, clearError } = useAuth();  // Auth context
+  const navigate = useNavigate();  // Navigation
+  const location = useLocation();  // Current location (for returnUrl)
+  
+  /**
+   * Effect: Clear form khi component mount
+   * Chạy sau khi logout để clear dữ liệu cũ
+   */
   useEffect(() => {
     setFormData({
       email: '',
@@ -27,15 +60,31 @@ const LoginPage: React.FC = () => {
     setErrors({});
   }, []);
   
-  // Get return URL from location state, default to customer dashboard for customers
+  /**
+   * getReturnUrl - Lấy URL để redirect sau khi login
+   * 
+   * Ư tiên lấy từ location state (nếu có).
+   * Nếu không có, mặc định là customer dashboard.
+   * 
+   * @returns {string} Return URL
+   */
   const getReturnUrl = () => {
     const stateReturnUrl = (location.state as { returnUrl?: string })?.returnUrl;
     if (stateReturnUrl) return stateReturnUrl;
-    // Default to customer dashboard for newly logged in users
+    // Mặc định cho newly logged in users
     return '/customer/dashboard';
   };
   const returnUrl = getReturnUrl();
 
+  /**
+   * Effect: Auto redirect sau khi login thành công
+   * 
+   * Navigate dựa trên user role:
+   * - CUSTOMER -> /customer/dashboard
+   * - STAFF -> /staff/dashboard
+   * - TECHNICIAN -> /technician/tasks
+   * - ADMIN -> /admin/dashboard
+   */
   useEffect(() => {
     if (state.isAuthenticated && state.user) {
       // Navigate based on user role
@@ -58,12 +107,24 @@ const LoginPage: React.FC = () => {
     }
   }, [state.isAuthenticated, state.user, navigate]);
 
+  /**
+   * Effect: Hiển thị error từ auth context
+   */
   useEffect(() => {
     if (state.error) {
       setErrors({ general: state.error });
     }
   }, [state.error]);
 
+  /**
+   * validateForm - Validate form data trước khi submit
+   * 
+   * Validation rules:
+   * - Email: required, phải đúng format email
+   * - Password: required
+   * 
+   * @returns {Object} Object chứa các field errors (empty nếu không có lỗi)
+   */
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
@@ -80,21 +141,42 @@ const LoginPage: React.FC = () => {
     return newErrors;
   };
 
+  /**
+   * handleSubmit - Xử lý khi submit form
+   * 
+   * Flow:
+   * 1. Prevent default form submission
+   * 2. Clear existing errors
+   * 3. Validate form data
+   * 4. Nếu hợp lệ -> gọi login API
+   * 5. Navigation được xử lý bởi useEffect dựa trên role
+   * 
+   * @param {React.FormEvent} e - Form submit event
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearError();
-    setErrors({});
+    clearError();  // Clear errors từ context
+    setErrors({});  // Clear local errors
 
+    // Validate form
     const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
     }
 
+    // Gọi login API
     await login(formData.email, formData.password);
-    // Navigation is handled by useEffect based on user role
+    // Navigation được xử lý bởi useEffect dựa trên user role
   };
 
+  /**
+   * handleInputChange - Xử lý khi user nhập vào input fields
+   * 
+   * Tự động clear errors khi user bắt đầu nhập lại.
+   * 
+   * @param {React.ChangeEvent<HTMLInputElement>} e - Input change event
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({

@@ -1,30 +1,88 @@
+/**
+ * MDTextField.tsx - Material Design 3 Text Field Component
+ * 
+ * Text input component theo chuẩn Material Design 3.
+ * Hỗ trợ nhiều variants, states và customization options.
+ * 
+ * Features:
+ * - 2 variants: filled, outlined
+ * - Floating label animation
+ * - Error state với helper text
+ * - Support icons (start & end)
+ * - Auto-focus management
+ * - Controlled/Uncontrolled modes
+ * - Full accessibility support
+ * 
+ * @module components/ui/MDTextField
+ */
+
 import React, { useState } from 'react';
 import './MDTextField.css';
 
+/**
+ * MDTextFieldProps - Props cho MDTextField component
+ * 
+ * @interface MDTextFieldProps
+ */
 interface MDTextFieldProps {
-  label?: string;
-  placeholder?: string;
-  value?: string;
-  defaultValue?: string;
-  type?: 'text' | 'email' | 'password' | 'number' | 'tel';
-  variant?: 'filled' | 'outlined';
-  size?: 'small' | 'medium';
-  fullWidth?: boolean;
-  disabled?: boolean;
-  error?: boolean;
-  helperText?: string;
-  required?: boolean;
-  startIcon?: React.ReactNode;
-  endIcon?: React.ReactNode;
-  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
-  onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
-  className?: string;
-  id?: string;
-  name?: string;
-  autoComplete?: string;
+  label?: string;                                          // Label text (floating)
+  placeholder?: string;                                    // Placeholder text
+  value?: string;                                          // Controlled value
+  defaultValue?: string;                                   // Uncontrolled default value
+  type?: 'text' | 'email' | 'password' | 'number' | 'tel'; // Input type
+  variant?: 'filled' | 'outlined';                         // TextField variant
+  size?: 'small' | 'medium';                               // Kích thước
+  fullWidth?: boolean;                                     // Chiếm full width
+  disabled?: boolean;                                      // Disabled state
+  error?: boolean;                                         // Error state
+  helperText?: string;                                     // Helper/Error text
+  required?: boolean;                                      // Required field marker
+  startIcon?: React.ReactNode;                             // Icon ở đầu
+  endIcon?: React.ReactNode;                               // Icon ở cuối
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;  // Change handler
+  onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;     // Blur handler
+  onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;    // Focus handler
+  className?: string;                                      // Custom CSS class
+  id?: string;                                             // Input ID
+  name?: string;                                           // Input name
+  autoComplete?: string;                                   // Autocomplete attribute
 }
 
+/**
+ * MDTextField Component
+ * 
+ * Material Design 3 text field với floating label và rich features.
+ * Tự động quản lý focus state và label animation.
+ * 
+ * @param {MDTextFieldProps} props - Component props
+ * @returns {JSX.Element} TextField element
+ * 
+ * @example
+ * ```tsx
+ * // Basic outlined text field
+ * <MDTextField
+ *   label="Email"
+ *   type="email"
+ *   value={email}
+ *   onChange={(e) => setEmail(e.target.value)}
+ * />
+ * 
+ * // Error state với helper text
+ * <MDTextField
+ *   label="Password"
+ *   type="password"
+ *   error={hasError}
+ *   helperText="Password is required"
+ * />
+ * 
+ * // Với icons
+ * <MDTextField
+ *   label="Search"
+ *   startIcon={<SearchIcon />}
+ *   endIcon={<ClearIcon />}
+ * />
+ * ```
+ */
 export const MDTextField: React.FC<MDTextFieldProps> = ({
   label,
   placeholder,
@@ -48,20 +106,33 @@ export const MDTextField: React.FC<MDTextFieldProps> = ({
   name,
   autoComplete,
 }) => {
-  const [focused, setFocused] = useState(false);
-  const [hasValue, setHasValue] = useState(Boolean(value || defaultValue));
+  // Local state để quản lý UI animations
+  const [focused, setFocused] = useState(false);                        // Focus state
+  const [hasValue, setHasValue] = useState(Boolean(value || defaultValue)); // Có value hay không
 
+  /**
+   * handleFocus - Xử lý khi input được focus
+   * Set focused state và trigger label animation
+   */
   const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
     setFocused(true);
     onFocus?.(event);
   };
 
+  /**
+   * handleBlur - Xử lý khi input mất focus
+   * Update hasValue state dựa trên current value
+   */
   const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     setFocused(false);
     setHasValue(Boolean(event.target.value));
     onBlur?.(event);
   };
 
+  /**
+   * handleChange - Xử lý khi value thay đổi
+   * Update hasValue state để control label animation
+   */
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setHasValue(Boolean(event.target.value));
     onChange?.(event);

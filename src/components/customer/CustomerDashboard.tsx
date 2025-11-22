@@ -1,3 +1,15 @@
+/**
+ * @fileoverview Customer Dashboard Component
+ * 
+ * Component chính cho giao diện khách hàng, hiển thị tổng quan về các hoạt động bảo dưỡng xe,
+ * quản lý lịch hẹn, theo dõi chi phí và thống kê các dịch vụ.
+ * 
+ * Main customer interface component that displays overview of vehicle maintenance activities,
+ * appointment management, cost tracking and service statistics.
+ * 
+ * @module components/customer/CustomerDashboard
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Car, Calendar, History, CreditCard, TrendingUp, Clock, CheckCircle, AlertCircle, Home, Menu, X } from 'lucide-react';
@@ -15,17 +27,49 @@ import appointmentService from '../../services/appointmentService';
 import invoiceService from '../../services/invoiceService';
 import './CustomerDashboard.css';
 
+/**
+ * Customer Dashboard Component
+ * 
+ * Hiển thị dashboard chính cho khách hàng bao gồm:
+ * - Thống kê tổng quan (số xe, lịch hẹn, chi phí)
+ * - Danh sách lịch hẹn sắp tới
+ * - Hoạt động gần đây
+ * - Điều hướng đến các module con (đặt lịch, theo dõi, thanh toán, quản lý xe)
+ * 
+ * Displays main customer dashboard including:
+ * - Overview statistics (vehicle count, appointments, costs)
+ * - Upcoming appointments list
+ * - Recent activities
+ * - Navigation to sub-modules (booking, tracking, payment, vehicle management)
+ * 
+ * @returns {JSX.Element} Customer dashboard component
+ * 
+ * @example
+ * // Sử dụng trong router / Used in router
+ * <Route path="/customer/*" element={<CustomerDashboard />} />
+ */
 const CustomerDashboard: React.FC = () => {
+  // Router hooks for navigation and location tracking
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // UI state - Mobile sidebar toggle / Trạng thái UI - Toggle sidebar mobile
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [vehicleCount, setVehicleCount] = useState(0);
-  const [appointmentCount, setAppointmentCount] = useState(0);
-  const [completedCount, setCompletedCount] = useState(0);
-  const [monthlyCost, setMonthlyCost] = useState('0');
-  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  
+  // Dashboard statistics / Thống kê dashboard
+  const [vehicleCount, setVehicleCount] = useState(0);           // Số lượng xe
+  const [appointmentCount, setAppointmentCount] = useState(0);   // Số lượng lịch hẹn đang hoạt động
+  const [completedCount, setCompletedCount] = useState(0);       // Số lịch hẹn đã hoàn thành
+  const [monthlyCost, setMonthlyCost] = useState('0');           // Chi phí tháng hiện tại
+  
+  // Appointment and activity data / Dữ liệu lịch hẹn và hoạt động
+  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);  // Lịch hẹn sắp tới
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);          // Hoạt động gần đây
 
+  /** 
+   * Dashboard statistics cards configuration
+   * Cấu hình các thẻ thống kê trên dashboard
+   */
   const stats = [
     { label: 'Xe của tôi', value: vehicleCount.toString(), icon: Car, gradient: 'from-blue-500 to-blue-600', link: '/customer/vehicles' },
     { label: 'Theo dõi lịch dịch vụ', value: appointmentCount.toString(), icon: Calendar, gradient: 'from-green-500 to-green-600', link: '/customer/appointments' },
@@ -33,6 +77,10 @@ const CustomerDashboard: React.FC = () => {
     { label: 'Chi phí tháng', value: monthlyCost, icon: CreditCard, gradient: 'from-orange-500 to-orange-600', link: '/customer/costs' }
   ];
 
+  /** 
+   * Sidebar menu items configuration
+   * Cấu hình các mục menu thanh bên
+   */
   const menuItems = [
     { path: '/customer/dashboard', label: 'Tổng quan khách hàng', icon: Home },
     { path: '/customer/booking', label: 'Đặt lịch dịch vụ', icon: Calendar },
@@ -43,27 +91,43 @@ const CustomerDashboard: React.FC = () => {
     { path: '/customer/vehicles', label: 'Quản lý xe', icon: Car }
   ];
 
+  /**
+   * Load dashboard data on component mount
+   * Tải dữ liệu dashboard khi component được mount
+   * 
+   * Fetches and processes:
+   * - User's vehicles count
+   * - Active and completed appointments
+   * - Monthly cost calculations from invoices
+   * - Recent maintenance activities
+   */
   useEffect(() => {
-    // Load user data from API
+    /**
+     * Load user data from API
+     * Tải dữ liệu người dùng từ API
+     */
     const loadUserData = async () => {
       try {
-        // Load vehicles
+        // Load vehicles / Tải danh sách xe
         const vehicles = await vehicleService.getMyVehicles();
         console.log('🚗 Vehicles loaded:', vehicles);
         setVehicleCount(vehicles.length);
 
-        // Load appointments
+        // Load appointments / Tải lịch hẹn
         const { appointments } = await appointmentService.getMyAppointments();
         console.log('📅 Appointments loaded:', appointments);
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
         
-        // Filter upcoming appointments (PENDING or CONFIRMED)
+        /**
+         * Filter and format upcoming appointments
+         * Lọc và định dạng lịch hẹn sắp tới (PENDING hoặc CONFIRMED)
+         */
         const upcoming = appointments
           .filter(a => a.status === 'PENDING' || a.status === 'CONFIRMED')
           .sort((a, b) => new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime())
-          .slice(0, 5)
+          .slice(0, 5)  // Chỉ lấy 5 lịch hẹn gần nhất
           .map(a => {
             const date = new Date(a.appointmentDate);
             return {
@@ -78,19 +142,26 @@ const CustomerDashboard: React.FC = () => {
           });
         
         setUpcomingAppointments(upcoming);
+        
+        // Count active appointments / Đếm số lịch hẹn đang hoạt động
         setAppointmentCount(appointments.filter(a => 
           a.status === 'PENDING' || a.status === 'CONFIRMED'
         ).length);
         
+        // Count completed appointments / Đếm số lịch hẹn đã hoàn thành
         const completed = appointments.filter(a => a.status === 'COMPLETED');
         setCompletedCount(completed.length);
         
-        // Load invoices and calculate monthly cost
+        /**
+         * Load invoices and calculate monthly cost
+         * Tải hóa đơn và tính chi phí tháng hiện tại
+         */
         try {
           const invoices = await invoiceService.getMyInvoices();
           console.log('💰 Invoices loaded:', invoices);
           
-          // Calculate monthly cost from paid/completed invoices this month
+          // Calculate total cost from paid/pending invoices of current month
+          // Tính tổng chi phí từ hóa đơn đã thanh toán/đang chờ trong tháng hiện tại
           const monthlyTotal = invoices
             .filter(inv => {
               if (!inv.paidDate && !inv.issueDate) return false;
@@ -103,6 +174,7 @@ const CustomerDashboard: React.FC = () => {
           
           console.log('💵 Monthly total:', monthlyTotal);
           
+          // Format monthly cost in Vietnamese currency / Định dạng chi phí theo tiền tệ Việt Nam
           setMonthlyCost(monthlyTotal > 0 ? new Intl.NumberFormat('vi-VN', { 
             style: 'currency', 
             currency: 'VND',
@@ -113,11 +185,14 @@ const CustomerDashboard: React.FC = () => {
           setMonthlyCost('0 ₫');
         }
         
-        // Recent activities (last 5 completed appointments)
+        /**
+         * Get recent activities from completed/in-progress appointments
+         * Lấy hoạt động gần đây từ các lịch hẹn đã hoàn thành/đang thực hiện
+         */
         const recent = appointments
           .filter(a => a.status === 'COMPLETED' || a.status === 'IN_PROGRESS')
           .sort((a, b) => new Date(b.updatedAt || b.appointmentDate).getTime() - new Date(a.updatedAt || a.appointmentDate).getTime())
-          .slice(0, 5)
+          .slice(0, 5)  // Lấy 5 hoạt động gần nhất
           .map(a => {
             const date = new Date(a.updatedAt || a.appointmentDate);
             return {
@@ -139,15 +214,32 @@ const CustomerDashboard: React.FC = () => {
     loadUserData();
   }, []);
 
+  /**
+   * Check if a menu path is currently active
+   * Kiểm tra xem một đường dẫn menu có đang hoạt động không
+   * 
+   * @param {string} path - Menu path to check
+   * @returns {boolean} True if path is active
+   */
   const isActivePath = (path: string) => {
     return location.pathname === path || (path === '/customer/dashboard' && location.pathname === '/customer');
   };
 
+  /**
+   * Handle menu item click
+   * Xử lý khi click vào mục menu
+   * 
+   * @param {string} path - Path to navigate to
+   */
   const handleMenuClick = (path: string) => {
     navigate(path);
-    setIsSidebarOpen(false);
+    setIsSidebarOpen(false);  // Đóng sidebar trên mobile
   };
 
+  /**
+   * Toggle mobile sidebar
+   * Bật/tắt sidebar trên mobile
+   */
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };

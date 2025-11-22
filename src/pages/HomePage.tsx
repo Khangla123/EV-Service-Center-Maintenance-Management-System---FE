@@ -1,19 +1,50 @@
+/**
+ * HomePage.tsx - Landing Page Component
+ * 
+ * Trang chủ của ứng dụng, hiển thị thông tin về dịch vụ bảo dưỡng.
+ * Cung cấp call-to-action để đặt lịch bảo dưỡng.
+ * 
+ * Features:
+ * - Hiển thị thông tin về bảo dưỡng định kỳ
+ * - CTA button để đặt lịch
+ * - Tự động redirect tới login nếu chưa đăng nhập
+ * - Hiển thị hình ảnh minh họa
+ * 
+ * @module pages/HomePage
+ */
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import MDButton from '../components/ui/MDButton';
 import './HomePage.css';
 
+/**
+ * HomePage Component
+ * 
+ * Component trang chủ với thông tin về dịch vụ bảo dưỡng EV.
+ * 
+ * @returns {JSX.Element} HomePage component
+ */
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { state } = useAuth();
   const user = state.user;
 
+  /**
+   * Handler: Xử lý khi user click nút "Đặt lịch dịch vụ"
+   * 
+   * Logic:
+   * - Nếu đã đăng nhập -> chuyển tới trang booking
+   * - Nếu chưa đăng nhập -> chuyển tới login với returnUrl
+   */
   const handleBookAppointment = () => {
     if (state.isAuthenticated && user) {
+      // User đã đăng nhập -> navigate trực tiếp tới booking
       navigate('/customer/booking');
     } else {
-      // Redirect to login with return URL to booking page
+      // User chưa đăng nhập -> redirect to login với return URL
+      // Sau khi login thành công sẽ quay lại trang booking
       navigate('/login', { state: { returnUrl: '/customer/booking' } });
     }
   };

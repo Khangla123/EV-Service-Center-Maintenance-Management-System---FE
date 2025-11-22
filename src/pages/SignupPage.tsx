@@ -1,3 +1,23 @@
+/**
+ * SignupPage.tsx - User Registration Page
+ * 
+ * Trang đăng ký tài khoản mới cho người dùng.
+ * Bao gồm form validation đầy đủ và UI hiện đại.
+ * 
+ * Features:
+ * - Multi-step form validation
+ * - Password strength validation
+ * - Phone number formatting
+ * - Name parsing (Vietnamese format)
+ * - Show/hide password toggles
+ * - Terms & conditions acceptance
+ * - Auto-login sau khi đăng ký
+ * - Role-based navigation
+ * - Benefits showcase section
+ * 
+ * @module pages/SignupPage
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, UserPlus, Sparkles, Settings, Clock } from 'lucide-react';
@@ -6,24 +26,42 @@ import { UserRole } from '../types';
 import { MDButton, MDTextField, MDCard } from '../components/ui';
 import './SignupPage.css';
 
+/**
+ * SignupPage Component
+ * 
+ * Component trang đăng ký với form validation và auto-login.
+ * 
+ * @returns {JSX.Element} SignupPage component
+ */
 const SignupPage: React.FC = () => {
+  // Form data state - Lưu trữ tất cả thông tin đăng ký
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    role: UserRole.CUSTOMER,
-    acceptTerms: false
+    fullName: '',           // Họ và tên đầy đủ
+    email: '',              // Email
+    phone: '',              // Số điện thoại
+    password: '',           // Mật khẩu
+    confirmPassword: '',    // Xác nhận mật khẩu
+    role: UserRole.CUSTOMER, // Vai trò mặc định
+    acceptTerms: false      // Đồng ý điều khoản
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const { state, register, clearError } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
   
-  // Get return URL from location state, default to customer dashboard for new signups
+  // UI state
+  const [showPassword, setShowPassword] = useState(false);  // Toggle hiển thị password
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);  // Toggle hiển thị confirm password
+  const [errors, setErrors] = useState<{ [key: string]: string }>({}); // Form validation errors
+  
+  // Hooks
+  const { state, register, clearError } = useAuth();  // Auth context
+  const navigate = useNavigate();  // Navigation
+  const location = useLocation();  // Current location
+  
+  /**
+   * getReturnUrl - Lấy URL để redirect sau khi đăng ký thành công
+   * 
+   * Ưu tiên lấy từ location state, fallback về customer dashboard.
+   * 
+   * @returns {string} Return URL
+   */
   const getReturnUrl = () => {
     const stateReturnUrl = (location.state as { returnUrl?: string })?.returnUrl;
     if (stateReturnUrl) return stateReturnUrl;
@@ -43,12 +81,28 @@ const SignupPage: React.FC = () => {
     }
   }, [state.isAuthenticated, state.user, navigate, returnUrl]);
 
+  /**
+   * Effect: Hiển thị error từ auth context
+   */
   useEffect(() => {
     if (state.error) {
       setErrors({ general: state.error });
     }
   }, [state.error]);
 
+  /**
+   * validateForm - Validate toàn bộ form data
+   * 
+   * Validation rules:
+   * - fullName: required, ít nhất 2 từ (họ và tên)
+   * - email: required, đúng format email
+   * - phone: required, 10-11 số
+   * - password: required, ít nhất 6 ký tự
+   * - confirmPassword: required, phải khớp với password
+   * - acceptTerms: phải check
+   * 
+   * @returns {Object} Object chứa validation errors
+   */
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
@@ -89,21 +143,36 @@ const SignupPage: React.FC = () => {
     return newErrors;
   };
 
+  /**
+   * handleSubmit - Xử lý khi submit form đăng ký
+   * 
+   * Flow:
+   * 1. Prevent default form submission
+   * 2. Clear existing errors
+   * 3. Validate form data
+   * 4. Parse Vietnamese name (họ và tên)
+   * 5. Gọi register API
+   * 6. Auto-login sau khi đăng ký thành công
+   * 
+   * @param {React.FormEvent} e - Form submit event
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearError();
-    setErrors({});
+    clearError();  // Clear errors từ context
+    setErrors({});  // Clear local errors
 
+    // Validate form
     const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
     }
 
-    // Split fullName into firstName and lastName
+    // Parse Vietnamese name format
+    // Format: "Họ Tên Đệm Tên" -> lastName="Họ Tên Đệm", firstName="Tên"
     const nameParts = formData.fullName.trim().split(' ');
-    const firstName = nameParts[nameParts.length - 1]; // Last part is first name in Vietnamese
-    const lastName = nameParts.slice(0, -1).join(' '); // Everything else is last name
+    const firstName = nameParts[nameParts.length - 1]; // Phần cuối là tên
+    const lastName = nameParts.slice(0, -1).join(' '); // Phần còn lại là họ
 
     await register({
       firstName,

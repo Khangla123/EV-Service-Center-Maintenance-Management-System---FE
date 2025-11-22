@@ -1,20 +1,53 @@
+/**
+ * api.ts - Axios HTTP Client Configuration
+ * 
+ * File cấu hình axios instance cho toàn bộ ứng dụng.
+ * Bao gồm interceptors để xử lý authentication và errors.
+ * 
+ * Features:
+ * - Tự động thêm JWT token vào headers
+ * - Xử lý 401 Unauthorized (token hết hạn)
+ * - Xử lý error messages thân thiện
+ * - Set timeout và base URL
+ * 
+ * @module services/api
+ */
+
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-// Base API URL - đảm bảo luôn là absolute URL
+/**
+ * getBaseURL - Lấy base URL cho API
+ * 
+ * Ư tiên sử dụng REACT_APP_API_URL từ environment variables.
+ * Nếu không có, fallback về localhost:8080.
+ * 
+ * @returns {string} Base URL cho API calls
+ */
 const getBaseURL = () => {
   const envUrl = process.env.REACT_APP_API_URL;
   if (envUrl) {
-    // Đảm bảo URL là absolute
+    // Đảm bảo URL là absolute (bắt đầu bằng http:// hoặc https://)
     if (envUrl.startsWith('http://') || envUrl.startsWith('https://')) {
       return envUrl;
     }
   }
+  // Fallback to default local development URL
   return 'http://localhost:8080/api';
 };
 
 const API_BASE_URL = getBaseURL();
 
-// Tạo axios instance
+/**
+ * Axios Instance
+ * 
+ * Tạo một axios instance với cấu hình chung cho tất cả API calls.
+ * 
+ * Configuration:
+ * - baseURL: API base URL
+ * - timeout: 10 seconds (10000ms)
+ * - headers: Default Content-Type application/json
+ * - withCredentials: true - cho phép gửi cookies
+ */
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -24,65 +57,117 @@ const api: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor - thêm token vào header
+/**
+ * Request Interceptor
+ * 
+ * Tự động thêm JWT token vào Authorization header cho mọi request.
+ * Chạy trước khi mỗi API request được gửi đi.
+ * 
+ * Flow:
+ * 1. Lấy accessToken từ localStorage
+ * 2. Nếu có token -> thêm vào Authorization header
+ * 3. Return config để tiếp tục request
+ */
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Lấy token từ localStorage
     const token = localStorage.getItem('accessToken');
+    
+    // Nếu có token và headers exist -> thêm Authorization header
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error: AxiosError) => {
+    // Xử lý error khi cấu hình request
     return Promise.reject(error);
   }
 );
 
-// Response interceptor - xử lý lỗi
+/**
+ * Response Interceptor
+ * 
+ * Xử lý response và errors từ API.
+ * Đặc biệt xử lý 401 Unauthorized (token hết hạn/không hợp lệ).
+ * 
+ * Flow:
+ * - Success response: Trả về response nguyên bản
+ * - Error response:
+ *   + 401: Clear localStorage và redirect to login
+ *   + Khác: Reject promise với error
+ */
 api.interceptors.response.use(
   (response) => {
+    // Response thành công - trả về nguyên bản
     return response;
   },
   async (error: AxiosError) => {
+    // Xử lý 401 Unauthorized - Token hết hạn hoặc không hợp lệ
     if (error.response?.status === 401) {
-      // Token hết hạn hoặc không hợp lệ
+      // Xóa token và user data khỏi localStorage
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       
-      // Redirect về login page
+      // Redirect về trang login (tránh redirect nếu đã ở trang login)
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }
     
+    // Reject promise với error để caller có thể xử lý
     return Promise.reject(error);
   }
 );
 
 export default api;
 
-// Helper function để xử lý error message
+/**
+ * getErrorMessage - Helper function để xử lý và trích xuất error message
+ * 
+ * Chuyển đổi các error từ API thành các message thân thiện cho người dùng.
+ * Xử lý cả Axios errors và generic errors.
+ * 
+ * @param {unknown} error - Error object cần xử lý
+ * @returns {string} User-friendly error message
+ * 
+ * Xử lý các trường hợp:
+ * - Backend trả về message có format đặc biệt (ví dụ: "400 BAD_REQUEST 'Message'")
+ * - HTTP status codes phổ biến (400, 401, 403, 404, 409, 500, 503)
+ * - Generic errors
+ * 
+ * @example
+ * ```typescript
+ * try {
+ *   await api.post('/login', data);
+ * } catch (error) {
+ *   const message = getErrorMessage(error);
+ *   console.error(message); // "Sai email hoặc mật khẩu"
+ * }
+ * ```
+ */
 export const getErrorMessage = (error: unknown): string => {
+  // Kiểm tra xem có phải là Axios error không
   if (axios.isAxiosError(error)) {
     const response = error.response;
     
-    // Lấy message từ backend nếu có
+    // Xử lý message từ backend
     if (response?.data?.message) {
       let message = response.data.message;
       
-      // Xử lý message từ backend có format: "400 BAD_REQUEST 'Sai email hoặc mật khẩu'"
+      // Xử lý message có format: "400 BAD_REQUEST 'Sai email hoặc mật khẩu'"
       // Lấy phần message trong dấu ngoặc đơn
       const match = message.match(/'([^']+)'/);
       if (match && match[1]) {
         return match[1];
       }
       
-      // Nếu không có dấu ngoặc đơn, loại bỏ status code và BAD_REQUEST
+      // Nếu không có dấu ngoặc đơn, loại bỏ status code và status text
       message = message.replace(/^\d+\s+[A-Z_]+\s+/i, '').trim();
       
-      // Nếu message vẫn chứa "BAD_REQUEST" hoặc các status text khác
+      // Nếu message vẫn chứa status text, sử dụng message mặc định
       if (message.match(/^(BAD_REQUEST|UNAUTHORIZED|FORBIDDEN|NOT_FOUND)/i)) {
-        // Sử dụng message mặc định dựa trên status code
         if (response.status === 400 || response.status === 401) {
           return 'Sai email hoặc mật khẩu';
         }
@@ -91,7 +176,7 @@ export const getErrorMessage = (error: unknown): string => {
       return message;
     }
     
-    // Xử lý các HTTP status code phổ biến với message thân thiện
+    // Xử lý các HTTP status code với message thân thiện
     if (response?.status) {
       switch (response.status) {
         case 400:
@@ -113,7 +198,10 @@ export const getErrorMessage = (error: unknown): string => {
       }
     }
     
+    // Fallback error message
     return error.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
   }
+  
+  // Generic error (không phải Axios error)
   return 'Có lỗi xảy ra. Vui lòng thử lại.';
 };

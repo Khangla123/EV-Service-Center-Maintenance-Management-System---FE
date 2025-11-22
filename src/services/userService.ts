@@ -1,5 +1,16 @@
+/**
+ * User Service Module
+ * Quản lý các API liên quan đến users và đăng ký tài khoản
+ * @module services/userService
+ */
+
 import api from './api';
 
+/**
+ * User Interface
+ * Định nghĩa cấu trúc dữ liệu của user
+ * @interface User
+ */
 export interface User {
   id: string;
   email: string;
@@ -12,6 +23,11 @@ export interface User {
   updatedAt?: Date;
 }
 
+/**
+ * Register Request
+ * Payload để đăng ký tài khoản mới
+ * @interface RegisterRequest
+ */
 export interface RegisterRequest {
   email: string;
   password: string;
@@ -21,6 +37,11 @@ export interface RegisterRequest {
   
 }
 
+/**
+ * Update User Request
+ * Payload để cập nhật thông tin user
+ * @interface UpdateUserRequest
+ */
 export interface UpdateUserRequest {
   firstName?: string;
   lastName?: string;
@@ -28,12 +49,36 @@ export interface UpdateUserRequest {
   avatar?: string;
 }
 
+/**
+ * Update Role Request
+ * Payload để cập nhật role của user (Admin only)
+ * @interface UpdateRoleRequest
+ */
 export interface UpdateRoleRequest {
   role: string;
 }
 
+/**
+ * UserService Class
+ * Service layer quản lý users và đăng ký tài khoản
+ * @class UserService
+ */
 class UserService {
-  // Đăng ký tài khoản mới - gọi endpoint /customers để tạo cả user + customer
+  /**
+   * register - Đăng ký tài khoản mới
+   * Gọi endpoint /customers để tạo cả user + customer profile
+   * Tự động parse tên tiếng Việt (lastName + firstName -> fullName)
+   * @param {RegisterRequest} data - Thông tin đăng ký
+   * @returns {Promise<User>} User vừa tạo
+   * @example
+   * const newUser = await userService.register({
+   *   email: 'user@example.com',
+   *   password: 'password123',
+   *   firstName: 'Van A',
+   *   lastName: 'Nguyen',
+   *   phone: '0901234567'
+   * });
+   */
   async register(data: RegisterRequest): Promise<User> {
     // Map RegisterRequest to CustomerCreateRequest format
     const customerData = {
@@ -59,7 +104,21 @@ class UserService {
     };
   }
 
-  // Lấy danh sách tất cả users (admin)
+  /**
+   * getAllUsers - Lấy danh sách tất cả users (Admin only)
+   * @param {Object} params - Query parameters
+   * @param {number} params.page - Số trang
+   * @param {number} params.size - Kích thước trang
+   * @param {string} params.role - Filter theo role
+   * @param {string} params.search - Từ khóa tìm kiếm
+   * @returns {Promise} Danh sách users với pagination
+   * @example
+   * const result = await userService.getAllUsers({
+   *   page: 1,
+   *   size: 10,
+   *   role: 'customer'
+   * });
+   */
   async getAllUsers(params?: {
     page?: number;
     size?: number;
@@ -70,25 +129,55 @@ class UserService {
     return response.data;
   }
 
-  // Lấy thông tin user theo ID
+  /**
+   * getUserById - Lấy thông tin user theo ID (Admin)
+   * @param {string} userId - UUID của user
+   * @returns {Promise<User>} Chi tiết user
+   * @example
+   * const user = await userService.getUserById('user-uuid');
+   */
   async getUserById(userId: string): Promise<User> {
     const response = await api.get(`/users/user/${userId}`);
     return response.data;
   }
 
-  // Cập nhật thông tin user theo ID
+  /**
+   * updateUser - Cập nhật thông tin user theo ID (Admin)
+   * @param {string} userId - UUID của user
+   * @param {UpdateUserRequest} data - Dữ liệu cần cập nhật
+   * @returns {Promise<User>} User sau khi update
+   * @example
+   * const updated = await userService.updateUser('user-uuid', {
+   *   phone: '0909999999'
+   * });
+   */
   async updateUser(userId: string, data: UpdateUserRequest): Promise<User> {
     const response = await api.put(`/users/user/${userId}`, data);
     return response.data;
   }
 
-  // Cập nhật role của user (admin)
+  /**
+   * updateUserRole - Cập nhật role của user (Admin only)
+   * @param {string} userId - UUID của user
+   * @param {UpdateRoleRequest} data - Role mới
+   * @returns {Promise<User>} User với role đã cập nhật
+   * @example
+   * const updated = await userService.updateUserRole('user-uuid', {
+   *   role: 'STAFF'
+   * });
+   */
   async updateUserRole(userId: string, data: UpdateRoleRequest): Promise<User> {
     const response = await api.patch(`/users/user/${userId}/role`, data);
     return response.data;
   }
 
-  // Xóa user theo ID (admin)
+  /**
+   * deleteUser - Xóa user theo ID (Admin only)
+   * @param {string} userId - UUID của user cần xóa
+   * @returns {Promise} Message xác nhận
+   * @example
+   * await userService.deleteUser('user-uuid');
+   */
   async deleteUser(userId: string): Promise<{ message: string }> {
     const response = await api.delete(`/users/user/${userId}`);
     return response.data;

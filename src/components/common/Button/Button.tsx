@@ -1,18 +1,53 @@
+/**
+ * Button Component
+ * Component button tùy chỉnh với nhiều variants và sizes
+ * @module components/common/Button
+ */
+
 import React from 'react';
 import './Button.css';
 
+/**
+ * Button Props Interface
+ * Props cho Button component
+ * @interface ButtonProps
+ */
 interface ButtonProps {
+  /** Nội dung bên trong button */
   children: React.ReactNode;
+  /** Kiểu hiển thị của button */
   variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'success';
+  /** Kích thước button */
   size?: 'sm' | 'md' | 'lg';
+  /** Vô hiệu hóa button */
   disabled?: boolean;
+  /** Trạng thái loading (hiển thị spinner) */
   loading?: boolean;
+  /** Button chiếm toàn bộ chiều rộng */
   fullWidth?: boolean;
+  /** Loại button HTML */
   type?: 'button' | 'submit' | 'reset';
+  /** Callback khi click */
   onClick?: () => void;
+  /** Class CSS bổ sung */
   className?: string;
 }
 
+/**
+ * Button Component
+ * Button tùy chỉnh với loading state, variants, sizes
+ * @param {ButtonProps} props - Component props
+ * @returns {JSX.Element} Button component
+ * @example
+ * <Button variant="primary" size="lg" onClick={handleClick}>
+ *   Click me
+ * </Button>
+ * 
+ * @example
+ * <Button variant="danger" loading={isLoading}>
+ *   Delete
+ * </Button>
+ */
 const Button: React.FC<ButtonProps> = ({
   children,
   variant = 'primary',
@@ -24,6 +59,7 @@ const Button: React.FC<ButtonProps> = ({
   onClick,
   className = ''
 }) => {
+  // Tạo class names dựa trên props
   const baseClass = 'btn';
   const variantClass = `btn--${variant}`;
   const sizeClass = `btn--${size}`;
@@ -31,6 +67,7 @@ const Button: React.FC<ButtonProps> = ({
   const loadingClass = loading ? 'btn--loading' : '';
   const disabledClass = disabled || loading ? 'btn--disabled' : '';
 
+  // Kết hợp tất cả classes
   const buttonClasses = [
     baseClass,
     variantClass,

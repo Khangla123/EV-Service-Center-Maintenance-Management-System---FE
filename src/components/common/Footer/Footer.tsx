@@ -1,8 +1,27 @@
+/**
+ * Footer Component
+ * Footer chung cho toàn ứng dụng với thông tin công ty, links và social media
+ * @module components/common/Footer
+ */
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, Facebook, Youtube, Instagram, ExternalLink, Send } from 'lucide-react';
 import './Footer.css';
 
+/**
+ * Footer Component
+ * Hiển thị footer với:
+ * - Newsletter subscription form
+ * - Thông tin công ty
+ * - Navigation links
+ * - Liên hệ và hotline
+ * - Social media links
+ * - Hệ sinh thái Vingroup
+ * @returns {JSX.Element} Footer component
+ * @example
+ * <Footer />
+ */
 const Footer: React.FC = () => {
   return (
     <footer className="footer-vinfast">

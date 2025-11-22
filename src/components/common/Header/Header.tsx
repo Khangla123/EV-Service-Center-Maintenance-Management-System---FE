@@ -1,3 +1,9 @@
+/**
+ * Header Component
+ * Header chung cho toàn ứng dụng với navigation, user menu và notifications
+ * @module components/common/Header
+ */
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, LogOut, Menu, X, Bell, Settings, Wrench, CreditCard } from 'lucide-react';
@@ -5,23 +11,51 @@ import { UserRole } from '../../../types';
 import Button from '../Button';
 import './Header.css';
 
+/**
+ * Header Props Interface
+ * Props cho Header component
+ * @interface HeaderProps
+ */
 interface HeaderProps {
+  /** Thông tin user hiện tại (null nếu chưa đăng nhập) */
   user?: {
     firstName: string;
     lastName: string;
     role: UserRole;
     avatar?: string;
   } | null;
+  /** Callback khi đăng xuất */
   onLogout?: () => void;
+  /** Callback khi hiển thị maintenance reminder */
   onShowMaintenanceReminder?: () => void;
+  /** Callback khi hiển thị payment reminder */
   onShowPaymentReminder?: () => void;
+  /** Callback khi hiển thị tất cả notifications */
   onShowAllNotifications?: () => void;
+  /** Số lượng maintenance reminders */
   maintenanceReminderCount?: number;
+  /** Số lượng payment reminders */
   paymentReminderCount?: number;
+  /** Set các notifications đã đọc */
   readNotifications?: Set<string>;
+  /** Callback khi đánh dấu notification đã đọc */
   onMarkNotificationAsRead?: (notificationId: string) => void;
 }
 
+/**
+ * Header Component
+ * Hiển thị header với navigation, user menu, notifications
+ * Tự động hiển thị nav links theo role của user
+ * @param {HeaderProps} props - Component props
+ * @returns {JSX.Element} Header component
+ * @example
+ * <Header 
+ *   user={currentUser}
+ *   onLogout={handleLogout}
+ *   maintenanceReminderCount={5}
+ *   paymentReminderCount={2}
+ * />
+ */
 const Header: React.FC<HeaderProps> = ({ 
   user, 
   onLogout, 
@@ -33,6 +67,7 @@ const Header: React.FC<HeaderProps> = ({
   readNotifications: externalReadNotifications,
   onMarkNotificationAsRead
 }) => {
+  // State quản lý UI
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -40,10 +75,13 @@ const Header: React.FC<HeaderProps> = ({
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const navigate = useNavigate();
   
-  // Use external readNotifications from context if available, otherwise use empty Set
+  // Sử dụng readNotifications từ context nếu có, không thì dùng Set rỗng
   const readNotifications = externalReadNotifications || new Set<string>();
   
-  // Helper function to mark notification as read
+  /**
+   * markAsRead - Đánh dấu notification đã đọc
+   * @param {string} notificationId - ID của notification
+   */
   const markAsRead = (notificationId: string) => {
     if (onMarkNotificationAsRead) {
       onMarkNotificationAsRead(notificationId);
@@ -58,7 +96,7 @@ const Header: React.FC<HeaderProps> = ({
   const totalNotifications = notificationTypes.length;
   const unreadCount = notificationTypes.filter(type => !readNotifications.has(type)).length;
   
-  // Mock data for old notifications (lịch sử thông báo) - giống Facebook
+  // Mock data cho old notifications (lịch sử thông báo) - tương tự Facebook
   const oldNotifications = [
     {
       id: 'old-1',
@@ -102,6 +140,10 @@ const Header: React.FC<HeaderProps> = ({
     }
   ];
 
+  /**
+   * handleLogout - Xử lý khi user đăng xuất
+   * Gọi callback onLogout và chuyển hướng về trang login
+   */
   const handleLogout = () => {
     if (onLogout) {
       onLogout();
@@ -109,6 +151,10 @@ const Header: React.FC<HeaderProps> = ({
     navigate('/login');
   };
 
+  /**
+   * getNavLinks - Lấy danh sách nav links dựa theo role của user
+   * @returns {Array} Danh sách nav links
+   */
   const getNavLinks = () => {
     if (!user) {
       return [];
@@ -142,7 +188,10 @@ const Header: React.FC<HeaderProps> = ({
 
   const navLinks = getNavLinks();
 
-  // Determine home path based on user role
+  /**
+   * getHomePath - Xác định home path dựa trên role của user
+   * @returns {string} Đường dẫn trang chủ
+   */
   const getHomePath = () => {
     if (!user) return '/';
     
