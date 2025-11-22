@@ -21,7 +21,6 @@ interface InventoryItem extends PartResponse {
 
 const InventoryManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -330,36 +329,11 @@ const InventoryManagement: React.FC = () => {
     }
   ];
 
-  const aiSuggestions = [
-    {
-      id: '1',
-      item: 'Pin VinFast VF8',
-      suggestedQuantity: 10,
-      reason: 'Dự kiến cần cho 8 lịch hẹn trong 2 tuần tới',
-      priority: 'high'
-    },
-    {
-      id: '2',
-      item: 'Lốp Michelin EV',
-      suggestedQuantity: 20,
-      reason: 'Hết hàng, có 5 đơn đặt hàng đang chờ',
-      priority: 'urgent'
-    },
-    {
-      id: '3',
-      item: 'Hệ thống làm mát pin',
-      suggestedQuantity: 8,
-      reason: 'Tồn kho thấp, xu hướng tăng 15% tháng này',
-      priority: 'medium'
-    }
-  ];
-
   const filteredInventory = inventory.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || item.category === filterCategory;
     const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
     
-    return matchesSearch && matchesCategory && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
   const formatCurrency = (amount: number) => {
@@ -385,15 +359,6 @@ const InventoryManagement: React.FC = () => {
       case 'low-stock': return 'Sắp hết';
       case 'out-of-stock': return 'Hết hàng';
       default: return status;
-    }
-  };
-
-  const getPriorityClass = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return 'priority-urgent';
-      case 'high': return 'priority-high';
-      case 'medium': return 'priority-medium';
-      default: return '';
     }
   };
 
@@ -423,29 +388,6 @@ const InventoryManagement: React.FC = () => {
         ))}
       </div>
 
-      {/* AI Suggestions */}
-      <div className="ai-suggestions-section">
-        <div className="section-header">
-          <TrendingUp size={20} />
-          <h2>Gợi ý Đặt hàng từ AI</h2>
-        </div>
-        <div className="suggestions-list">
-          {aiSuggestions.map((suggestion) => (
-            <div key={suggestion.id} className={`suggestion-card ${getPriorityClass(suggestion.priority)}`}>
-              <div className="suggestion-info">
-                <h4>{suggestion.item}</h4>
-                <p className="suggestion-reason">{suggestion.reason}</p>
-                <p className="suggestion-quantity">Đề xuất: <strong>{suggestion.suggestedQuantity} chiếc</strong></p>
-              </div>
-              <div className="suggestion-actions">
-                <button className="btn-approve">Phê duyệt</button>
-                <button className="btn-adjust">Điều chỉnh</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Filters */}
       <div className="inventory-filters">
         <div className="search-box">
@@ -460,14 +402,6 @@ const InventoryManagement: React.FC = () => {
 
         <div className="filter-group">
           <Filter size={18} />
-          <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-            <option value="all">Tất cả danh mục</option>
-            <option value="Pin EV">Pin EV</option>
-            <option value="Lốp xe">Lốp xe</option>
-            <option value="Phụ kiện sạc">Phụ kiện sạc</option>
-            <option value="Phụ tùng hệ thống">Phụ tùng hệ thống</option>
-          </select>
-
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
             <option value="all">Tất cả trạng thái</option>
             <option value="in-stock">Còn hàng</option>

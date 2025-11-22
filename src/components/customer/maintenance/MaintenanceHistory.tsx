@@ -103,7 +103,9 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
         return {
           id: record.appointmentId,
           appointmentId: record.appointmentId,
-          vehicleId: selectedVehicle || '',
+          vehicleId: record.vehicleId || '', // May not exist in response
+          vehicleModel: record.vehicleModel, // Add from backend
+          licensePlate: record.licensePlate, // Add from backend
           technicianId: '',
           serviceType: {
             id: '',
@@ -454,19 +456,31 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
               <h4>Thông tin chung</h4>
               <div className="detail-grid">
                 <div className="detail-item">
-                  <strong>Xe:</strong> {vehicle?.make} {vehicle?.model} - {vehicle?.licensePlate}
+                  <strong>Xe:</strong> 
+                  <span>
+                    {record.vehicleModel && record.licensePlate 
+                      ? `${record.vehicleModel} - ${record.licensePlate}`
+                      : vehicle 
+                        ? `${vehicle.make} ${vehicle.model} - ${vehicle.licensePlate}`
+                        : '-'
+                    }
+                  </span>
                 </div>
                 <div className="detail-item">
-                  <strong>Dịch vụ:</strong> {record.serviceType.name}
+                  <strong>Dịch vụ:</strong> 
+                  <span>{record.serviceType.name}</span>
                 </div>
                 <div className="detail-item">
-                  <strong>Thời gian bắt đầu:</strong> {formatDateTime(record.startTime)}
+                  <strong>Thời gian bắt đầu:</strong> 
+                  <span>{formatDateTime(record.startTime)}</span>
                 </div>
                 <div className="detail-item">
-                  <strong>Thời gian kết thúc:</strong> {record.endTime ? formatDateTime(record.endTime) : 'Chưa hoàn thành'}
+                  <strong>Thời gian kết thúc:</strong> 
+                  <span>{record.endTime ? formatDateTime(record.endTime) : 'Chưa hoàn thành'}</span>
                 </div>
                 <div className="detail-item">
-                  <strong>Số km khi bảo dưỡng:</strong> {record.mileageAtService.toLocaleString()}
+                  <strong>Số km khi bảo dưỡng:</strong> 
+                  <span>{record.mileageAtService.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -474,13 +488,13 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
             <div className="detail-section">
               <h4>Công việc thực hiện</h4>
               <div className="work-details">
-                <div className="service-item">
-                  <strong>Dịch vụ chính:</strong> 
-                  <span>{appointmentDetails?.servicePackageName || record.serviceType.name}</span>
+                <div className="service-item-detail">
+                  <div className="service-label">Dịch vụ chính:</div>
+                  <div className="service-value">{appointmentDetails?.servicePackageName || record.serviceType.name}</div>
                 </div>
                 {selectedPackageNames.length > 0 && (
-                  <div className="selected-packages">
-                    <strong>Các gói dịch vụ đã chọn:</strong>
+                  <div className="selected-packages-detail">
+                    <div className="service-label">Các gói dịch vụ đã chọn:</div>
                     <ul className="packages-list">
                       {selectedPackageNames.map((name, idx) => (
                         <li key={idx}>{name}</li>
@@ -524,17 +538,23 @@ const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({
               <div className="cost-breakdown">
                 {!loadingDetails && appointmentDetails && (
                   <>
-                    {/* Hiển thị tất cả các gói dịch vụ trong một dòng */}
+                    {/* Hiển thị gói dịch vụ chính */}
                     <div className="cost-item">
-                      <span>
-                        Gói dịch vụ: {appointmentDetails.servicePackageName}
-                        {selectedPackageNames.length > 0 && ` + ${selectedPackageNames.join(', ')}`}
-                      </span>
-                      <span>{formatCurrency(calculatedTotal)}</span>
+                      <span>Gói dịch vụ chính: {appointmentDetails.servicePackageName}</span>
+                      <span>{formatCurrency(mainPackagePrice)}</span>
                     </div>
+                    
+                    {/* Hiển thị các gói phụ nếu có */}
+                    {selectedPackagesWithPrices.length > 0 && selectedPackagesWithPrices.map((pkg, idx) => (
+                      <div key={idx} className="cost-item">
+                        <span>+ {pkg.name}</span>
+                        <span>{formatCurrency(pkg.price)}</span>
+                      </div>
+                    ))}
+                    
                     <div className="cost-item total">
                       <span>Tổng chi phí:</span>
-                      <span>{formatCurrency(calculatedTotal)}</span>
+                      <span>{formatCurrency(record.totalCost)}</span>
                     </div>
                   </>
                 )}

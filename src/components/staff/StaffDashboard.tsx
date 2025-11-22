@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Users, Calendar, Wrench, Package,
-  MessageSquare, TrendingUp, Bell, FileText, Activity
+  TrendingUp, FileText, Activity
 } from 'lucide-react';
 import { CustomerManagement } from './customers';
 import { AppointmentManagement } from './appointments';
 import { InvoiceManagement } from './invoices';
-import IssuePricing from './pricing/IssuePricing';
 import appointmentService from '../../services/appointmentService';
 import customerService from '../../services/customerService';
 import partService from '../../services/partService';
@@ -16,10 +16,11 @@ type StaffView =
   | 'overview'
   | 'customers'
   | 'appointments'
-  | 'invoices'
-  | 'pricing';
+  | 'invoices';
 
 const StaffDashboard: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<StaffView>('overview');
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
@@ -29,6 +30,32 @@ const StaffDashboard: React.FC = () => {
     lowStockParts: 0,
     recentAppointments: [] as any[]
   });
+
+  // Sync currentView with URL
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes('/appointments')) {
+      setCurrentView('appointments');
+    } else if (path.includes('/customers')) {
+      setCurrentView('customers');
+    } else if (path.includes('/services') || path.includes('/invoices')) {
+      setCurrentView('invoices');
+    } else {
+      setCurrentView('overview');
+    }
+  }, [location.pathname]);
+
+  // Update URL when view changes
+  const handleViewChange = (view: StaffView) => {
+    setCurrentView(view);
+    const pathMap: Record<StaffView, string> = {
+      'overview': '/staff/dashboard',
+      'customers': '/staff/customers',
+      'appointments': '/staff/appointments',
+      'invoices': '/staff/services'
+    };
+    navigate(pathMap[view]);
+  };
 
   useEffect(() => {
     if (currentView === 'overview') {
@@ -125,8 +152,7 @@ const StaffDashboard: React.FC = () => {
     { id: 'overview', icon: <TrendingUp />, label: 'Tổng quan', color: '#667eea' },
     { id: 'customers', icon: <Users />, label: 'Quản lý Khách hàng', color: '#10b981' },
     { id: 'appointments', icon: <Calendar />, label: 'Quản lý Lịch hẹn', color: '#3b82f6' },
-    { id: 'invoices', icon: <FileText />, label: 'Quản lý Hóa đơn', color: '#f59e0b' },
-    { id: 'pricing', icon: <MessageSquare />, label: 'Định giá Vấn đề', color: '#8b5cf6' }
+    { id: 'invoices', icon: <FileText />, label: 'Quản lý Hóa đơn', color: '#f59e0b' }
   ] as const;
 
   const renderContent = () => {
@@ -137,8 +163,6 @@ const StaffDashboard: React.FC = () => {
         return <AppointmentManagement />;
       case 'invoices':
         return <InvoiceManagement />;
-      case 'pricing':
-        return <IssuePricing />;
       case 'overview':
       default:
         if (loading) {
@@ -203,11 +227,11 @@ const StaffDashboard: React.FC = () => {
             <div className="quick-actions">
               <h3>Thao tác nhanh</h3>
               <div className="actions-grid">
-                <button className="action-btn" onClick={() => setCurrentView('appointments')}>
+                <button className="action-btn" onClick={() => handleViewChange('appointments')}>
                   <Calendar />
                   <span>Quản lý lịch hẹn</span>
                 </button>
-                <button className="action-btn" onClick={() => setCurrentView('customers')}>
+                <button className="action-btn" onClick={() => handleViewChange('customers')}>
                   <Users />
                   <span>Quản lý khách hàng</span>
                 </button>
@@ -258,7 +282,7 @@ const StaffDashboard: React.FC = () => {
             <button
               key={item.id}
               className={`menu-item ${currentView === item.id ? 'active' : ''}`}
-              onClick={() => setCurrentView(item.id as StaffView)}
+              onClick={() => handleViewChange(item.id as StaffView)}
             >
               <span className="menu-icon">{item.icon}</span>
               <span className="menu-label">{item.label}</span>

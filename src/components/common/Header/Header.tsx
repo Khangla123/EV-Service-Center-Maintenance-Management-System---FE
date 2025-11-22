@@ -111,14 +111,7 @@ const Header: React.FC<HeaderProps> = ({
 
   const getNavLinks = () => {
     if (!user) {
-      return [
-        { label: 'Giới thiệu', path: '/about' },
-        { label: 'Dịch vụ bảo trì', path: '/services' },
-        { label: 'Hỗ trợ xe điện', path: '/vehicles' },
-        { label: 'Dịch vụ hậu mãi', path: '/after-sales' },
-        { label: 'Phụ tùng & phụ kiện', path: '/parts' },
-        { label: 'Liên hệ', path: '/contact' }
-      ];
+      return [];
     }
 
     switch (user.role) {  
@@ -181,232 +174,6 @@ const Header: React.FC<HeaderProps> = ({
         <div className="header__actions">
           {user ? (
             <>
-              {/* Notifications */}
-              <div className="header__notification-menu">
-                <button 
-                  className="header__notification-btn"
-                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                >
-                  <Bell size={20} />
-                  {unreadCount > 0 && (
-                    <span className="header__notification-badge">{unreadCount}</span>
-                  )}
-                </button>
-
-                {isNotificationOpen && (
-                  <div className="header__notification-dropdown">
-                    <div className="notification-header">
-                      <div className="notification-header-top">
-                        <h3>Thông báo</h3>
-                        <button 
-                          className="notification-close-btn"
-                          onClick={() => {
-                            setIsNotificationOpen(false);
-                            setShowAllNotifications(false);
-                            setActiveTab('all');
-                          }}
-                          aria-label="Đóng thông báo"
-                        >
-                          <X size={20} />
-                        </button>
-                      </div>
-                      <div className="notification-tabs">
-                        <button 
-                          className={`notification-tab ${activeTab === 'all' ? 'active' : ''}`}
-                          onClick={() => setActiveTab('all')}
-                        >
-                          Tất cả
-                        </button>
-                        <button 
-                          className={`notification-tab ${activeTab === 'unread' ? 'active' : ''}`}
-                          onClick={() => setActiveTab('unread')}
-                        >
-                          Chưa đọc
-                        </button>
-                      </div>
-                    </div>
-                    <div className="notification-list">
-                      {totalNotifications === 0 && activeTab === 'all' ? (
-                        <div className="notification-empty">
-                          <Bell size={48} style={{ opacity: 0.3 }} />
-                          <p>Không có thông báo nào</p>
-                        </div>
-                      ) : (
-                        <>
-                          {/* Thông báo mới - chưa đọc */}
-                          {(activeTab === 'all' || activeTab === 'unread') && (
-                            <>
-                              {maintenanceReminderCount > 0 && !readNotifications.has('maintenance') && (
-                                <button 
-                                  className={`notification-item ${!readNotifications.has('maintenance') ? 'notification-item-unread' : 'notification-item-read'}`}
-                                  onClick={() => {
-                                    markAsRead('maintenance');
-                                    setIsNotificationOpen(false);
-                                    setShowAllNotifications(false);
-                                    setActiveTab('all');
-                                    // Đảm bảo dropdown đóng hoàn toàn trước khi mở popup
-                                    setTimeout(() => {
-                                      onShowMaintenanceReminder?.();
-                                    }, 100);
-                                  }}
-                                >
-                                  <div className="notification-icon maintenance">
-                                    <Wrench size={20} />
-                                  </div>
-                                  <div className="notification-content">
-                                    <div className="notification-title">
-                                      🔔 Nhắc nhở bảo dưỡng
-                                    </div>
-                                    <div className="notification-description">
-                                      {maintenanceReminderCount === 1 
-                                        ? 'Xe của bạn cần được bảo dưỡng định kỳ' 
-                                        : `Bạn có ${maintenanceReminderCount} xe cần bảo dưỡng`}
-                                    </div>
-                                    <div className="notification-time">Hôm nay</div>
-                                  </div>
-                                  {!readNotifications.has('maintenance') && (
-                                    <div className="notification-unread-badge"></div>
-                                  )}
-                                </button>
-                              )}
-                              {paymentReminderCount > 0 && !readNotifications.has('payment') && (
-                                <button 
-                                  className={`notification-item ${!readNotifications.has('payment') ? 'notification-item-unread' : 'notification-item-read'}`}
-                                  onClick={() => {
-                                    markAsRead('payment');
-                                    setIsNotificationOpen(false);
-                                    setShowAllNotifications(false);
-                                    setActiveTab('all');
-                                    // Đảm bảo dropdown đóng hoàn toàn trước khi mở popup
-                                    setTimeout(() => {
-                                      onShowPaymentReminder?.();
-                                    }, 100);
-                                  }}
-                                >
-                                  <div className="notification-icon payment">
-                                    <CreditCard size={20} />
-                                  </div>
-                                  <div className="notification-content">
-                                    <div className="notification-title">
-                                      💳 Nhắc nhở thanh toán
-                                    </div>
-                                    <div className="notification-description">
-                                      {paymentReminderCount === 1 
-                                        ? 'Bạn có khoản cần thanh toán' 
-                                        : `Bạn có ${paymentReminderCount} khoản cần thanh toán`}
-                                    </div>
-                                    <div className="notification-time">Hôm nay</div>
-                                  </div>
-                                  {!readNotifications.has('payment') && (
-                                    <div className="notification-unread-badge"></div>
-                                  )}
-                                </button>
-                              )}
-                            </>
-                          )}
-                          
-                          {/* Hiển thị thông báo đã đọc trong tab Tất cả */}
-                          {activeTab === 'all' && (
-                            <>
-                              {maintenanceReminderCount > 0 && readNotifications.has('maintenance') && (
-                                <button 
-                                  className="notification-item notification-item-read"
-                                  onClick={() => {
-                                    setIsNotificationOpen(false);
-                                    setShowAllNotifications(false);
-                                    setActiveTab('all');
-                                    // Đảm bảo dropdown đóng hoàn toàn trước khi mở popup
-                                    setTimeout(() => {
-                                      onShowMaintenanceReminder?.();
-                                    }, 100);
-                                  }}
-                                >
-                                  <div className="notification-icon maintenance">
-                                    <Wrench size={20} />
-                                  </div>
-                                  <div className="notification-content">
-                                    <div className="notification-title">
-                                      🔔 Nhắc nhở bảo dưỡng
-                                    </div>
-                                    <div className="notification-description">
-                                      {maintenanceReminderCount === 1 
-                                        ? 'Xe của bạn cần được bảo dưỡng định kỳ' 
-                                        : `Bạn có ${maintenanceReminderCount} xe cần bảo dưỡng`}
-                                    </div>
-                                    <div className="notification-time">Hôm nay</div>
-                                  </div>
-                                </button>
-                              )}
-                              {paymentReminderCount > 0 && readNotifications.has('payment') && (
-                                <button 
-                                  className="notification-item notification-item-read"
-                                  onClick={() => {
-                                    setIsNotificationOpen(false);
-                                    setShowAllNotifications(false);
-                                    setActiveTab('all');
-                                    // Đảm bảo dropdown đóng hoàn toàn trước khi mở popup
-                                    setTimeout(() => {
-                                      onShowPaymentReminder?.();
-                                    }, 100);
-                                  }}
-                                >
-                                  <div className="notification-icon payment">
-                                    <CreditCard size={20} />
-                                  </div>
-                                  <div className="notification-content">
-                                    <div className="notification-title">
-                                      💳 Nhắc nhở thanh toán
-                                    </div>
-                                    <div className="notification-description">
-                                      {paymentReminderCount === 1 
-                                        ? 'Bạn có khoản cần thanh toán' 
-                                        : `Bạn có ${paymentReminderCount} khoản cần thanh toán`}
-                                    </div>
-                                    <div className="notification-time">Hôm nay</div>
-                                  </div>
-                                </button>
-                              )}
-                            </>
-                          )}
-                          
-                          {/* Thông báo cũ - đã đọc - chỉ hiển thị khi showAllNotifications = true */}
-                          {activeTab === 'all' && showAllNotifications && oldNotifications.map(notif => (
-                            <div key={notif.id} className="notification-item notification-item-read">
-                              <div className={`notification-icon ${notif.type}`}>
-                                {notif.type === 'maintenance' ? <Wrench size={20} /> : <CreditCard size={20} />}
-                              </div>
-                              <div className="notification-content">
-                                <div className="notification-title">{notif.title}</div>
-                                <div className="notification-description">{notif.description}</div>
-                                <div className="notification-time">{notif.time}</div>
-                              </div>
-                            </div>
-                          ))}
-                          
-                          {/* Hiển thị message nếu tab Chưa đọc nhưng không có thông báo */}
-                          {activeTab === 'unread' && unreadCount === 0 && (
-                            <div className="notification-empty">
-                              <Bell size={48} style={{ opacity: 0.3 }} />
-                              <p>Không có thông báo chưa đọc</p>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                    {!showAllNotifications && activeTab === 'all' && (unreadCount > 0 || readNotifications.size > 0) && (
-                      <div className="notification-footer">
-                        <button 
-                          className="view-all-btn"
-                          onClick={() => setShowAllNotifications(true)}
-                        >
-                          Xem thông báo trước đó
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
               {/* User Menu */}
               <div className="header__user-menu">
                 <button
@@ -416,16 +183,16 @@ const Header: React.FC<HeaderProps> = ({
                   {user.avatar ? (
                     <img
                       src={user.avatar}
-                      alt={`${user.firstName} ${user.lastName}`}
+                      alt={`${user.lastName} ${user.firstName}`}
                       className="header__user-avatar"
                     />
                   ) : (
                     <div className="header__user-avatar header__user-avatar--placeholder">
-                      {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                      {user.lastName.charAt(0)}{user.firstName.charAt(0)}
                     </div>
                   )}
                   <span className="header__user-name">
-                    {user.firstName} {user.lastName}
+                    {user.lastName} {user.firstName}
                   </span>
                 </button>
 
@@ -439,15 +206,6 @@ const Header: React.FC<HeaderProps> = ({
                         {user.role === UserRole.ADMIN && 'Quản trị viên'}
                       </div>
                     </div>
-                    <div className="header__user-dropdown-divider"></div>
-                    <Link to="/profile" className="header__user-dropdown-item">
-                      <User size={16} />
-                      Hồ sơ cá nhân
-                    </Link>
-                    <Link to="/settings" className="header__user-dropdown-item">
-                      <Settings size={16} />
-                      Cài đặt
-                    </Link>
                     <div className="header__user-dropdown-divider"></div>
                     <button
                       onClick={handleLogout}
